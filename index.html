@@ -136,6 +136,100 @@ canvas{max-height:220px}
 #ai-send{background:#7c3aed;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background 0.15s}
 #ai-send:hover{background:#6d28d9}
 #ai-send:disabled{background:#2d3f54;color:#475569;cursor:not-allowed}
+/* ============================================================
+   RESPONSIVE — Mobile (max 768px)
+   ============================================================ */
+@media(max-width:768px){
+  /* HEADER */
+  .header{padding:10px 12px;flex-wrap:wrap;gap:8px}
+  .header h1{font-size:13px}
+  .header>div:last-child{width:100%;display:flex;justify-content:space-between}
+  .header>div:last-child select{flex:1}
+
+  /* FILTER BAR */
+  .filterbar{padding:8px 12px;flex-wrap:wrap;gap:6px}
+  .filterbar input[type=date]{width:calc(50% - 14px);font-size:11px}
+  .filterbar>div{width:100%;display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .filterbar .apply-btn{width:100%;margin-left:0;margin-top:4px}
+
+  /* TABS — horizontaler Scroll */
+  .tabs{padding:0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{padding:10px 12px;font-size:11px}
+
+  /* CONTENT */
+  .content{padding:12px}
+
+  /* KPI GRID — 2 Spalten statt 4 */
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .kpi-val{font-size:17px}
+  .kpi-label{font-size:10px}
+  .kpi-ai{font-size:9px}
+
+  /* STANDORT CARDS — untereinander */
+  .st-cards{grid-template-columns:1fr}
+  .st-val{font-size:20px}
+
+  /* GRID 2/3 — untereinander */
+  .grid2{grid-template-columns:1fr}
+  .grid3{grid-template-columns:1fr}
+
+  /* BOX */
+  .box{padding:12px;border-radius:8px}
+  .box-title{font-size:12px}
+
+  /* TABELLEN — horizontal scrollbar */
+  .speise-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+  .speise-table th,.speise-table td{padding:7px 8px;font-size:11px}
+
+  /* MA ROWS */
+  .ma-row{flex-wrap:wrap;gap:4px}
+  .ma-name{min-width:100%;font-size:11px}
+  .ma-stat{min-width:auto;font-size:10px;text-align:left}
+  .ma-bar-wrap{width:100%}
+
+  /* DRILL PANEL */
+  .drill-panel{padding:10px}
+  .drill-row{font-size:11px;flex-wrap:wrap;gap:2px}
+
+  /* GuV ROWS */
+  .guv-row{font-size:12px;padding:7px 0}
+
+  /* SLIDER */
+  .slider-row{margin-bottom:12px}
+  .slider-top{font-size:11px}
+
+  /* CHARTS — etwas höher auf Mobile */
+  canvas{max-height:180px}
+
+  /* AMPEL */
+  .ampel-row{font-size:11px;padding:7px 0}
+
+  /* AI PANEL — Fullscreen auf Mobile */
+  #ai-fab{bottom:16px;right:16px;width:46px;height:46px;font-size:18px}
+  #ai-panel{bottom:0;right:0;left:0;width:100%;height:85vh;border-radius:16px 16px 0 0}
+  #ai-messages{padding:10px}
+  .ai-msg{max-width:92%;font-size:11px}
+  #ai-input{font-size:14px}
+
+  /* CLOSING ROW */
+  .closing-row{font-size:11px}
+
+  /* BADGES */
+  .badge{font-size:9px;padding:2px 5px}
+
+  /* ALERT */
+  .alert{font-size:11px;padding:8px 10px}
+}
+
+/* Extra klein (max 400px) */
+@media(max-width:400px){
+  .kpi-grid{grid-template-columns:1fr}
+  .kpi-val{font-size:20px}
+  .header h1{font-size:12px}
+  .tab{padding:8px 10px;font-size:10px}
+  .filterbar>div .qbtn{font-size:10px;padding:3px 6px}
+}
 </style>
 </head>
 <body>
