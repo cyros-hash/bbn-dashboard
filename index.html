@@ -382,20 +382,29 @@ async function ladeDaten(){
   document.getElementById("status").textContent="● Lade Daten...";
   document.getElementById("status").style.color="#f97316";
   try{
-    // APICBASE
+    // APICBASE — nur für Food Cost
     var r=await fetch(CSV.apic);var t=await r.text();
     var lines=t.trim().split("\n"),h=pCSV(lines[0]);
-    alle=lines.slice(1).map(function(l){
+    var apicData=lines.slice(1).map(function(l){
       var v=pCSV(l),o={};h.forEach(function(hh,i){o[hh]=v[i]||"";});
       return{datum:pDat(o["Datum"]),st:o["Standort"]||"",u:pDE(o["Umsatz Netto (€)"]),f:pDE(o["Food Cost (€)"]),s:parseInt(String(o["Anzahl Verkäufe"]).replace(/\./g,""))||0};
-    }).filter(function(r){return r.datum&&r.st&&r.u>0;});
+    }).filter(function(r){return r.datum&&r.st;});
 
-    // LS TX
+    // Food Cost Lookup: datum|standort → food cost
+    var fcLookup={};
+    apicData.forEach(function(r){fcLookup[r.datum+"|"+r.st]=r.f;});
+
+    // LS TX — Hauptquelle für Umsatz + Bons
     var r2=await fetch(CSV.lsTx);var t2=await r2.text();
     lsTx=t2.trim().split("\n").map(function(l){
       var v=pCSV(l);
       return{datum:pDat(v[0]),standort:v[1]||"",bons:parseInt(v[2])||0,umsatz:pDE(v[5]),ldo:pDE(v[8]),onprem:pDE(v[10]),takeaway:pDE(v[12]),rabatt:pDE(v[6])};
     }).filter(function(r){return r.datum&&r.standort;});
+
+    // ALLE = Lightspeed Umsatz + Apicbase Food Cost (merged)
+    alle=lsTx.filter(function(r){return r.umsatz>0;}).map(function(r){
+      return{datum:r.datum,st:r.standort,u:r.umsatz,f:fcLookup[r.datum+"|"+r.standort]||0,s:r.bons};
+    });
 
     // LS STUNDEN
     var r3=await fetch(CSV.lsStd);var t3=await r3.text();
@@ -473,7 +482,7 @@ async function ladeDaten(){
     document.getElementById("bis").value=maxD;
     setQ("monat");
     applyFilter();
-    document.getElementById("status").textContent="● Live · "+alle.length+" Apicbase · "+lsTx.length+" LS · "+ordio.length+" Ordio · "+artikel.length+" Artikel · "+bons.length+" Bons · "+waste.length+" Waste";
+    document.getElementById("status").textContent="● Live · "+alle.length+" Tage (LS-Umsatz) · "+apicData.length+" Apicbase (FC) · "+ordio.length+" Ordio · "+artikel.length+" Artikel · "+bons.length+" Bons · "+waste.length+" Waste";
     document.getElementById("status").style.color="#22c55e";
   }catch(e){
     document.getElementById("status").textContent="⚠️ "+e.message;
