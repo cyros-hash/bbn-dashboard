@@ -255,11 +255,12 @@ canvas{max-height:220px}
   <span style="color:#2d3f54;font-size:12px">→</span>
   <input type="date" id="bis" onchange="clearQuick()">
   <div style="display:flex;gap:4px">
-    <button class="qbtn" id="q-heute" onclick="setQuick('heute')">Heute</button>
+    <button class="qbtn active" id="q-heute" onclick="setQuick('heute')">Heute</button>
+    <button class="qbtn" id="q-woche" onclick="setQuick('woche')">Diese Woche</button>
     <button class="qbtn" id="q-7" onclick="setQuick('7')">7 Tage</button>
-    <button class="qbtn active" id="q-monat" onclick="setQuick('monat')">Monat</button>
+    <button class="qbtn" id="q-monat" onclick="setQuick('monat')">Monat</button>
     <button class="qbtn" id="q-quartal" onclick="setQuick('quartal')">Quartal</button>
-    <button class="qbtn" id="q-alle" onclick="setQuick('alle')">Alle</button>
+    <button class="qbtn" id="q-jahr" onclick="setQuick('jahr')">Jahr</button>
   </div>
   <button class="apply-btn" onclick="applyFilter()">Anwenden</button>
 </div>
@@ -308,7 +309,7 @@ var CSV = {
 // ============================================================
 var alle=[],lsTx=[],lsStd=[],lsQ=[],lsPay=[],ordio=[],artikel=[],bons=[],waste=[];
 var gefiltert=[];
-var charts={}, simV={p:0,v:0,f:0,a:0}, aktQ="monat";
+var charts={}, simV={p:0,v:0,f:0,a:0}, aktQ="heute";
 var ZIELE={fc:0.25,pa:0.30,cm:0.40,ebitda:0.12,bonWert:22,umsatzStd:115};
 
 // ============================================================
@@ -424,7 +425,7 @@ async function ladeDaten(){
     var r5=await fetch(CSV.lsPay);var t5=await r5.text();
     lsPay=t5.trim().split("\n").map(function(l){
       var v=pCSV(l);
-      return{datum:pDat(v[0]),standort:v[1]||"",bar:pDE(v[3]),karte:pDE(v[5]),ldo:pDE(v[7]),trinkgeld:pDE(v[10])};
+      return{datum:pDat(v[0]),standort:v[1]||"",bar:pDE(v[3]),karte:pDE(v[5]),ldo:pDE(v[7]),onlineOrder:pDE(v[9]),trinkgeld:pDE(v[10])};
     }).filter(function(r){return r.datum&&r.standort;});
 
     // ORDIO
@@ -480,7 +481,8 @@ async function ladeDaten(){
     var max=new Date(maxD+"T12:00:00");
     document.getElementById("von").value=new Date(max.getFullYear(),max.getMonth(),1).toISOString().split("T")[0];
     document.getElementById("bis").value=maxD;
-    setQ("monat");
+    // Standard: Heute (echter heutiger Tag)
+    setQuick("heute");
     applyFilter();
     document.getElementById("status").textContent="● Live · "+alle.length+" Tage (LS-Umsatz) · "+apicData.length+" Apicbase (FC) · "+ordio.length+" Ordio · "+artikel.length+" Artikel · "+bons.length+" Bons · "+waste.length+" Waste";
     document.getElementById("status").style.color="#22c55e";
@@ -502,20 +504,45 @@ function applyFilter(){
 }
 
 function setQuick(k){
-  var daten=alle.map(function(r){return r.datum;}).sort();
-  var maxD=daten[daten.length-1]||new Date().toISOString().split("T")[0];
-  var max=new Date(maxD+"T12:00:00");
+  // Echter heutiger Tag — unabhängig von den Daten im Sheet
+  var today = new Date();
+  today.setHours(12,0,0,0);
+  var todayStr = today.toISOString().split("T")[0];
+
   setQ(k);
-  if(k==="heute"){document.getElementById("von").value=maxD;document.getElementById("bis").value=maxD;}
-  else if(k==="7"){var d=new Date(max);d.setDate(d.getDate()-6);document.getElementById("von").value=d.toISOString().split("T")[0];document.getElementById("bis").value=maxD;}
-  else if(k==="monat"){document.getElementById("von").value=new Date(max.getFullYear(),max.getMonth(),1).toISOString().split("T")[0];document.getElementById("bis").value=maxD;}
-  else if(k==="quartal"){document.getElementById("von").value=new Date(max.getFullYear(),Math.floor(max.getMonth()/3)*3,1).toISOString().split("T")[0];document.getElementById("bis").value=maxD;}
-  else if(k==="alle"){document.getElementById("von").value=daten[0]||maxD;document.getElementById("bis").value=maxD;}
+
+  if(k==="heute"){
+    document.getElementById("von").value = todayStr;
+    document.getElementById("bis").value = todayStr;
+  } else if(k==="woche"){
+    // Laufende Woche: Montag dieser Woche bis heute
+    var day = today.getDay(); // 0=So, 1=Mo, ..., 6=Sa
+    var diffToMon = (day === 0) ? 6 : day - 1; // Tage seit Montag
+    var mon = new Date(today);
+    mon.setDate(today.getDate() - diffToMon);
+    document.getElementById("von").value = mon.toISOString().split("T")[0];
+    document.getElementById("bis").value = todayStr;
+  } else if(k==="7"){
+    var d = new Date(today);
+    d.setDate(d.getDate() - 6);
+    document.getElementById("von").value = d.toISOString().split("T")[0];
+    document.getElementById("bis").value = todayStr;
+  } else if(k==="monat"){
+    document.getElementById("von").value = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0];
+    document.getElementById("bis").value = todayStr;
+  } else if(k==="quartal"){
+    var qStart = new Date(today.getFullYear(), Math.floor(today.getMonth()/3)*3, 1);
+    document.getElementById("von").value = qStart.toISOString().split("T")[0];
+    document.getElementById("bis").value = todayStr;
+  } else if(k==="jahr"){
+    document.getElementById("von").value = new Date(today.getFullYear(), 0, 1).toISOString().split("T")[0];
+    document.getElementById("bis").value = todayStr;
+  }
 }
 
 function setQ(k){
   aktQ=k;
-  ["heute","7","monat","quartal","alle"].forEach(function(q){
+  ["heute","woche","7","monat","quartal","jahr"].forEach(function(q){
     var el=document.getElementById("q-"+q);
     if(el)el.className="qbtn"+(q===k?" active":"");
   });
@@ -740,7 +767,8 @@ function renderUmsatz(){
   var totalBar=payG.reduce(function(s,r){return s+r.bar;},0);
   var totalKarte=payG.reduce(function(s,r){return s+r.karte;},0);
   var totalLdoPay=payG.reduce(function(s,r){return s+r.ldo;},0);
-  var totalZahl=totalBar+totalKarte+totalLdoPay;
+  var totalOnlineOrder=payG.reduce(function(s,r){return s+(r.onlineOrder||0);},0);
+  var totalZahl=totalBar+totalKarte+totalLdoPay+totalOnlineOrder;
 
   var stundenMap={};
   stdG.forEach(function(r){if(!stundenMap[r.stunde])stundenMap[r.stunde]=0;stundenMap[r.stunde]+=r.umsatz;});
@@ -794,6 +822,7 @@ function renderUmsatz(){
         <div class="box-sub">${lsPay.length>0?"Lightspeed Live":"Keine LS-Daten"}</div>
         <div class="r" style="cursor:default"><span>Karte</span><span>${fmt(totalKarte)} (${totalZahl>0?(totalKarte/totalZahl*100).toFixed(1):0}%)</span></div>
         <div class="r" style="cursor:default"><span>Lieferando</span><span style="color:${totalLdoPay/Math.max(totalZahl,1)>0.2?'#f97316':'#e2e8f0'}">${fmt(totalLdoPay)} (${totalZahl>0?(totalLdoPay/totalZahl*100).toFixed(1):0}%)</span></div>
+        <div class="r" style="cursor:default"><span>Online Order (QR-Tisch)</span><span>${fmt(totalOnlineOrder)} (${totalZahl>0?(totalOnlineOrder/totalZahl*100).toFixed(1):0}%)</span></div>
         <div class="r" style="cursor:default"><span>Bar / Manuell</span><span>${fmt(totalBar)} (${totalZahl>0?(totalBar/totalZahl*100).toFixed(1):0}%)</span></div>
         <div class="r" style="cursor:default;border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9;font-weight:600">Gesamt</span><span style="color:#22c55e;font-weight:600">${fmt(totalZahl)}</span></div>
         ${totalLdoPay/Math.max(totalZahl,1)>0.2?'<div class="ai-box">Lieferando-Anteil über 20% — erhöht Food Cost durch Portionsgrößen und Provisionen. Prüfe ob Lieferando-Preise angepasst werden sollten.</div>':""}
