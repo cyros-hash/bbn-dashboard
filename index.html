@@ -234,47 +234,6 @@ canvas{max-height:220px}
 </head>
 <body>
 
-<!-- ========== PASSWORT-SCHUTZ ========== -->
-<div id="pw-overlay" style="position:fixed;inset:0;z-index:9999;background:#0a0f1e;display:flex;align-items:center;justify-content:center">
-  <div style="text-align:center;max-width:320px;width:90%">
-    <div style="font-size:28px;margin-bottom:6px">&#127836;</div>
-    <h2 style="font-size:18px;font-weight:700;color:#f1f5f9;margin-bottom:4px">BBN Intelligence</h2>
-    <p style="font-size:12px;color:#475569;margin-bottom:20px">Bitte Passwort eingeben</p>
-    <input id="pw-input" type="password" placeholder="Passwort"
-      style="width:100%;padding:10px 14px;background:#111827;border:1px solid #2d3f54;border-radius:8px;color:#e2e8f0;font-size:14px;text-align:center;outline:none"
-      onkeydown="if(event.key==='Enter')checkPw()">
-    <button onclick="checkPw()"
-      style="width:100%;margin-top:10px;padding:10px;background:#f97316;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">
-      Anmelden
-    </button>
-    <p id="pw-error" style="color:#ef4444;font-size:11px;margin-top:10px;display:none">Falsches Passwort</p>
-  </div>
-</div>
-<script>
-// ===== PASSWORT HIER ÄNDERN =====
-var BBN_PASSWORT = 'bangbanghase';
-// ================================
-function checkPw(){
-  var eingabe=document.getElementById('pw-input').value;
-  if(eingabe===BBN_PASSWORT){
-    document.getElementById('pw-overlay').style.display='none';
-    sessionStorage.setItem('bbn-auth','1');
-  } else {
-    document.getElementById('pw-error').style.display='block';
-    document.getElementById('pw-input').style.borderColor='#ef4444';
-    setTimeout(function(){
-      document.getElementById('pw-error').style.display='none';
-      document.getElementById('pw-input').style.borderColor='#2d3f54';
-    },2000);
-  }
-}
-// Session merken (Tab-Refresh ohne erneute Eingabe)
-if(sessionStorage.getItem('bbn-auth')==='1'){
-  document.getElementById('pw-overlay').style.display='none';
-}
-</script>
-<!-- ========== ENDE PASSWORT ========== -->
-
 <div class="header">
   <div>
     <h1>🍜 Bang Bang Noodles — Intelligence Dashboard</h1>
@@ -876,6 +835,12 @@ function renderUmsatz(){
     </div>
 
     <div class="box">
+      <div class="box-title">📊 Inhouse vs. Lieferando</div>
+      <div class="box-sub">${txG.length>1?"Entwicklung im Zeitraum — klick auf Legende zum Ein-/Ausblenden":"Tagesansicht"}</div>
+      <canvas id="c-um-kanal" style="max-height:200px"></canvas>
+    </div>
+
+    <div class="box">
       <div class="box-title">🧾 Lightspeed KPIs</div>
       <div class="box-sub">${txG.length} Tage mit Daten</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
@@ -894,6 +859,84 @@ function renderUmsatz(){
   if(sKeys.length>0){
     charts["c-um-std"]=new Chart(document.getElementById("c-um-std"),{type:"line",data:{labels:sKeys.map(function(h){return h+":00";}),datasets:[{label:"Umsatz",data:sKeys.map(function(h){return Math.round(stundenMap[h]);}),borderColor:"#f97316",backgroundColor:"#f9731620",fill:true,tension:0.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#475569",font:{size:10}},grid:{color:"#1e2d40"}},y:{ticks:{color:"#475569",font:{size:10},callback:function(v){return fmt(v);}},grid:{color:"#1e2d40"}}}}});
   }
+  // Inhouse vs. Lieferando Chart
+  dc("c-um-kanal");
+  var kanalDaten = {};
+  txG.forEach(function(r){
+    if(!kanalDaten[r.datum]) kanalDaten[r.datum] = {inhouse:0, ldo:0};
+    kanalDaten[r.datum].ldo    += r.ldo;
+    kanalDaten[r.datum].inhouse += Math.max(r.umsatz - r.ldo, 0);
+  });
+  var kanalLabs = Object.keys(kanalDaten).sort();
+
+  if(kanalLabs.length === 1) {
+    // Heute-Ansicht: statt Datum die Stunden auf X-Achse
+    var stdLdo = {}, stdInhouse = {};
+    lsStd.filter(function(r){
+      return r.datum>=von && r.datum<=bis && (st==="Alle Standorte"||r.standort===st);
+    }).forEach(function(r){
+      if(!stdLdo[r.stunde]) { stdLdo[r.stunde]=0; stdInhouse[r.stunde]=0; }
+      // Stunden haben keinen LDO-Split → zeige Gesamt als Inhouse
+      stdInhouse[r.stunde] += r.umsatz;
+    });
+    var stdKeys = Object.keys(stdInhouse).sort(function(a,b){return parseInt(a)-parseInt(b);});
+    charts["c-um-kanal"] = new Chart(document.getElementById("c-um-kanal"), {
+      type: "line",
+      data: {
+        labels: stdKeys.map(function(h){ return h+":00"; }),
+        datasets: [{
+          label: "Inhouse",
+          data: stdKeys.map(function(h){ return Math.round(stdInhouse[h]); }),
+          borderColor: "#3b82f6", backgroundColor: "#3b82f620",
+          fill: true, tension: 0.4, pointRadius: 3
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: "#94a3b8", font: { size: 11 } } } },
+        scales: {
+          x: { ticks: { color: "#475569", font: { size: 10 } }, grid: { color: "#1e2d40" } },
+          y: { ticks: { color: "#475569", font: { size: 10 }, callback: function(v){ return "€ "+Math.round(v).toLocaleString("de-DE"); } }, grid: { color: "#1e2d40" } }
+        }
+      }
+    });
+  } else {
+    // Mehrtages-Ansicht: Datum auf X-Achse, zwei Linien
+    charts["c-um-kanal"] = new Chart(document.getElementById("c-um-kanal"), {
+      type: "line",
+      data: {
+        labels: kanalLabs.map(function(d){ return d.slice(8)+"."+d.slice(5,7); }),
+        datasets: [
+          {
+            label: "Inhouse",
+            data: kanalLabs.map(function(d){ return Math.round(kanalDaten[d].inhouse); }),
+            borderColor: "#3b82f6", backgroundColor: "#3b82f620",
+            fill: false, tension: 0.4, pointRadius: 3, borderWidth: 2
+          },
+          {
+            label: "Lieferando",
+            data: kanalLabs.map(function(d){ return Math.round(kanalDaten[d].ldo); }),
+            borderColor: "#f97316", backgroundColor: "#f9731620",
+            fill: false, tension: 0.4, pointRadius: 3, borderWidth: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            labels: { color: "#94a3b8", font: { size: 11 }, usePointStyle: true, pointStyleWidth: 10 }
+          }
+        },
+        scales: {
+          x: { ticks: { color: "#475569", font: { size: 9 }, maxTicksLimit: 12 }, grid: { color: "#1e2d40" } },
+          y: { ticks: { color: "#475569", font: { size: 9 }, callback: function(v){ return "€ "+Math.round(v).toLocaleString("de-DE"); } }, grid: { color: "#1e2d40" } }
+        }
+      }
+    });
+  }
+
   buildArtikelProStundeChart(von, bis, st);
 }
 
