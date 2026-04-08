@@ -2005,12 +2005,11 @@ function renderSpeisekarte(){
     if(artMap[r.name])artMap[r.name].stornos++;
   });
 
-  var speise=Object.values(artMap)
-    .sort(function(a,b){return b.umsatz-a.umsatz;})
-    .slice(0,30); // Top 30
+  var alleArtikel=Object.values(artMap).sort(function(a,b){return b.umsatz-a.umsatz;});
+  var speise=alleArtikel.slice(0,30); // Top 30 anzeigen
 
   var maxUmsatz=speise.length>0?speise[0].umsatz:1;
-  var totalUmsatz=speise.reduce(function(s,g){return s+g.umsatz;},0);
+  var totalUmsatz=alleArtikel.reduce(function(s,g){return s+g.umsatz;},0);
   var totalMenge=speise.reduce(function(s,g){return s+g.menge;},0);
   var totalStornos=speise.reduce(function(s,g){return s+g.stornos;},0);
 
@@ -2030,8 +2029,12 @@ function renderSpeisekarte(){
   var tage=new Set(artG.map(function(r){return r.datum;})).size||1;
 
   // Renner/Penner Logik
-  var avgAnteil = totalUmsatz>0 ? (1/speise.length) : 0; // Ø Anteil pro Artikel
-  var avgUmsatzTag = speise.length>0 ? speise.reduce(function(s,g){return s+g.umsatz/tage;},0)/speise.length : 0;
+  // Schwellen für Renner/Penner: Median aller Artikel
+  var alleUmsatzTag = alleArtikel.map(function(g){return g.umsatz/tage;}).sort(function(a,b){return a-b;});
+  var medianIdx = Math.floor(alleUmsatzTag.length/2);
+  var avgUmsatzTag = alleUmsatzTag.length>0 ? alleUmsatzTag[medianIdx] : 0;
+  var alleAnteile = alleArtikel.map(function(g){return totalUmsatz>0?g.umsatz/totalUmsatz:0;}).sort(function(a,b){return a-b;});
+  var avgAnteil = alleAnteile.length>0 ? alleAnteile[medianIdx] : 0;
 
   function rennerPenner(g) {
     var anteilPct = totalUmsatz>0 ? g.umsatz/totalUmsatz : 0;
