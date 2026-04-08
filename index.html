@@ -669,6 +669,7 @@ function renderOverview(){
   var deltaU=kp.u>0?((k.u-kp.u)/kp.u*100):0;
 
   // Standort split
+  var bonWertData=getBonWert(von,bis,st);
   var md=gefiltert.filter(function(r){return r.st==="Mehringdamm";});
   var rs=gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";});
   var km=kpi(md),kr=kpi(rs);
@@ -828,6 +829,7 @@ function renderUmsatz(){
   var von=document.getElementById("von").value;
   var bis=document.getElementById("bis").value;
   var st=document.getElementById("standort").value;
+  var bonWertData=getBonWert(von,bis,st);
   var md=gefiltert.filter(function(r){return r.st==="Mehringdamm";});
   var rs=gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";});
   var km=kpi(md),kr=kpi(rs);
@@ -1266,6 +1268,7 @@ function renderGuV(){
   var ebitda=cm-fk.personalGemein-fk.managementFee-fk.miete-fk.versicherung-fk.werbeReise-fk.sonstBetrieb-fk.verwaltung-fk.instandhaltung-fk.abschreibung;
   var ebitdaPct=k.u>0?ebitda/k.u:0;
 
+  var bonWertData=getBonWert(von,bis,st);
   var md=gefiltert.filter(function(r){return r.st==="Mehringdamm";});
   var rs=gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";});
   var km=kpi(md),kr=kpi(rs);
