@@ -275,6 +275,7 @@ canvas{max-height:220px}
   <button class="tab" onclick="showTab('speisekarte',this)">🍽️ Speisekarte</button>
   <button class="tab" onclick="showTab('trinkgeld',this)">💝 Trinkgeld & Stornos</button>
   <button class="tab" onclick="showTab('simulator',this)">🧮 Simulator</button>
+  <button class="tab" onclick="showTab('lieferando',this)">🛵 Lieferando</button>
 </div>
 
 <div class="content">
@@ -286,6 +287,7 @@ canvas{max-height:220px}
   <div id="t-speisekarte" style="display:none"></div>
   <div id="t-trinkgeld" style="display:none"></div>
   <div id="t-simulator" style="display:none"></div>
+  <div id="t-lieferando" style="display:none"></div>
 </div>
 
 <script>
@@ -635,6 +637,7 @@ function renderAll(){
   renderSpeisekarte();
   renderTrinkgeld();
   renderSimulator();
+  renderLieferando();
 }
 
 // ============================================================
@@ -2546,6 +2549,301 @@ function renderSimulator(){
         </div>
       </div>
     </div>`;
+}
+
+
+// ============================================================
+// LIEFERANDO TAB
+// ============================================================
+function renderLieferando(){
+  var von=document.getElementById("von").value;
+  var bis=document.getElementById("bis").value;
+  var st=document.getElementById("standort").value;
+  var tage=new Set(gefiltert.map(function(r){return r.datum;})).size||1;
+
+  // === UMSATZ ===
+  var txLdo=lsTx.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);
+  });
+  var ldoBrutto=txLdo.reduce(function(s,r){return s+r.ldo;},0);
+  var ldoProv=ldoBrutto*0.20;
+  var ldoNetto=ldoBrutto-ldoProv;
+  var ldoBons=bons.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.kanal==="Lieferando"&&r.storniert===0;
+  });
+  var ldoTicket=ldoBons.length>0?ldoBrutto/ldoBons.length:0;
+  var ldoAnteil=gefiltert.reduce(function(s,r){return s+r.u;},0)>0?ldoBrutto/gefiltert.reduce(function(s,r){return s+r.u;},0):0;
+
+  // === RABATTAKTIONEN (Lieferando Discount in 13_ls_artikel) ===
+  var discountArtikel=artikel.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&
+           (r.name.toLowerCase().indexOf("lieferando discount")!==-1||r.name.toLowerCase().indexOf("discount")!==-1&&r.kanal==="Lieferando");
+  });
+  var discountBrutto=discountArtikel.reduce(function(s,r){return s+r.preis;},0);
+  var discountNetto=discountArtikel.reduce(function(s,r){return s+r.preisN;},0);
+  var discountBons=new Set(discountArtikel.map(function(r){return r.bonNr;})).size;
+  var bonsMitAktion=ldoBons.filter(function(r){
+    return discountArtikel.some(function(d){return d.bonNr===r.bonNr;});
+  });
+  var bonsOhneAktion=ldoBons.filter(function(r){
+    return !discountArtikel.some(function(d){return d.bonNr===r.bonNr;});
+  });
+  var ticketMitAktion=bonsMitAktion.length>0?bonsMitAktion.reduce(function(s,r){return s+r.total;},0)/bonsMitAktion.length:0;
+  var ticketOhneAktion=bonsOhneAktion.length>0?bonsOhneAktion.reduce(function(s,r){return s+r.total;},0)/bonsOhneAktion.length:0;
+
+  // === UMSATZGARANTIE PRO STANDORT ===
+  function garantie(stName) {
+    var stTx=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort===stName;});
+    var stLdoBrutto=stTx.reduce(function(s,r){return s+r.ldo;},0);
+    var stDiscount=artikel.filter(function(r){
+      return r.datum>=von&&r.datum<=bis&&r.standort===stName&&
+             (r.name.toLowerCase().indexOf("lieferando discount")!==-1||r.name.toLowerCase().indexOf("discount")!==-1&&r.kanal==="Lieferando");
+    });
+    var stDiscountSumme=Math.abs(stDiscount.reduce(function(s,r){return s+r.preis;},0));
+    var garantieSumme=62500;
+    var bereinigt=stLdoBrutto+(stDiscountSumme*0.33);
+    var differenz=Math.max(garantieSumme-bereinigt,0);
+    var anspruch=differenz*0.47;
+    return{brutto:stLdoBrutto,marketing:stDiscountSumme,bereinigt:bereinigt,differenz:differenz,anspruch:anspruch,erreicht:bereinigt>=garantieSumme};
+  }
+  var garMd=garantie("Mehringdamm");
+  var garRs=garantie("Rosenthaler Straße");
+
+  // === TOP SELLER AUF LIEFERANDO ===
+  var ldoArtikel=artikel.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&
+           r.kanal==="Lieferando"&&r.storniert===0&&
+           r.name.toLowerCase().indexOf("discount")===-1;
+  });
+  var ldoArtMap={};
+  ldoArtikel.forEach(function(r){
+    if(!ldoArtMap[r.name])ldoArtMap[r.name]={menge:0,umsatz:0,gruppe:r.gruppe};
+    ldoArtMap[r.name].menge+=r.menge;
+    ldoArtMap[r.name].umsatz+=r.preisN;
+  });
+  var topLdo=Object.entries(ldoArtMap).sort(function(a,b){return b[1].menge-a[1].menge;}).slice(0,10);
+  var maxLdoMenge=topLdo.length>0?topLdo[0][1].menge:1;
+  var totalLdoUmsatz=Object.values(ldoArtMap).reduce(function(s,d){return s+d.umsatz;},0);
+
+  // === TOP KOMBINATIONEN ===
+  var bonArtikelMap={};
+  ldoArtikel.forEach(function(r){
+    if(!bonArtikelMap[r.bonNr])bonArtikelMap[r.bonNr]=[];
+    if(bonArtikelMap[r.bonNr].indexOf(r.name)===-1)bonArtikelMap[r.bonNr].push(r.name);
+  });
+  var kombiMap={};
+  Object.values(bonArtikelMap).forEach(function(arts){
+    for(var i=0;i<arts.length;i++){
+      for(var j=i+1;j<arts.length;j++){
+        var key=[arts[i],arts[j]].sort().join(" + ");
+        kombiMap[key]=(kombiMap[key]||0)+1;
+      }
+    }
+  });
+  var topKombi=Object.entries(kombiMap).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+
+  // === ZEITVERLAUF ===
+  var tagLdoMap={};
+  txLdo.forEach(function(r){
+    if(!tagLdoMap[r.datum])tagLdoMap[r.datum]=0;
+    tagLdoMap[r.datum]+=r.ldo;
+  });
+  var tagKeys=Object.keys(tagLdoMap).sort();
+  var tagesziel=(62500*2)/30;
+
+  document.getElementById("t-lieferando").innerHTML=`
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">🛵 LDO Bruttoumsatz</div>
+        <div class="kpi-val" style="color:#f97316">${fmt(ldoBrutto)}</div>
+        <div class="kpi-delta delta-neu">Ø ${fmt(ldoBrutto/tage)}/Tag · ${ldoBons.length} Bons</div>
+        <div class="kpi-ai">${fmtP(ldoAnteil)} vom Gesamtumsatz</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">💰 LDO Nettoumsatz</div>
+        <div class="kpi-val" style="color:#22c55e">${fmt(ldoNetto)}</div>
+        <div class="kpi-delta delta-neu">Nach Provision 20%</div>
+        <div class="kpi-ai">Provision: ${fmt(ldoProv)}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">💰 Garantie-Auszahlung</div>
+        <div class="kpi-val" style="color:${(garMd.anspruch+garRs.anspruch)>0?'#22c55e':'#64748b'}">${fmt(garMd.anspruch+garRs.anspruch)}</div>
+        <div class="kpi-delta delta-neu">MD: ${fmt(garMd.anspruch)} · RS: ${fmt(garRs.anspruch)}</div>
+        <div class="kpi-ai">Bei Unterschreitung der €62.500 Garantie</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">🎯 Marketing Payout</div>
+        <div class="kpi-val" style="color:#8b5cf6">${fmt((garMd.marketing+garRs.marketing)*0.33)}</div>
+        <div class="kpi-delta delta-neu">Rabatte × 33% Food & Paper</div>
+        <div class="kpi-ai">Gesamt Rabatte: ${fmt(garMd.marketing+garRs.marketing)}</div>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="box-title">📈 Umsatzentwicklung Lieferando</div>
+      <div class="box-sub">Täglicher LDO-Umsatz vs. Tagesziel ${fmtD(tagesziel)} (€62.500 × 2 ÷ 30)</div>
+      <canvas id="c-ldo-zeit" style="max-height:200px"></canvas>
+    </div>
+
+    <div class="grid2">
+      <div class="box">
+        <div class="box-title">🎯 Rabattaktionen</div>
+        <div class="box-sub">Lieferando Discount Artikel</div>
+        ${discountArtikel.length>0?`
+        <div class="drill-row"><span>Discount Brutto gesamt</span><span style="color:#ef4444">${fmt(Math.abs(discountBrutto))}</span></div>
+        <div class="drill-row"><span>Discount Netto gesamt</span><span style="color:#ef4444">${fmt(Math.abs(discountNetto))}</span></div>
+        <div class="drill-row"><span>Betroffene Bons</span><span>${discountBons}</span></div>
+        <div class="drill-row"><span>Ø Ticketsize mit Aktion</span><span style="color:#f97316">${fmtD(ticketMitAktion)}</span></div>
+        <div class="drill-row"><span>Ø Ticketsize ohne Aktion</span><span style="color:#22c55e">${fmtD(ticketOhneAktion)}</span></div>
+        <div class="ai-box">${ticketMitAktion>ticketOhneAktion?"Aktionsbons haben höheren Ticketsize — Rabatt zieht Mehrkäufer an.":"Aktionsbons haben niedrigeren Ticketsize — Rabatt wirkt ohne Upsell."}</div>
+        `:'<div style="color:#475569;font-size:12px;padding:12px 0">Keine Discount-Artikel im Zeitraum.</div>'}
+      </div>
+
+      <div class="box">
+        <div class="box-title">🧾 Ø Ticketsize</div>
+        <div class="box-sub">Mit Aktion vs. ohne Aktion</div>
+        <div style="display:flex;gap:10px;margin-bottom:16px">
+          <div style="flex:1;background:#1a2538;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:11px;color:#475569;margin-bottom:4px">Mit Aktion</div>
+            <div style="font-size:20px;font-weight:700;color:#f97316">${fmtD(ticketMitAktion)}</div>
+            <div style="font-size:10px;color:#475569;margin-top:3px">${bonsMitAktion.length} Bons</div>
+          </div>
+          <div style="flex:1;background:#1a2538;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:11px;color:#475569;margin-bottom:4px">Ohne Aktion</div>
+            <div style="font-size:20px;font-weight:700;color:#22c55e">${fmtD(ticketOhneAktion)}</div>
+            <div style="font-size:10px;color:#475569;margin-top:3px">${bonsOhneAktion.length} Bons</div>
+          </div>
+          <div style="flex:1;background:#1a2538;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:11px;color:#475569;margin-bottom:4px">Gesamt Ø</div>
+            <div style="font-size:20px;font-weight:700;color:#8b5cf6">${fmtD(ldoTicket)}</div>
+            <div style="font-size:10px;color:#475569;margin-top:3px">${ldoBons.length} Bons</div>
+          </div>
+        </div>
+        <div class="ai-box">${ticketMitAktion>ticketOhneAktion?"Aktionsbons haben höheren Ticketsize (+"+fmtD(ticketMitAktion-ticketOhneAktion)+") — Rabatt zieht Mehrkäufer an.":"Aktionsbons haben niedrigeren Ticketsize ("+fmtD(ticketOhneAktion-ticketMitAktion)+" weniger) — Rabatt wirkt ohne Upsell-Effekt."}</div>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="box-title">🏦 Umsatzgarantie Lieferando</div>
+      <div class="box-sub">Garantie €62.500 pro Standort · Bereinigt = Umsatz + (Marketing × 33%) · Anspruch = Differenz × 47%</div>
+      <div class="grid2" style="margin-top:12px">
+        ${['Mehringdamm','Rosenthaler Straße'].map(function(stName){
+          var g=stName==='Mehringdamm'?garMd:garRs;
+          var col=stName==='Mehringdamm'?'#f97316':'#3b82f6';
+          return'<div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:8px;padding:14px">'+
+            '<div style="font-size:13px;font-weight:700;color:'+col+';margin-bottom:10px">'+(stName==='Mehringdamm'?'🟠':'🔵')+' '+stName+'</div>'+
+            '<div class="drill-row"><span>Garantie</span><span>€ 62.500</span></div>'+
+            '<div class="drill-row"><span>Erreichter LDO-Umsatz</span><span>'+fmt(g.brutto)+'</span></div>'+
+            '<div class="drill-row"><span>Marketing (Rabatte)</span><span>'+fmt(g.marketing)+'</span></div>'+
+            '<div class="drill-row"><span>Bereinigter Umsatz</span><span style="color:#f97316;font-weight:600">'+fmt(g.bereinigt)+'</span></div>'+
+            '<div class="drill-row"><span>Differenz zur Garantie</span><span style="color:'+(g.differenz>0?'#ef4444':'#22c55e')+';font-weight:600">'+fmt(g.differenz)+'</span></div>'+
+            '<div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid #1e3a5f;margin-top:4px">'+
+              '<span style="font-size:12px;font-weight:700;color:#f1f5f9">Garantieanspruch (×47%)</span>'+
+              '<span style="color:'+(g.anspruch>0?'#22c55e':'#64748b')+';font-size:16px;font-weight:700">'+fmt(g.anspruch)+'</span>'+
+            '</div>'+
+            '<div style="background:'+(g.erreicht?'#16653420':'#7f1d1d20')+';border:1px solid '+(g.erreicht?'#16653440':'#7f1d1d40')+';border-radius:6px;padding:6px 10px;font-size:11px;color:'+(g.erreicht?'#22c55e':'#ef4444')+'">'+
+              (g.erreicht?'✅ Garantieziel erreicht':'⚠️ Nicht erreicht — Anspruch: '+fmt(g.anspruch))+
+            '</div>'+
+          '</div>';
+        }).join("")}
+      </div>
+      <div style="border-top:2px solid #f97316;margin-top:14px;padding-top:12px;display:flex;gap:12px">
+        <div style="flex:1;background:#16653420;border:1px solid #16653440;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:4px">💰 Garantie-Auszahlung gesamt</div>
+          <div style="font-size:22px;font-weight:700;color:#22c55e">${fmt(garMd.anspruch+garRs.anspruch)}</div>
+          <div style="font-size:10px;color:#475569;margin-top:4px">MD ${fmt(garMd.anspruch)} + RS ${fmt(garRs.anspruch)}</div>
+        </div>
+        <div style="flex:1;background:#4c1d9520;border:1px solid #4c1d9540;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:4px">🎯 Marketing Payout (×33%)</div>
+          <div style="font-size:22px;font-weight:700;color:#8b5cf6">${fmt((garMd.marketing+garRs.marketing)*0.33)}</div>
+          <div style="font-size:10px;color:#475569;margin-top:4px">Rabatte gesamt: ${fmt(garMd.marketing+garRs.marketing)}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="box">
+        <div class="box-title">🏆 Top Seller Lieferando</div>
+        <div class="box-sub">nach Verkäufen</div>
+        ${topLdo.length>0?topLdo.map(function(e){
+          var name=e[0],d=e[1];
+          var pct=maxLdoMenge>0?Math.round(d.menge/maxLdoMenge*100):0;
+          var anteil=totalLdoUmsatz>0?(d.umsatz/totalLdoUmsatz*100).toFixed(1):0;
+          return'<div style="margin-bottom:8px">'+
+            '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'+
+              '<span style="color:#f1f5f9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">'+name+'</span>'+
+              '<span style="display:flex;gap:10px">'+
+                '<span style="color:#f97316;font-weight:600">'+Math.round(d.menge)+'x</span>'+
+                '<span style="color:#64748b">'+anteil+'%</span>'+
+              '</span>'+
+            '</div>'+
+            '<div style="height:4px;background:#1e2d40;border-radius:2px">'+
+              '<div style="height:100%;background:#f97316;border-radius:2px;width:'+pct+'%"></div>'+
+            '</div>'+
+          '</div>';
+        }).join(""):'<div style="color:#475569;font-size:12px;padding:12px 0">Keine Lieferando-Artikel im Zeitraum.</div>'}
+      </div>
+
+      <div class="box">
+        <div class="box-title">🔗 Top Artikel-Kombinationen</div>
+        <div class="box-sub">Häufig zusammen bestellte Artikel auf Lieferando</div>
+        ${topKombi.length>0?topKombi.map(function(e){
+          var kombi=e[0],count=e[1];
+          var pct=topKombi[0][1]>0?Math.round(count/topKombi[0][1]*100):0;
+          return'<div style="margin-bottom:8px">'+
+            '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">'+
+              '<span style="color:#e2e8f0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px">'+kombi+'</span>'+
+              '<span style="color:#8b5cf6;font-weight:600;margin-left:8px">'+count+'x</span>'+
+            '</div>'+
+            '<div style="height:3px;background:#1e2d40;border-radius:2px">'+
+              '<div style="height:100%;background:#8b5cf6;border-radius:2px;width:'+pct+'%"></div>'+
+            '</div>'+
+          '</div>';
+        }).join(""):'<div style="color:#475569;font-size:12px;padding:12px 0">Nicht genug Daten für Kombinationsanalyse.</div>'}
+        <div class="ai-box" style="margin-top:10px">Häufige Kombinationen zeigen natürliche Bundles — ideal für Menü-Optimierung und Aktionsangebote.</div>
+      </div>
+    </div>`;
+
+  // Chart
+  dc("c-ldo-zeit");
+  if(tagKeys.length>0){
+    charts["c-ldo-zeit"]=new Chart(document.getElementById("c-ldo-zeit"),{
+      type:"line",
+      data:{
+        labels:tagKeys.map(function(d){return d.slice(8)+"."+d.slice(5,7);}),
+        datasets:[
+          {
+            label:"LDO Brutto",
+            data:tagKeys.map(function(d){return Math.round(tagLdoMap[d]||0);}),
+            borderColor:"#f97316",
+            backgroundColor:"#f9731620",
+            fill:true,
+            tension:0.4,
+            pointRadius:3,
+            borderWidth:2
+          },
+          {
+            label:"Tagesziel "+fmtD(tagesziel),
+            data:tagKeys.map(function(){return Math.round(tagesziel);}),
+            borderColor:"#22c55e",
+            borderDash:[6,4],
+            borderWidth:1.5,
+            pointRadius:0,
+            fill:false
+          }
+        ]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{legend:{display:true,labels:{color:"#94a3b8",font:{size:11},usePointStyle:true}}},
+        scales:{
+          x:{ticks:{color:"#475569",font:{size:9},maxTicksLimit:12},grid:{color:"#1e2d40"}},
+          y:{ticks:{color:"#475569",font:{size:9},callback:function(v){return"€"+v;}},grid:{color:"#1e2d40"}}
+        }
+      }
+    });
+  }
 }
 
 // ============================================================
