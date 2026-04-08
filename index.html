@@ -311,7 +311,7 @@ var CSV = {
 var alle=[],lsTx=[],lsStd=[],lsQ=[],lsPay=[],ordio=[],artikel=[],bons=[],waste=[];
 var gefiltert=[];
 var charts={}, simV={p:0,v:0,f:0,a:0}, aktQ="gestern";
-var ZIELE={fc:0.25,pa:0.30,cm:0.40,ebitda:0.12,bonWert:22,umsatzStd:115};
+var ZIELE={fc:0.25,pa:0.25,cm:0.40,ebitda:0.10,bonWert:22,umsatzStd:115};
 
 // ============================================================
 // FIXKOSTEN (monatliche Durchschnittswerte aus BWA)
@@ -391,6 +391,15 @@ function kpi(d){
   d.forEach(function(r){u+=r.u;f+=r.f;s+=r.s;});
   var t=Math.max([...new Set(d.map(function(r){return r.datum;}))].length,1);
   return{u:u,f:f,s:s,t:t,fp:u>0?f/u:0,at:s>0?u/s:0};
+}
+
+// Bon-Wert aus 14_ls_bons (echte Quittungen)
+function getBonWert(von,bis,st){
+  var b=bons.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===0;
+  });
+  var total=b.reduce(function(s,r){return s+r.total;},0);
+  return{count:b.length,total:total,avg:b.length>0?total/b.length:0};
 }
 
 function getOrdio(von,bis,st){
@@ -643,6 +652,9 @@ function renderOverview(){
   var ldoProvOv=txOvG.reduce(function(s,r){return s+r.ldo;},0)*0.20;
   var fkOv=getFixkostenTage(von,bis);
   var cm=k.u-k.f-ldoProvOv-pa;
+  var bonWertData=getBonWert(von,bis,st);
+  var bonWertMd=getBonWert(von,bis,'Mehringdamm');
+  var bonWertRs=getBonWert(von,bis,'Rosenthaler Straße');
   var cmPct=k.u>0?cm/k.u:0;
   var ebitda=cm-fkOv.gesamt;
   var ebitdaPct=k.u>0?ebitda/k.u:0;
@@ -671,7 +683,7 @@ function renderOverview(){
   var data=Object.keys(tm).sort().map(function(d){return Math.round(tm[d]);});
 
   // Kosten Donut
-  var fcAmt=k.f,paAmt=pa,miAmt=mi,enAmt=en,soAmt=so,profitAmt=Math.max(ebitda,0);
+  var fcAmt=k.f,paAmt=pa,profitAmt=Math.max(ebitda,0);
 
   document.getElementById("t-overview").innerHTML=`
     <div class="alert">
@@ -688,7 +700,7 @@ function renderOverview(){
         <div class="kpi-label">💰 Umsatz gesamt</div>
         <div class="kpi-val" style="color:#22c55e">${fmt(k.u)}</div>
         <div class="kpi-delta ${deltaU>=0?'delta-up':'delta-dn'}">${deltaU>=0?"▲":"▼"} ${Math.abs(deltaU).toFixed(1)}% vs. Vorperiode</div>
-        <div class="kpi-ai">Ø ${fmt(k.u/k.t)}/Tag · ${k.t} Tage · ${k.s.toLocaleString("de-DE")} Verkäufe</div>
+        <div class="kpi-ai">Ø ${fmt(k.u/k.t)}/Tag · ${k.t} Tage · ${bonWertData.count} Bons · Ø Bon: ${fmtD(bonWertData.avg)}</div>
       </div>
       <div class="kpi-card" onclick="drill('d-ov-pa')">
         <div class="kpi-label">👥 Personalkosten ${paReal?'<span class="badge bb">Live</span>':'<span class="badge by">Schätzung</span>'}</div>
@@ -714,7 +726,7 @@ function renderOverview(){
       <div class="drill-title">Umsatz — Aufschlüsselung</div>
       <div class="drill-row"><span>Mehringdamm</span><span>${fmt(km.u)} · Ø ${fmt(km.u/Math.max(km.t,1))}/Tag</span></div>
       <div class="drill-row"><span>Rosenthaler Straße</span><span>${fmt(kr.u)} · Ø ${fmt(kr.u/Math.max(kr.t,1))}/Tag</span></div>
-      <div class="drill-row"><span>Ø Bon-Wert gesamt</span><span>${fmtD(k.at)}</span></div>
+      <div class="drill-row"><span>Ø Bon-Wert gesamt</span><span>${fmtD(bonWertData.avg)} (${bonWertData.count} Bons)</span></div>
       <div class="drill-row"><span>Ø Tagesumsatz</span><span>${fmt(k.u/k.t)}</span></div>
       <div class="ai-box">${km.u>kr.u?"Mehringdamm liegt "+((km.u/kr.u-1)*100).toFixed(1)+"% über Rosenthaler im gewählten Zeitraum.":"Rosenthaler liegt "+((kr.u/km.u-1)*100).toFixed(1)+"% über Mehringdamm im gewählten Zeitraum."} Vorperiode: ${fmtP(Math.abs(deltaU)/100)} ${deltaU>=0?"Wachstum":"Rückgang"}.</div>
     </div>
@@ -756,7 +768,7 @@ function renderOverview(){
         <div style="display:flex;align-items:center;gap:16px">
           <div style="position:relative;width:110px;height:110px;flex-shrink:0"><canvas id="c-ov-donut"></canvas></div>
           <div style="font-size:11px;flex:1">
-            ${[{l:"Food Cost",v:fcAmt,c:"#ef4444"},{l:"Personal",v:paAmt,c:"#8b5cf6"},{l:"Miete",v:miAmt,c:"#3b82f6"},{l:"Energie",v:enAmt,c:"#f97316"},{l:"Sonstiges",v:soAmt,c:"#64748b"},{l:"EBITDA",v:profitAmt,c:"#22c55e"}].map(function(i){return'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #1e2d40"><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:'+i.c+';display:inline-block"></span><span style="color:#94a3b8">'+i.l+'</span></span><span style="color:#f1f5f9">'+fmtP(k.u>0?i.v/k.u:0)+'</span></div>';}).join("")}
+            ${[{l:"Food Cost",v:donutFC,c:"#ef4444"},{l:"Operative Personal",v:donutOpa,c:"#8b5cf6"},{l:"Personalgemeinkosten",v:donutPG,c:"#3b82f6"},{l:"Rest Gemeinkosten",v:donutRest,c:"#64748b"},{l:"EBITDA",v:donutEBITDA,c:"#22c55e"}].map(function(i){return'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #1e2d40"><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:'+i.c+';display:inline-block"></span><span style="color:#94a3b8">'+i.l+'</span></span><span style="color:#f1f5f9">'+fmtP(k.u>0?i.v/k.u:0)+'</span></div>';}).join("")}
           </div>
         </div>
       </div>
@@ -771,7 +783,7 @@ function renderOverview(){
           {l:"Food Cost %",md:fmtP(km.fp),rs:fmtP(kr.fp),mdOk:km.fp<=ZIELE.fc,rsOk:kr.fp<=ZIELE.fc},
           {l:"Personal-Quote",md:fmtP(km.u>0?pkMd.total/km.u:0),rs:fmtP(kr.u>0?pkRs.total/kr.u:0),mdOk:pkMd.total/Math.max(km.u,1)<=ZIELE.pa,rsOk:pkRs.total/Math.max(kr.u,1)<=ZIELE.pa},
           {l:"Contribution Margin",md:fmtP(cmpMd),rs:fmtP(cmpRs),mdOk:cmpMd>=ZIELE.cm,rsOk:cmpRs>=ZIELE.cm},
-          {l:"Ø Bon-Wert",md:fmtD(km.at),rs:fmtD(kr.at),mdOk:km.at>=ZIELE.bonWert,rsOk:kr.at>=ZIELE.bonWert}
+          {l:"Ø Bon-Wert",md:fmtD(bonWertMd.avg),rs:fmtD(bonWertRs.avg),mdOk:bonWertMd.avg>=ZIELE.bonWert,rsOk:bonWertRs.avg>=ZIELE.bonWert}
         ].map(function(row){
           return'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1e2d40;font-size:12px">'+
             '<span style="color:#64748b;flex:1">'+row.l+'</span>'+
@@ -789,7 +801,7 @@ function renderOverview(){
           {n:"Contribution Margin",w:fmtP(cmPct),z:fmtP(ZIELE.cm),ok:cmPct>=ZIELE.cm,warn:cmPct>=ZIELE.cm-0.03},
           {n:"EBITDA-Marge",w:fmtP(ebitdaPct),z:fmtP(ZIELE.ebitda),ok:ebitdaPct>=ZIELE.ebitda,warn:ebitdaPct>=ZIELE.ebitda-0.03},
           {n:"Umsatz/Personalstunde",w:fmt(umsatzStd),z:fmt(ZIELE.umsatzStd),ok:umsatzStd>=ZIELE.umsatzStd,warn:umsatzStd>=ZIELE.umsatzStd*0.9},
-          {n:"Ø Bon-Wert",w:fmtD(k.at),z:fmtD(ZIELE.bonWert),ok:k.at>=ZIELE.bonWert,warn:k.at>=ZIELE.bonWert*0.9}
+          {n:"Ø Bon-Wert",w:fmtD(bonWertData.avg),z:fmtD(ZIELE.bonWert),ok:bonWertData.avg>=ZIELE.bonWert,warn:bonWertData.avg>=ZIELE.bonWert*0.9}
         ].map(function(a){
           var col=a.ok?"#22c55e":a.warn?"#f97316":"#ef4444";
           return'<div class="ampel-row"><span style="color:#64748b">'+a.n+'</span><div style="display:flex;align-items:center;gap:8px"><span style="color:#f1f5f9;font-weight:600">'+a.w+'</span><span style="font-size:10px;color:#475569">Ziel '+a.z+'</span><div class="ampel-dot" style="background:'+col+'"></div></div></div>';
@@ -801,7 +813,12 @@ function renderOverview(){
   charts["c-ov-tag"]=new Chart(document.getElementById("c-ov-tag"),{type:"bar",data:{labels:labs,datasets:[{label:"Umsatz",data:data,backgroundColor:"#f97316",borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#475569",font:{size:9},maxTicksLimit:10},grid:{color:"#1e2d40"}},y:{ticks:{color:"#475569",font:{size:9},callback:function(v){return(v/1000).toFixed(0)+"k";}},grid:{color:"#1e2d40"}}}}});
 
   dc("c-ov-donut");
-  charts["c-ov-donut"]=new Chart(document.getElementById("c-ov-donut"),{type:"doughnut",data:{labels:["FC","Personal","Miete","Energie","Sonstiges","EBITDA"],datasets:[{data:[fcAmt,paAmt,miAmt,enAmt,soAmt,Math.max(profitAmt,0)],backgroundColor:["#ef4444","#8b5cf6","#3b82f6","#f97316","#64748b","#22c55e"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:"72%"}});
+  var donutFC=k.f;
+  var donutOpa=pa; // Operative Personalkosten
+  var donutPG=fkOv.personalGemein+fkOv.managementFee; // Personalgemeinkosten
+  var donutRest=fkOv.miete+fkOv.versicherung+fkOv.werbeReise+fkOv.sonstBetrieb+fkOv.verwaltung+fkOv.instandhaltung+fkOv.abschreibung; // Rest Gemeinkosten
+  var donutEBITDA=Math.max(ebitda,0);
+  charts["c-ov-donut"]=new Chart(document.getElementById("c-ov-donut"),{type:"doughnut",data:{labels:["Food Cost","Operative Personal","Personalgemeinkosten","Rest Gemeinkosten","EBITDA"],datasets:[{data:[donutFC,donutOpa,donutPG,donutRest,donutEBITDA],backgroundColor:["#ef4444","#8b5cf6","#3b82f6","#64748b","#22c55e"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:"72%"}});
 }
 
 // ============================================================
@@ -814,6 +831,8 @@ function renderUmsatz(){
   var md=gefiltert.filter(function(r){return r.st==="Mehringdamm";});
   var rs=gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";});
   var km=kpi(md),kr=kpi(rs);
+  var bonWertMd=getBonWert(von,bis,'Mehringdamm');
+  var bonWertRs=getBonWert(von,bis,'Rosenthaler Straße');
   var tm={};
   gefiltert.forEach(function(r){if(!tm[r.datum])tm[r.datum]={m:0,r:0};if(r.st==="Mehringdamm")tm[r.datum].m+=r.u;else tm[r.datum].r+=r.u;});
   var labs=Object.keys(tm).sort().map(function(d){return d.slice(8)+"."+d.slice(5,7);});
@@ -855,13 +874,13 @@ function renderUmsatz(){
       <div class="st-card" onclick="drill('d-md')">
         <div class="st-name">Mehringdamm</div>
         <div class="st-val" style="color:#f97316">${fmt(km.u)}</div>
-        <div class="st-meta"><span>Ø ${fmt(km.u/Math.max(km.t,1))}/Tag</span><span>FC: ${fmtP(km.fp)}</span><span>Ø Bon: ${fmtD(km.at)}</span></div>
+        <div class="st-meta"><span>Ø ${fmt(km.u/Math.max(km.t,1))}/Tag</span><span>FC: ${fmtP(km.fp)}</span><span>Ø Bon: ${fmtD(bonWertMd.avg)}</span></div>
         <div class="progress"><div class="progress-fill" style="width:${km.u+kr.u>0?Math.round(km.u/(km.u+kr.u)*100):50}%;background:#f97316"></div></div>
       </div>
       <div class="st-card" onclick="drill('d-rs')">
         <div class="st-name">Rosenthaler Straße</div>
         <div class="st-val" style="color:#3b82f6">${fmt(kr.u)}</div>
-        <div class="st-meta"><span>Ø ${fmt(kr.u/Math.max(kr.t,1))}/Tag</span><span>FC: ${fmtP(kr.fp)}</span><span>Ø Bon: ${fmtD(kr.at)}</span></div>
+        <div class="st-meta"><span>Ø ${fmt(kr.u/Math.max(kr.t,1))}/Tag</span><span>FC: ${fmtP(kr.fp)}</span><span>Ø Bon: ${fmtD(bonWertRs.avg)}</span></div>
         <div class="progress"><div class="progress-fill" style="width:${km.u+kr.u>0?Math.round(kr.u/(km.u+kr.u)*100):50}%;background:#3b82f6"></div></div>
       </div>
     </div>
@@ -875,9 +894,9 @@ function renderUmsatz(){
       <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>Take Away</span><span>${fmt(mdTakeaway)} (${km.u>0?fmtP(mdTakeaway/km.u):"—"})</span></div>
       <div style="border-top:1px solid #1e2d40;margin:6px 0"></div>
       <div class="drill-row"><span>Verkäufe (Bons)</span><span>${km.s.toLocaleString("de-DE")}</span></div>
-      <div class="drill-row"><span>Ø Bon-Wert</span><span>${fmtD(km.at)}</span></div>
+      <div class="drill-row"><span>Ø Bon-Wert</span><span>${fmtD(bonWertMd.avg)} (${bonWertMd.count} Bons)</span></div>
       <div class="drill-row"><span>Food Cost</span><span style="color:${km.fp>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(km.fp)}</span></div>
-      <div class="ai-box">Mehringdamm macht ${km.u+kr.u>0?((km.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${mdLdo>0?"Lieferando-Anteil "+fmtP(km.u>0?mdLdo/km.u:0)+".":""} ${km.at>kr.at?"Höherer Bon-Wert als Rosenthaler (+"+fmtD(km.at-kr.at)+"/Bon).":"Niedrigerer Bon-Wert als Rosenthaler ("+fmtD(km.at-kr.at)+"/Bon)."}</div>
+      <div class="ai-box">Mehringdamm macht ${km.u+kr.u>0?((km.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${mdLdo>0?"Lieferando-Anteil "+fmtP(km.u>0?mdLdo/km.u:0)+".":""} ${bonWertMd.avg>bonWertRs.avg?"Höherer Bon-Wert als Rosenthaler (+"+fmtD(bonWertMd.avg-bonWertRs.avg)+"/Bon).":"Niedrigerer Bon-Wert als Rosenthaler ("+fmtD(bonWertMd.avg-bonWertRs.avg)+"/Bon)."}</div>
     </div>
     <div id="d-rs" class="drill-panel">
       <div class="drill-title">Rosenthaler Straße — Details</div>
@@ -888,9 +907,9 @@ function renderUmsatz(){
       <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>Take Away</span><span>${fmt(rsTakeaway)} (${kr.u>0?fmtP(rsTakeaway/kr.u):"—"})</span></div>
       <div style="border-top:1px solid #1e2d40;margin:6px 0"></div>
       <div class="drill-row"><span>Verkäufe (Bons)</span><span>${kr.s.toLocaleString("de-DE")}</span></div>
-      <div class="drill-row"><span>Ø Bon-Wert</span><span>${fmtD(kr.at)}</span></div>
+      <div class="drill-row"><span>Ø Bon-Wert</span><span>${fmtD(bonWertRs.avg)} (${bonWertRs.count} Bons)</span></div>
       <div class="drill-row"><span>Food Cost</span><span style="color:${kr.fp>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(kr.fp)}</span></div>
-      <div class="ai-box">Rosenthaler macht ${km.u+kr.u>0?((kr.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${rsLdo>0?"Lieferando-Anteil "+fmtP(kr.u>0?rsLdo/kr.u:0)+".":""} ${kr.at>km.at?"Höherer Bon-Wert als Mehringdamm (+"+fmtD(kr.at-km.at)+"/Bon).":"Niedrigerer Bon-Wert als Mehringdamm ("+fmtD(kr.at-km.at)+"/Bon)."}</div>
+      <div class="ai-box">Rosenthaler macht ${km.u+kr.u>0?((kr.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${rsLdo>0?"Lieferando-Anteil "+fmtP(kr.u>0?rsLdo/kr.u:0)+".":""} ${bonWertRs.avg>bonWertMd.avg?"Höherer Bon-Wert als Mehringdamm (+"+fmtD(bonWertRs.avg-bonWertMd.avg)+"/Bon).":"Niedrigerer Bon-Wert als Mehringdamm ("+fmtD(bonWertRs.avg-bonWertMd.avg)+"/Bon)."}</div>
     </div>
 
     <div class="box">
@@ -1087,6 +1106,7 @@ function renderArtikelProStunde(von, bis, st) {
     var hInt = parseInt(h);
     var tageInStunde = new Set(artG.filter(function(r){return r.stunde===hInt;}).map(function(r){return r.datum;}));
     var alleMA = {};
+    var maZeiten = {}; // Schichtzeiten pro MA
     tageInStunde.forEach(function(tag){
       ordio.filter(function(r){
         return r.datum === tag &&
@@ -1094,6 +1114,10 @@ function renderArtikelProStunde(von, bis, st) {
                r.startStunde <= hInt && r.endeStunde > hInt;
       }).forEach(function(r){
         alleMA[r.mitarbeiter] = (alleMA[r.mitarbeiter]||0)+1;
+        // Letzte bekannte Schichtzeit speichern
+        if(r.startZeit && r.endeZeit) {
+          maZeiten[r.mitarbeiter] = r.startZeit + '–' + r.endeZeit;
+        }
       });
     });
     var maListe = Object.keys(alleMA).sort();
@@ -1115,11 +1139,12 @@ function renderArtikelProStunde(von, bis, st) {
         (maListe.length>0
           ? '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
               maListe.map(function(ma){
-                var n = alleMA[ma];
+                var zeit = maZeiten[ma] || '';
                 return '<span style="background:#1a2538;border:1px solid #2d3f54;border-radius:4px;padding:3px 10px;font-size:11px;color:#e2e8f0">'+
-                  ma+'<span style="color:#475569;margin-left:4px">('+n+'d)</span></span>';
+                  ma+(zeit?'<span style="color:#60a5fa;margin-left:5px;font-size:10px">'+zeit+'</span>':'')+
+                  '</span>';
               }).join("")+
-            '</div><div style="font-size:10px;color:#334155;margin-top:6px">(d) = Anzahl Tage mit Schicht im gewählten Zeitraum</div>'
+            '</div>'
           : '<div style="color:#475569;font-size:11px">Keine Ordio-Schichtdaten für diesen Zeitraum</div>')+
       '</div>'+
     '</div>';
@@ -1398,7 +1423,7 @@ function renderGuV(){
           {n:"Rohertrag-Marge",w:fmtP(k.u>0?rohertrag/k.u:0),z:"65%+",ok:rohertrag/k.u>=0.65,warn:rohertrag/k.u>=0.62},
           {n:"EBITDA-Marge",w:fmtP(ebitdaPct),z:fmtP(ZIELE.ebitda),ok:ebitdaPct>=ZIELE.ebitda,warn:ebitdaPct>=ZIELE.ebitda*0.9},
           {n:"Ø Tagesumsatz",w:fmt(k.u/k.t),z:"€ 3.200+",ok:k.u/k.t>=3200,warn:k.u/k.t>=2800},
-          {n:"Ø Bon-Wert",w:fmtD(k.at),z:fmtD(ZIELE.bonWert),ok:k.at>=ZIELE.bonWert,warn:k.at>=ZIELE.bonWert*0.9}
+          {n:"Ø Bon-Wert",w:fmtD(bonWertData.avg),z:fmtD(ZIELE.bonWert),ok:bonWertData.avg>=ZIELE.bonWert,warn:bonWertData.avg>=ZIELE.bonWert*0.9}
         ].map(function(a){
           var col=a.ok?"#22c55e":a.warn?"#f97316":"#ef4444";
           return'<div class="ampel-row"><span style="color:#64748b">'+a.n+'</span><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;color:#f1f5f9">'+a.w+'</span><span style="font-size:10px;color:#475569">Ziel: '+a.z+'</span><div class="ampel-dot" style="background:'+col+'"></div></div></div>';
@@ -1436,7 +1461,17 @@ function renderPersonal(){
 
   // Tag-Map
   var tagMap={};
-  pk.data.forEach(function(r){if(!tagMap[r.datum])tagMap[r.datum]=0;tagMap[r.datum]+=r.kosten;});
+  var umsatzStdMap={};
+  pk.data.forEach(function(r){
+    if(!tagMap[r.datum])tagMap[r.datum]=0;
+    tagMap[r.datum]+=r.kosten;
+    if(!umsatzStdMap[r.datum])umsatzStdMap[r.datum]={umsatz:0,stunden:0};
+    umsatzStdMap[r.datum].stunden+=r.stunden;
+  });
+  // Umsatz pro Tag aus gefiltert
+  gefiltert.forEach(function(r){
+    if(umsatzStdMap[r.datum])umsatzStdMap[r.datum].umsatz+=r.u;
+  });
   var tagKeys=Object.keys(tagMap).sort();
 
   // Standort-Map
@@ -1492,7 +1527,7 @@ function renderPersonal(){
         <div class="box-sub">Personalkosten und Effizienz</div>
         ${Object.entries(stMap).map(function(e){
           var name=e[0],d=e[1];
-          var pct=k.u>0?d.kosten/k.u:0;
+          var stUmsatzPct=gefiltert.filter(function(r){return r.st===name;}).reduce(function(s,r){return s+r.u;},0); var pct=stUmsatzPct>0?d.kosten/stUmsatzPct:0;
           var stU=d.stunden>0?(gefiltert.filter(function(r){return r.st===name;}).reduce(function(s,r){return s+r.u;},0)/d.stunden):0;
           return'<div style="padding:10px 0;border-bottom:1px solid #1e2d40;cursor:pointer" onclick="drill(\'d-pa-st-'+name.replace(/\s/g,'')+'\')" >'+
             '<div style="display:flex;justify-content:space-between;margin-bottom:4px">'+
@@ -1544,16 +1579,58 @@ function renderPersonal(){
     </div>
 
     <div class="box">
-      <div class="box-title">📅 Personalkosten pro Tag</div>
+      <div class="box-title">⚡ Umsatz / Personalstunde</div>
+      <div class="box-sub">Ziel: €${ZIELE.umsatzStd}/h — gestrichelte Linie</div>
       <canvas id="c-pa-tag" style="max-height:160px"></canvas>
     </div>`;
 
   dc("c-pa-tag");
-  if(tagKeys.length>0){
+  var stdKeys=Object.keys(umsatzStdMap).sort();
+  if(stdKeys.length>0){
+    var stdData=stdKeys.map(function(d){
+      var s=umsatzStdMap[d];
+      return s.stunden>0?Math.round(s.umsatz/s.stunden):null;
+    });
     charts["c-pa-tag"]=new Chart(document.getElementById("c-pa-tag"),{
-      type:"bar",
-      data:{labels:tagKeys.map(function(d){return d.slice(8)+"."+d.slice(5,7);}),datasets:[{label:"Personalkosten",data:tagKeys.map(function(d){return Math.round(tagMap[d]);}),backgroundColor:"#8b5cf6",borderRadius:3}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#475569",font:{size:9},maxTicksLimit:10},grid:{color:"#1e2d40"}},y:{ticks:{color:"#475569",font:{size:9},callback:function(v){return fmt(v);}},grid:{color:"#1e2d40"}}}}
+      type:"line",
+      data:{
+        labels:stdKeys.map(function(d){return d.slice(8)+"."+d.slice(5,7);}),
+        datasets:[
+          {
+            label:"Umsatz/h",
+            data:stdData,
+            borderColor:"#8b5cf6",
+            backgroundColor:"#8b5cf620",
+            fill:true,
+            tension:0.4,
+            pointRadius:3,
+            borderWidth:2
+          },
+          {
+            label:"Ziel €"+ZIELE.umsatzStd,
+            data:stdKeys.map(function(){return ZIELE.umsatzStd;}),
+            borderColor:"#f97316",
+            borderDash:[6,4],
+            borderWidth:1.5,
+            pointRadius:0,
+            fill:false
+          }
+        ]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{
+            display:true,
+            labels:{color:"#94a3b8",font:{size:11},usePointStyle:true}
+          }
+        },
+        scales:{
+          x:{ticks:{color:"#475569",font:{size:9},maxTicksLimit:12},grid:{color:"#1e2d40"}},
+          y:{ticks:{color:"#475569",font:{size:9},callback:function(v){return"€"+v;}},grid:{color:"#1e2d40"}}
+        }
+      }
     });
   }
 }
@@ -1632,10 +1709,67 @@ function renderFoodCost(){
   });
   var tagKeys=Object.keys(tagWasteMap).sort();
 
+  // Per-Standort Berechnungen
+  var stList = ['Mehringdamm','Rosenthaler Straße'];
+  function calcStandort(stName) {
+    var stWaste = waste.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort===stName;});
+    var stGefiltert = gefiltert.filter(function(r){return r.st===stName;});
+    var stU = stGefiltert.reduce(function(s,r){return s+r.u;},0);
+    var stFC = stGefiltert.reduce(function(s,r){return s+r.f;},0);
+    var stTotalWaste = stWaste.reduce(function(s,r){return s+r.kosten;},0);
+    var stWareneinsatz = stFC - stTotalWaste;
+    // Waste nach Kategorie
+    var stKatMap = {};
+    stWaste.forEach(function(r){
+      if(!stKatMap[r.kategorie])stKatMap[r.kategorie]={kosten:0,count:0};
+      stKatMap[r.kategorie].kosten+=r.kosten;
+      stKatMap[r.kategorie].count++;
+    });
+    var stKatList = Object.entries(stKatMap).sort(function(a,b){return b[1].kosten-a[1].kosten;});
+    // Top Waste Artikel
+    var stArtMap = {};
+    stWaste.forEach(function(r){
+      if(!stArtMap[r.artikel])stArtMap[r.artikel]={kosten:0,menge:0,kategorie:r.kategorie,events:new Set()};
+      stArtMap[r.artikel].kosten+=r.kosten;
+      stArtMap[r.artikel].menge+=r.menge;
+      stArtMap[r.artikel].events.add(r.eventId);
+    });
+    var stTopWaste = Object.entries(stArtMap).sort(function(a,b){return b[1].kosten-a[1].kosten;}).slice(0,5);
+    var stMaxWaste = stTopWaste.length>0?stTopWaste[0][1].kosten:1;
+    return {
+      u:stU, fc:stFC, waste:stTotalWaste, wareneinsatz:stWareneinsatz,
+      fcPct:stU>0?stFC/stU:0, wastePct:stU>0?stTotalWaste/stU:0,
+      wareneinsatzPct:stU>0?stWareneinsatz/stU:0,
+      katList:stKatList, topWaste:stTopWaste, maxWaste:stMaxWaste
+    };
+  }
+  var stData = {
+    'Mehringdamm': calcStandort('Mehringdamm'),
+    'Rosenthaler Straße': calcStandort('Rosenthaler Straße')
+  };
+
   // Farben für Kategorien
   var katColors={'Kitchen error':'#ef4444','Date expired':'#f97316','Used for marketing':'#3b82f6',
     'Staff':'#8b5cf6','Expired because of mistake':'#ec4899','':'#64748b'};
   function katColor(k){return katColors[k]||'#64748b';}
+
+  // Waste-Konsistenz pro Standort
+  var betriebsTage = new Set(gefiltert.map(function(r){return r.datum;})).size || 1;
+  function wasteKonsistenz(stName) {
+    var stWaste = waste.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort===stName;});
+    var tageMitWaste = new Set(stWaste.map(function(r){return r.datum;})).size;
+    var totalW = stWaste.reduce(function(s,r){return s+r.kosten;},0);
+    var avgProWasteTag = tageMitWaste>0?totalW/tageMitWaste:0;
+    return {
+      tageMitWaste: tageMitWaste,
+      betriebsTage: betriebsTage,
+      quote: betriebsTage>0?tageMitWaste/betriebsTage:0,
+      avgProWasteTag: avgProWasteTag,
+      total: totalW
+    };
+  }
+  var wkMd = wasteKonsistenz('Mehringdamm');
+  var wkRs = wasteKonsistenz('Rosenthaler Straße');
 
   document.getElementById("t-foodcost").innerHTML=`
     <div class="kpi-grid">
@@ -1665,6 +1799,21 @@ function renderFoodCost(){
       </div>
     </div>
 
+    <div class="grid2" style="margin-bottom:14px">
+      <div class="kpi-card" style="border-color:${wkMd.quote>=0.8?'#22c55e40':wkMd.quote>=0.5?'#f9731640':'#ef444440'}">
+        <div class="kpi-label">🟠 Mehringdamm — Waste-Konsistenz</div>
+        <div class="kpi-val" style="color:${wkMd.quote>=0.8?'#22c55e':wkMd.quote>=0.5?'#f97316':'#ef4444'}">${Math.round(wkMd.quote*100)}%</div>
+        <div class="kpi-delta" style="color:${wkMd.quote>=0.8?'#22c55e':wkMd.quote>=0.5?'#f97316':'#ef4444'}">${wkMd.tageMitWaste} von ${wkMd.betriebsTage} Tagen erfasst</div>
+        <div class="kpi-ai">Ø ${fmt(wkMd.avgProWasteTag)}/Waste-Tag · ${wkMd.quote>=0.8?'✓ Regelmäßig erfasst':wkMd.quote>=0.5?'⚠️ Lückenhaft — Erfassung verbessern':'🔴 Kaum Erfassung — sofort handeln'}</div>
+      </div>
+      <div class="kpi-card" style="border-color:${wkRs.quote>=0.8?'#22c55e40':wkRs.quote>=0.5?'#f9731640':'#ef444440'}">
+        <div class="kpi-label">🔵 Rosenthaler Straße — Waste-Konsistenz</div>
+        <div class="kpi-val" style="color:${wkRs.quote>=0.8?'#22c55e':wkRs.quote>=0.5?'#f97316':'#ef4444'}">${Math.round(wkRs.quote*100)}%</div>
+        <div class="kpi-delta" style="color:${wkRs.quote>=0.8?'#22c55e':wkRs.quote>=0.5?'#f97316':'#ef4444'}">${wkRs.tageMitWaste} von ${wkRs.betriebsTage} Tagen erfasst</div>
+        <div class="kpi-ai">Ø ${fmt(wkRs.avgProWasteTag)}/Waste-Tag · ${wkRs.quote>=0.8?'✓ Regelmäßig erfasst':wkRs.quote>=0.5?'⚠️ Lückenhaft — Erfassung verbessern':'🔴 Kaum Erfassung — sofort handeln'}</div>
+      </div>
+    </div>
+
     <div id="d-fc-fc" class="drill-panel">
       <div class="drill-title">Food Cost — Aufschlüsselung</div>
       <div class="drill-row"><span>Wareneinsatz (Zutaten)</span><span>${fmt(wareneinsatz)} (${fmtP(wareneinsatzQuote)})</span></div>
@@ -1687,73 +1836,63 @@ function renderFoodCost(){
 
     <div class="grid2">
       <div class="box">
-        <div class="box-title">⚖️ FC Aufschlüsselung</div>
-        <div class="box-sub">Wareneinsatz vs. Waste</div>
-        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
-          <div style="position:relative;width:110px;height:110px;flex-shrink:0"><canvas id="c-fc-donut"></canvas></div>
-          <div style="font-size:12px;flex:1">
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1e2d40">
-              <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:#f97316;display:inline-block"></span><span style="color:#94a3b8">Wareneinsatz</span></span>
-              <span style="color:#f1f5f9;font-weight:600">${fmt(wareneinsatz)} (${fmtP(wareneinsatzQuote)})</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1e2d40">
-              <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:#ef4444;display:inline-block"></span><span style="color:#94a3b8">Waste</span></span>
-              <span style="color:#ef4444;font-weight:600">${fmt(totalWaste)} (${fmtP(wasteQuote)})</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0">
-              <span style="color:#64748b">Food Cost gesamt</span>
-              <span style="color:#f1f5f9;font-weight:600">${fmt(totalFC)} (${fmtP(fcQuote)})</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="box-title" style="margin-top:8px;margin-bottom:10px">Waste nach Kategorie</div>
-        ${katList.map(function(e){
-          var name=e[0]||"Keine Kategorie",d=e[1];
-          var pct=totalWaste>0?Math.round(d.kosten/totalWaste*100):0;
-          var col=katColor(name);
-          return'<div style="margin-bottom:8px">'+
-            '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'+
-              '<span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:'+col+';display:inline-block"></span><span style="color:#e2e8f0">'+name+'</span></span>'+
-              '<span style="color:'+col+';font-weight:600">'+fmt(d.kosten)+' ('+pct+'%)</span>'+
-            '</div>'+
-            '<div style="height:4px;background:#1e2d40;border-radius:2px">'+
-              '<div style="height:100%;background:'+col+';border-radius:2px;width:'+pct+'%"></div>'+
-            '</div>'+
-          '</div>';
-        }).join("")}
-        ${katList.length===0?'<div style="color:#475569;font-size:12px;padding:12px 0">Keine Waste-Daten im Zeitraum.</div>':""}
+        <div class="box-title" style="color:#f97316">🟠 Mehringdamm</div>
+        <div class="box-sub">FC Aufschlüsselung & Waste</div>
+        ${(function(){
+          var sd=stData['Mehringdamm'];
+          var html='';
+          html+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1e2d40;font-size:12px"><span style="color:#94a3b8">Food Cost</span><span style="color:'+(sd.fcPct>ZIELE.fc?'#ef4444':'#22c55e')+';font-weight:600">'+fmt(sd.fc)+' ('+fmtP(sd.fcPct)+')</span></div>';
+          html+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1e2d40;font-size:12px"><span style="color:#94a3b8">Wareneinsatz</span><span style="color:#f97316;font-weight:600">'+fmt(sd.wareneinsatz)+'</span></div>';
+          html+='<div style="display:flex;justify-content:space-between;padding:5px 0;margin-bottom:12px;font-size:12px"><span style="color:#94a3b8">Waste</span><span style="color:#ef4444;font-weight:600">'+fmt(sd.waste)+' ('+fmtP(sd.wastePct)+')</span></div>';
+          html+='<div style="font-size:11px;font-weight:600;color:#60a5fa;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px">Waste nach Kategorie</div>';
+          if(sd.katList.length===0){html+='<div style="color:#475569;font-size:12px">Keine Waste-Daten.</div>';}
+          sd.katList.forEach(function(e){
+            var n=e[0]||'Keine Kategorie',d=e[1];
+            var pct=sd.waste>0?Math.round(d.kosten/sd.waste*100):0;
+            var col=katColor(n);
+            html+='<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span style="display:flex;align-items:center;gap:5px"><span style="width:7px;height:7px;border-radius:2px;background:'+col+';display:inline-block"></span><span style="color:#e2e8f0">'+n+'</span></span><span style="color:'+col+';font-weight:600">'+fmt(d.kosten)+' ('+pct+'%)</span></div><div style="height:3px;background:#1e2d40;border-radius:2px"><div style="height:100%;background:'+col+';border-radius:2px;width:'+pct+'%"></div></div></div>';
+          });
+          html+='<div style="font-size:11px;font-weight:600;color:#60a5fa;text-transform:uppercase;letter-spacing:0.4px;margin:12px 0 8px">Top 5 Waste-Artikel</div>';
+          if(sd.topWaste.length===0){html+='<div style="color:#475569;font-size:12px">Keine Artikel-Daten.</div>';}
+          sd.topWaste.forEach(function(e){
+            var n=e[0],d=e[1];
+            var pct=sd.maxWaste>0?Math.round(d.kosten/sd.maxWaste*100):0;
+            var col=katColor(d.kategorie);
+            html+='<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span style="color:#f1f5f9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">'+n+'</span><span style="color:#ef4444;font-weight:600">'+fmt(d.kosten)+'</span></div><div style="font-size:10px;color:'+col+';margin-bottom:2px">'+(d.kategorie||'—')+'</div><div style="height:3px;background:#1e2d40;border-radius:2px"><div style="height:100%;background:#ef4444;border-radius:2px;width:'+pct+'%"></div></div></div>';
+          });
+          return html;
+        })()}
       </div>
 
       <div class="box">
-        <div class="box-title">🔝 Top 10 Waste-Artikel</div>
-        <div class="box-sub">nach Kostenwert</div>
-        ${topWaste.length>0?topWaste.map(function(e){
-          var name=e[0],d=e[1];
-          var pct=maxWasteKosten>0?Math.round(d.kosten/maxWasteKosten*100):0;
-          var col=katColor(d.kategorie);
-          return'<div style="margin-bottom:10px;cursor:pointer" onclick="drill(\'d-waste-art-'+name.replace(/[\s\W]/g,'').slice(0,15)+'\')">'+
-            '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'+
-              '<span style="color:#f1f5f9;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">'+name+'</span>'+
-              '<span style="color:#ef4444;font-weight:600;margin-left:8px">'+fmt(d.kosten)+'</span>'+
-            '</div>'+
-            '<div style="display:flex;justify-content:space-between;font-size:10px;color:#475569;margin-bottom:3px">'+
-              '<span style="color:'+col+'">'+( d.kategorie||"Keine Kategorie")+'</span>'+
-              '<span>'+d.events.size+'x erfasst</span>'+
-            '</div>'+
-            '<div style="height:4px;background:#1e2d40;border-radius:2px">'+
-              '<div style="height:100%;background:#ef4444;border-radius:2px;width:'+pct+'%"></div>'+
-            '</div>'+
-            '<div id="d-waste-art-'+name.replace(/[\s\W]/g,'').slice(0,15)+'" class="drill-panel">'+
-              '<div class="drill-row"><span>Kosten gesamt</span><span style="color:#ef4444">'+fmt(d.kosten)+'</span></div>'+
-              '<div class="drill-row"><span>Ø Kosten/Tag</span><span>'+fmt(d.kosten/tage)+'</span></div>'+
-              '<div class="drill-row"><span>Kategorie</span><span style="color:'+col+'">'+( d.kategorie||"—")+'</span></div>'+
-              '<div class="drill-row"><span>Waste-Events</span><span>'+d.events.size+'x</span></div>'+
-              '<div class="ai-box">'+(d.kategorie==="Date expired"?"Abgelaufen — Bestellmengen oder Haltbarkeit prüfen.":d.kategorie==="Kitchen error"?"Küchenfehler — Training oder Prozess anpassen.":d.kategorie==="Used for marketing"?"Marketing-Aufwand — bewusste Entscheidung.":"Waste bei "+name+". Kategorie: "+(d.kategorie||"nicht erfasst")+".")+'</div>'+
-            '</div>'+
-          '</div>';
-        }).join(""):'<div style="color:#475569;font-size:12px;padding:12px 0">Keine Waste-Daten im Zeitraum.</div>'}
+        <div class="box-title" style="color:#3b82f6">🔵 Rosenthaler Straße</div>
+        <div class="box-sub">FC Aufschlüsselung & Waste</div>
+        ${(function(){
+          var sd=stData['Rosenthaler Straße'];
+          var html='';
+          html+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1e2d40;font-size:12px"><span style="color:#94a3b8">Food Cost</span><span style="color:'+(sd.fcPct>ZIELE.fc?'#ef4444':'#22c55e')+';font-weight:600">'+fmt(sd.fc)+' ('+fmtP(sd.fcPct)+')</span></div>';
+          html+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1e2d40;font-size:12px"><span style="color:#94a3b8">Wareneinsatz</span><span style="color:#f97316;font-weight:600">'+fmt(sd.wareneinsatz)+'</span></div>';
+          html+='<div style="display:flex;justify-content:space-between;padding:5px 0;margin-bottom:12px;font-size:12px"><span style="color:#94a3b8">Waste</span><span style="color:#ef4444;font-weight:600">'+fmt(sd.waste)+' ('+fmtP(sd.wastePct)+')</span></div>';
+          html+='<div style="font-size:11px;font-weight:600;color:#60a5fa;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px">Waste nach Kategorie</div>';
+          if(sd.katList.length===0){html+='<div style="color:#475569;font-size:12px">Keine Waste-Daten.</div>';}
+          sd.katList.forEach(function(e){
+            var n=e[0]||'Keine Kategorie',d=e[1];
+            var pct=sd.waste>0?Math.round(d.kosten/sd.waste*100):0;
+            var col=katColor(n);
+            html+='<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span style="display:flex;align-items:center;gap:5px"><span style="width:7px;height:7px;border-radius:2px;background:'+col+';display:inline-block"></span><span style="color:#e2e8f0">'+n+'</span></span><span style="color:'+col+';font-weight:600">'+fmt(d.kosten)+' ('+pct+'%)</span></div><div style="height:3px;background:#1e2d40;border-radius:2px"><div style="height:100%;background:'+col+';border-radius:2px;width:'+pct+'%"></div></div></div>';
+          });
+          html+='<div style="font-size:11px;font-weight:600;color:#60a5fa;text-transform:uppercase;letter-spacing:0.4px;margin:12px 0 8px">Top 5 Waste-Artikel</div>';
+          if(sd.topWaste.length===0){html+='<div style="color:#475569;font-size:12px">Keine Artikel-Daten.</div>';}
+          sd.topWaste.forEach(function(e){
+            var n=e[0],d=e[1];
+            var pct=sd.maxWaste>0?Math.round(d.kosten/sd.maxWaste*100):0;
+            var col=katColor(d.kategorie);
+            html+='<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span style="color:#f1f5f9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">'+n+'</span><span style="color:#ef4444;font-weight:600">'+fmt(d.kosten)+'</span></div><div style="font-size:10px;color:'+col+';margin-bottom:2px">'+(d.kategorie||'—')+'</div><div style="height:3px;background:#1e2d40;border-radius:2px"><div style="height:100%;background:#ef4444;border-radius:2px;width:'+pct+'%"></div></div></div>';
+          });
+          return html;
+        })()}
       </div>
+
     </div>
 
     <div class="box">
@@ -1811,16 +1950,8 @@ function renderFoodCost(){
     </div>`;
 
   // Donut Chart FC Aufschlüsselung
-  dc("c-fc-donut");
-  if(totalFC>0){
-    charts["c-fc-donut"]=new Chart(document.getElementById("c-fc-donut"),{
-      type:"doughnut",
-      data:{labels:["Wareneinsatz","Waste"],datasets:[{data:[Math.max(wareneinsatz,0),totalWaste],backgroundColor:["#f97316","#ef4444"],borderWidth:0}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:"72%"}
-    });
-  }
 
-  // Waste pro Tag Chart
+
   dc("c-waste-tag");
   if(tagKeys.length>0){
     charts["c-waste-tag"]=new Chart(document.getElementById("c-waste-tag"),{
@@ -1895,12 +2026,31 @@ function renderSpeisekarte(){
 
   var tage=new Set(artG.map(function(r){return r.datum;})).size||1;
 
+  // Renner/Penner Logik
+  var avgAnteil = totalUmsatz>0 ? (1/speise.length) : 0; // Ø Anteil pro Artikel
+  var avgUmsatzTag = speise.length>0 ? speise.reduce(function(s,g){return s+g.umsatz/tage;},0)/speise.length : 0;
+
+  function rennerPenner(g) {
+    var anteilPct = totalUmsatz>0 ? g.umsatz/totalUmsatz : 0;
+    var umsatzProTag = g.umsatz/tage;
+    var hoherAnteil = anteilPct >= avgAnteil;
+    var hoheGeschw  = umsatzProTag >= avgUmsatzTag;
+    if(hoherAnteil && hoheGeschw)  return {badge:'🟢 Renner',     color:'#22c55e', grund:'Hoher Umsatzanteil ('+( anteilPct*100).toFixed(1)+'%) und hohe Verkaufsgeschwindigkeit ('+fmtD(umsatzProTag)+'/Tag). Priorität bei Verfügbarkeit und Qualität.'};
+    if(!hoherAnteil && hoheGeschw) return {badge:'🟡 Schnelldreher', color:'#f59e0b', grund:'Oft bestellt aber geringer Umsatzanteil ('+( anteilPct*100).toFixed(1)+'%). Günstiger Artikel der Volumen macht — prüfe ob Preis erhöhbar.'};
+    if(hoherAnteil && !hoheGeschw) return {badge:'🟠 Schläfer',   color:'#f97316', grund:'Hoher Umsatzanteil ('+( anteilPct*100).toFixed(1)+'%) aber selten bestellt. Teurer Artikel — gezielt promoten oder besser platzieren.'};
+    return                                {badge:'🔴 Penner',      color:'#ef4444', grund:'Geringer Umsatzanteil ('+( anteilPct*100).toFixed(1)+'%) und niedrige Verkaufsgeschwindigkeit ('+fmtD(umsatzProTag)+'/Tag). Überdenken oder streichen.'};
+  }
+
   var tableRows=speise.map(function(g,i){
     var stornoRate=g.menge>0?(g.stornos/g.menge*100).toFixed(1):0;
     var avgPreis=g.menge>0?g.umsatz/g.menge:0;
     var anteil=totalUmsatz>0?(g.umsatz/totalUmsatz*100).toFixed(1):0;
+    var rp=rennerPenner(g);
     return'<tr onclick="drillSpeise('+i+')" style="cursor:pointer">'+
-      '<td style="padding:8px 6px;font-weight:600;color:#f1f5f9;font-size:12px">'+g.name+'</td>'+
+      '<td style="padding:8px 6px;font-size:12px">'+
+        '<div style="font-weight:600;color:#f1f5f9">'+g.name+'</div>'+
+        '<div style="margin-top:3px"><span style="font-size:10px;font-weight:600;color:'+rp.color+'">'+rp.badge+'</span></div>'+
+      '</td>'+
       '<td style="padding:8px 6px;text-align:right;color:#64748b;font-size:12px">'+g.gruppe+'</td>'+
       '<td style="padding:8px 6px;text-align:right;font-weight:600;color:#f97316;font-size:12px">'+Math.round(g.menge)+'x</td>'+
       '<td style="padding:8px 6px;text-align:right;color:#22c55e;font-size:12px">'+fmt(g.umsatz)+'</td>'+
@@ -1911,11 +2061,14 @@ function renderSpeisekarte(){
     '<tr id="sp-'+i+'" style="display:none"><td colspan="7">'+
       '<div class="drill-panel open" style="margin:4px 6px 8px">'+
         '<div class="drill-title">'+g.name+' — Details</div>'+
+        '<div class="drill-row"><span>Kategorie</span><span style="color:'+rp.color+';font-weight:700">'+rp.badge+'</span></div>'+
+        '<div style="background:#0c1f3a;border-left:3px solid '+rp.color+';border-radius:0 6px 6px 0;padding:8px 10px;margin:6px 0 10px;font-size:11px;color:#93c5fd;line-height:1.6">'+rp.grund+'</div>'+
         '<div class="drill-row"><span>Verkäufe gesamt</span><span>'+Math.round(g.menge)+'x</span></div>'+
         '<div class="drill-row"><span>Ø Verkäufe/Tag</span><span>'+(g.menge/tage).toFixed(1)+'x</span></div>'+
         '<div class="drill-row"><span>Umsatz gesamt</span><span>'+fmt(g.umsatz)+'</span></div>'+
         '<div class="drill-row"><span>Ø Preis/Einheit</span><span>'+fmtD(avgPreis)+'</span></div>'+
         '<div class="drill-row"><span>Umsatz-Anteil</span><span>'+anteil+'%</span></div>'+
+        '<div class="drill-row"><span>Umsatz/Tag</span><span>'+fmtD(g.umsatz/tage)+'</span></div>'+
         '<div class="drill-row"><span>Stornierungen</span><span style="color:'+(g.stornos>0?'#ef4444':'#22c55e')+'">'+g.stornos+'x ('+stornoRate+'%)</span></div>'+
         '<div class="drill-row"><span>Gruppe</span><span>'+g.gruppe+'</span></div>'+
         '<div class="ai-box">'+(g.stornos>3?'⚠️ Hohe Storno-Rate ('+stornoRate+'%) — Qualitätsproblem prüfen. ':'')+
@@ -2039,7 +2192,7 @@ function renderTrinkgeld(){
 
   // Online Order vs Mitarbeiter
   var bonsOnline=bonsG.filter(function(r){return r.mitarbeiter==="Online Order"||r.mitarbeiter.indexOf("Online")!==-1;});
-  var bonsMitarb=bonsG.filter(function(r){return r.mitarbeiter!=="Online Order"&&r.mitarbeiter.indexOf("Online")===-1&&r.kanal!=="Lieferando";});
+  var bonsMitarb=bonsG.filter(function(r){return r.mitarbeiter!=="Online Order"&&r.mitarbeiter.indexOf("Online")===-1&&r.kanal!=="Lieferando"&&r.mitarbeiter.indexOf(",")===-1;});
   var tkOnline=bonsOnline.reduce(function(s,r){return s+r.trinkgeld;},0);
   var totalOnline=bonsOnline.reduce(function(s,r){return s+r.total;},0);
   var tkMitarb=bonsMitarb.reduce(function(s,r){return s+r.trinkgeld;},0);
@@ -2119,6 +2272,12 @@ function renderTrinkgeld(){
       ${maList.length>0?" Bester Service-MA: "+maList[0][0]+" ("+fmtP(maList[0][1].tk/Math.max(maList[0][1].total,1))+" Quote).":""}
     </div>
 
+    <div class="box">
+      <div class="box-title">📈 Trinkgeld-Quote im Zeitverlauf</div>
+      <div class="box-sub">TK-Quote pro Tag (Service ohne Online Order & Lieferando)</div>
+      <canvas id="c-tk-zeit" style="max-height:180px"></canvas>
+    </div>
+
     <div class="grid2">
       <div class="box">
         <div class="box-title">👤 Trinkgeld nach Mitarbeiter</div>
@@ -2191,6 +2350,36 @@ function renderTrinkgeld(){
     </div>`;
 
   // Charts
+  // TK-Quote im Zeitverlauf
+  dc("c-tk-zeit");
+  var tkZeitMap={};
+  bonsG.filter(function(r){return r.kanal!=="Lieferando"&&r.mitarbeiter.indexOf(",")===-1;}).forEach(function(r){
+    if(!tkZeitMap[r.datum])tkZeitMap[r.datum]={tk:0,total:0};
+    tkZeitMap[r.datum].tk+=r.trinkgeld;
+    tkZeitMap[r.datum].total+=r.total;
+  });
+  var tkZeitKeys=Object.keys(tkZeitMap).sort();
+  if(tkZeitKeys.length>0){
+    charts["c-tk-zeit"]=new Chart(document.getElementById("c-tk-zeit"),{
+      type:"line",
+      data:{
+        labels:tkZeitKeys.map(function(d){return d.slice(8)+"."+d.slice(5,7);}),
+        datasets:[{
+          label:"TK-Quote %",
+          data:tkZeitKeys.map(function(d){return Math.round(tkZeitMap[d].tk/Math.max(tkZeitMap[d].total,1)*1000)/10;}),
+          borderColor:"#8b5cf6",backgroundColor:"#8b5cf620",fill:true,tension:0.4,pointRadius:3,borderWidth:2
+        }]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{ticks:{color:"#475569",font:{size:9},maxTicksLimit:12},grid:{color:"#1e2d40"}},
+          y:{ticks:{color:"#475569",font:{size:9},callback:function(v){return v+"%";}},grid:{color:"#1e2d40"}}
+        }
+      }
+    });
+  }
+
   dc("c-tk-std");
   if(stundenKeys.length>0){
     charts["c-tk-std"]=new Chart(document.getElementById("c-tk-std"),{
@@ -2235,14 +2424,47 @@ function renderSimulator(){
   var paReal=pk.total>0;
   var paBasePct=k.u>0?paBase/k.u*100:33;
   var fb=k.fp*100;
-  var mi=k.u*0.12,en=k.u*0.04,so=k.u*0.08;
-  var eA=k.u-k.f-paBase-mi-en-so;
-  var uN=k.u*(1+simV.p/100)*(1+simV.v/100);
-  var fN=uN*((fb+simV.f)/100);
+  var fkSim=getFixkostenTage(von,bis);
+
+  // Basis LDO Provision
+  var txSim=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  var ldoBaseProv=txSim.reduce(function(s,r){return s+r.ldo;},0)*0.20;
+
+  // IST-Werte (Vorher)
+  var uA=k.u;
+  var fcA=k.f;
+  var ldoProvA=ldoBaseProv;
+  var rohertraA=uA-fcA-ldoProvA;
+  var paOpaA=paBase;
+  var cmA=rohertraA-paOpaA;
+  var paGemA=fkSim.personalGemein+fkSim.managementFee;
+  var mieteA=fkSim.miete+fkSim.versicherung;
+  var werbeA=fkSim.werbeReise;
+  var sonstA=fkSim.sonstBetrieb+fkSim.verwaltung+fkSim.instandhaltung+fkSim.abschreibung;
+  var ebitdaA=cmA-paGemA-mieteA-werbeA-sonstA;
+
+  // SIMULIERT (Nachher)
+  var uN=uA*(1+simV.p/100)*(1+simV.v/100);
+  var fcN=uN*((fb+simV.f)/100);
+  var ldoProvN=ldoBaseProv*(uN/Math.max(uA,1)); // LDO skaliert mit Umsatz
+  var rohertraN=uN-fcN-ldoProvN;
   var paN=paReal?paBase*(1+simV.a/100):uN*((paBasePct+simV.a)/100);
-  var eN=uN-fN-paN-mi-en-so;
-  var diff=eN-eA;
-  var cmA=k.u-k.f-paBase,cmN=uN-fN-paN;
+  var cmN=rohertraN-paN;
+  // Fixkosten bleiben gleich
+  var ebitdaN=cmN-paGemA-mieteA-werbeA-sonstA;
+  var diff=ebitdaN-ebitdaA;
+
+  function simRow(label,a,n,neg,bold,sep){
+    var better=neg?n<a:n>a;
+    var col=Math.abs(n-a)<0.5?"#64748b":better?"#22c55e":"#ef4444";
+    var style=bold?"font-weight:700;color:#f1f5f9;font-size:13px":"color:#64748b";
+    var borderTop=sep?"border-top:2px solid #f97316;margin-top:4px;padding-top:10px":"border-bottom:1px solid #1e2d40";
+    return'<div style="display:flex;justify-content:space-between;padding:7px 0;'+borderTop+';font-size:12px">'+
+      '<span style="'+style+';flex:1">'+label+'</span>'+
+      '<span style="color:#475569;width:80px;text-align:right">'+fmt(a)+'</span>'+
+      '<span style="color:'+col+';width:90px;text-align:right;font-weight:'+(bold?700:600)+'">'+fmt(n)+'</span>'+
+    '</div>';
+  }
 
   document.getElementById("t-simulator").innerHTML=`
     <div class="grid2">
@@ -2263,38 +2485,58 @@ function renderSimulator(){
         }).join("")}
         <button onclick="simV={p:0,v:0,f:0,a:0};renderSimulator()" style="width:100%;background:#1a2538;border:1px solid #2d3f54;color:#64748b;padding:8px;border-radius:8px;cursor:pointer;font-size:13px">🔄 Zurücksetzen</button>
       </div>
+
       <div class="box">
         <div class="box-title">📄 Vorher vs. Nachher</div>
-        ${[
-          {l:"Umsatz",a:k.u,n:uN,neg:false},
-          {l:"Food Cost ("+(fb+simV.f).toFixed(1)+"%)",a:k.f,n:fN,neg:true},
-          {l:"Personal "+(paReal?"(Ordio)":"(~33%)"),a:paBase,n:paN,neg:true},
-          {l:"Contribution Margin",a:cmA,n:cmN,neg:false},
-          {l:"Miete (fix)",a:mi,n:mi,neg:true},
-        ].map(function(r){
-          var better=r.neg?r.n<r.a:r.n>r.a;
-          var col=r.n===r.a?"#64748b":better?"#22c55e":"#ef4444";
-          return'<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1e2d40;font-size:12px">'+
-            '<span style="color:#64748b;flex:1">'+r.l+'</span>'+
-            '<span style="color:#475569;width:80px;text-align:right">'+fmt(r.a)+'</span>'+
-            '<span style="color:'+col+';width:90px;text-align:right;font-weight:600">'+fmt(r.n)+'</span>'+
-          '</div>';
-        }).join("")}
-        <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid #f97316">
+        <div style="display:flex;justify-content:space-between;padding:4px 0 8px;border-bottom:1px solid #1e3a5f;font-size:10px;color:#475569;margin-bottom:4px">
+          <span style="flex:1"></span>
+          <span style="width:80px;text-align:right">IST</span>
+          <span style="width:90px;text-align:right">SIMULIERT</span>
+        </div>
+        ${simRow("Umsatz",uA,uN,false,false,false)}
+        ${simRow("− Food Cost ("+(fb+simV.f).toFixed(1)+"%)",fcA,fcN,true,false,false)}
+        ${simRow("− Lieferando-Provision (20%)",ldoProvA,ldoProvN,true,false,false)}
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e2d40;font-size:12px;font-weight:600">
+          <span style="color:#94a3b8;flex:1">= Rohertrag</span>
+          <span style="color:#475569;width:80px;text-align:right">${fmt(rohertraA)}</span>
+          <span style="color:${rohertraN>=rohertraA?'#22c55e':'#ef4444'};width:90px;text-align:right">${fmt(rohertraN)}</span>
+        </div>
+        ${simRow("− Operative Personal "+(paReal?"(Ordio)":"(~33%)"),paOpaA,paN,true,false,false)}
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:2px solid #3b82f640;font-size:12px;font-weight:700">
+          <span style="color:#3b82f6;flex:1">= Contribution Margin</span>
+          <span style="color:#475569;width:80px;text-align:right">${fmt(cmA)}</span>
+          <span style="color:${cmN>=cmA?'#22c55e':'#ef4444'};width:90px;text-align:right">${fmt(cmN)}</span>
+        </div>
+        ${simRow("− Personalgemeinkosten (fix)",paGemA,paGemA,true,false,false)}
+        ${simRow("− Miete & Leasing (fix)",mieteA,mieteA,true,false,false)}
+        ${simRow("− Werbe- & Reisekosten (fix)",werbeA,werbeA,true,false,false)}
+        ${simRow("− Sonstige Fixkosten (fix)",sonstA,sonstA,true,false,false)}
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid #f97316;margin-top:4px">
           <span style="font-weight:700;color:#f1f5f9;font-size:13px">= EBITDA</span>
-          <span style="color:#475569;font-size:12px;font-weight:600">${fmt(eA)}</span>
-          <span style="color:${eN>eA?'#22c55e':'#ef4444'};font-size:15px;font-weight:700">${fmt(eN)}</span>
+          <span style="color:#475569;font-size:12px;font-weight:600">${fmt(ebitdaA)}</span>
+          <span style="color:${ebitdaN>=ebitdaA?'#22c55e':'#ef4444'};font-size:15px;font-weight:700">${fmt(ebitdaN)}</span>
         </div>
-        <div style="padding:12px;background:${diff>=0?'#16653420':'#7f1d1d20'};border:1px solid ${diff>=0?'#16653440':'#7f1d1d40'};border-radius:8px;margin-top:4px">
-          <div style="font-size:13px;font-weight:700;color:${diff>=0?'#22c55e':'#ef4444'}">${diff>=0?"▲":"▼"} ${diff>=0?"+":""}${fmt(diff)} (${eA!==0?((diff/Math.abs(eA))*100).toFixed(1):0}%)</div>
-          <div style="font-size:11px;color:#64748b;margin-top:4px">${diff>5000?"🟢 Starker positiver Effekt":diff>0?"🟡 Leichte Verbesserung":"🔴 Gewinn sinkt — Annahmen prüfen"}</div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <div style="flex:1;background:#1a2538;border-radius:6px;padding:6px 10px;text-align:center;font-size:11px">
+            <div style="color:#475569">IST EBITDA-Marge</div>
+            <div style="color:${ebitdaA/Math.max(uA,1)>=ZIELE.ebitda?'#22c55e':'#ef4444'};font-weight:700">${fmtP(uA>0?ebitdaA/uA:0)}</div>
+          </div>
+          <div style="flex:1;background:#1a2538;border-radius:6px;padding:6px 10px;text-align:center;font-size:11px">
+            <div style="color:#475569">SIM EBITDA-Marge</div>
+            <div style="color:${ebitdaN/Math.max(uN,1)>=ZIELE.ebitda?'#22c55e':'#ef4444'};font-weight:700">${fmtP(uN>0?ebitdaN/uN:0)}</div>
+          </div>
         </div>
-        <div class="ai-box" style="margin-top:10px">
+        <div style="padding:10px 12px;background:${diff>=0?'#16653420':'#7f1d1d20'};border:1px solid ${diff>=0?'#16653440':'#7f1d1d40'};border-radius:8px;margin-top:8px">
+          <div style="font-size:13px;font-weight:700;color:${diff>=0?'#22c55e':'#ef4444'}">${diff>=0?"▲":"▼"} ${diff>=0?"+":""}${fmt(diff)} (${ebitdaA!==0?((diff/Math.abs(ebitdaA))*100).toFixed(1):0}%)</div>
+          <div style="font-size:11px;color:#64748b;margin-top:3px">${diff>5000?"🟢 Starker positiver Effekt":diff>0?"🟡 Leichte Verbesserung":"🔴 EBITDA sinkt — Annahmen prüfen"}</div>
+        </div>
+        <div class="ai-box" style="margin-top:8px">
           ${simV.p!==0||simV.v!==0||simV.f!==0||simV.a!==0?
-            "Simulierter EBITDA: "+fmt(eN)+" ("+fmtP(uN>0?eN/uN:0)+"). "+
-            (simV.p>0?"Preiserhöhung von "+simV.p+"% erhöht Umsatz ohne Mehrkosten — stärkster Hebel. ":"")+
-            (simV.a<0?"Personalreduktion von "+Math.abs(simV.a)+"% spart "+fmt(paBase-paN)+". ":""):
-            "Schieberegler bewegen um verschiedene Szenarien zu simulieren. Stärkste Hebel: Preisanpassung und Personal-Effizienz."}
+            "Simulierter EBITDA: "+fmt(ebitdaN)+" ("+fmtP(uN>0?ebitdaN/uN:0)+"). "+
+            (simV.p>0?"Preiserhöhung +"+simV.p+"% = stärkster Hebel: mehr Umsatz ohne Mehrkosten. ":"")+
+            (simV.f<0?"FC-Senkung um "+Math.abs(simV.f)+"Punkte spart "+fmt(fcA-fcN)+". ":"")+
+            (simV.a<0?"Personalreduktion "+Math.abs(simV.a)+"% spart "+fmt(paOpaA-paN)+". ":""):
+            "Schieberegler bewegen um Szenarien zu simulieren. Fixkosten (Gemeinkosten, Miete) bleiben konstant."}
         </div>
       </div>
     </div>`;
