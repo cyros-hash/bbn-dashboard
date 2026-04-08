@@ -255,7 +255,8 @@ canvas{max-height:220px}
   <span style="color:#2d3f54;font-size:12px">→</span>
   <input type="date" id="bis" onchange="clearQuick()">
   <div style="display:flex;gap:4px">
-    <button class="qbtn active" id="q-heute" onclick="setQuick('heute')">Heute</button>
+    <button class="qbtn" id="q-heute" onclick="setQuick('heute')">Heute</button>
+    <button class="qbtn active" id="q-gestern" onclick="setQuick('gestern')">Gestern</button>
     <button class="qbtn" id="q-woche" onclick="setQuick('woche')">Diese Woche</button>
     <button class="qbtn" id="q-7" onclick="setQuick('7')">7 Tage</button>
     <button class="qbtn" id="q-monat" onclick="setQuick('monat')">Monat</button>
@@ -309,8 +310,58 @@ var CSV = {
 // ============================================================
 var alle=[],lsTx=[],lsStd=[],lsQ=[],lsPay=[],ordio=[],artikel=[],bons=[],waste=[];
 var gefiltert=[];
-var charts={}, simV={p:0,v:0,f:0,a:0}, aktQ="heute";
+var charts={}, simV={p:0,v:0,f:0,a:0}, aktQ="gestern";
 var ZIELE={fc:0.25,pa:0.30,cm:0.40,ebitda:0.12,bonWert:22,umsatzStd:115};
+
+// ============================================================
+// FIXKOSTEN (monatliche Durchschnittswerte aus BWA)
+// ============================================================
+var FIXKOSTEN = {
+  // Personalkosten (nicht operativ, fix)
+  personalGemein: 11025.00,    // Kevin Weber (4.175) + Jan Haring (6.050) + Buted Deleg (800)
+
+  // Management Fee lt. Gesellschaftervereinbarung Savory Stories (Anlage 1):
+  // Miete 3.850 + AFA Inventar 785 + 15% Aufschlag 695,25 + GF-Fee 6.000 = 11.330,25/Monat
+  managementFee:  11330.25,
+
+  // BWA-Kategorien (Ø Jul-Dez 2025) — BEREINIGT um Savory Stories Weiterberechnung:
+  // Miete:       13.438,66 - 4.427,50 (Miete/NK inkl. 15%) = 9.011,16
+  // Sonstige:    11.474,20 - 6.000,00 (GF-Fee) - 120,49 (AFA-Überhang) = 5.353,71
+  // Abschreibung: 782,26 - 902,75 (AFA Inventar inkl. 15%) → 0 (durch MgmtFee abgedeckt)
+  miete:          9011.16,
+  versicherung:     43.63,
+  werbeReise:      3528.04,
+  sonstBetrieb:    5353.71,
+  verwaltung:      5441.25,
+  instandhaltung:   717.58,
+  abschreibung:       0.00
+  // Gesamt: 46.450,62/Monat = 1.548,35/Tag
+};
+// Gesamte Fixkosten pro Monat
+var FIXKOSTEN_GESAMT = Object.values(FIXKOSTEN).reduce(function(s,v){return s+v;},0);
+// Kontrolle: BWA (35.425) - MgmtFee (11.637) + PersonalGemein (11.025) + MgmtFee (11.637) = 46.451
+
+// Operative Mitarbeiter die NICHT in Personalkosten-Quote fließen
+// (sind über Personalgemeinkosten abgedeckt)
+var MGMT_MITARBEITER = ["Kevin Weber","Jan Haring","Buted Deleg"];
+
+function getFixkostenTage(von, bis) {
+  var v = new Date(von+"T12:00:00"), b = new Date(bis+"T12:00:00");
+  var tage = Math.round((b - v) / 86400000) + 1;
+  return {
+    tage: tage,
+    personalGemein: FIXKOSTEN.personalGemein / 30 * tage,
+    managementFee:  FIXKOSTEN.managementFee  / 30 * tage,
+    miete:          FIXKOSTEN.miete          / 30 * tage,
+    versicherung:   FIXKOSTEN.versicherung   / 30 * tage,
+    werbeReise:     FIXKOSTEN.werbeReise     / 30 * tage,
+    sonstBetrieb:   FIXKOSTEN.sonstBetrieb   / 30 * tage,
+    verwaltung:     FIXKOSTEN.verwaltung     / 30 * tage,
+    instandhaltung: FIXKOSTEN.instandhaltung / 30 * tage,
+    abschreibung:   FIXKOSTEN.abschreibung   / 30 * tage,
+    gesamt:         FIXKOSTEN_GESAMT         / 30 * tage
+  };
+}
 
 // ============================================================
 // UTILS
@@ -343,7 +394,11 @@ function kpi(d){
 }
 
 function getOrdio(von,bis,st){
-  var d=ordio.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  var d=ordio.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&
+           (st==="Alle Standorte"||r.standort===st)&&
+           MGMT_MITARBEITER.indexOf(r.mitarbeiter)===-1; // Managementkosten raus
+  });
   return{
     total:d.reduce(function(s,r){return s+r.kosten;},0),
     stunden:d.reduce(function(s,r){return s+r.stunden;},0),
@@ -481,8 +536,8 @@ async function ladeDaten(){
     var max=new Date(maxD+"T12:00:00");
     document.getElementById("von").value=new Date(max.getFullYear(),max.getMonth(),1).toISOString().split("T")[0];
     document.getElementById("bis").value=maxD;
-    // Standard: Heute (echter heutiger Tag)
-    setQuick("heute");
+    // Standard: Gestern (Daten kommen immer einen Tag später)
+    setQuick("gestern");
     applyFilter();
     document.getElementById("status").textContent="● Live · "+alle.length+" Tage (LS-Umsatz) · "+apicData.length+" Apicbase (FC) · "+ordio.length+" Ordio · "+artikel.length+" Artikel · "+bons.length+" Bons · "+waste.length+" Waste";
     document.getElementById("status").style.color="#22c55e";
@@ -508,12 +563,18 @@ function setQuick(k){
   var today = new Date();
   today.setHours(12,0,0,0);
   var todayStr = today.toISOString().split("T")[0];
+  var yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  var yesterdayStr = yesterday.toISOString().split("T")[0];
 
   setQ(k);
 
   if(k==="heute"){
     document.getElementById("von").value = todayStr;
     document.getElementById("bis").value = todayStr;
+  } else if(k==="gestern"){
+    document.getElementById("von").value = yesterdayStr;
+    document.getElementById("bis").value = yesterdayStr;
   } else if(k==="woche"){
     // Laufende Woche: Montag dieser Woche bis heute
     var day = today.getDay(); // 0=So, 1=Mo, ..., 6=Sa
@@ -542,7 +603,7 @@ function setQuick(k){
 
 function setQ(k){
   aktQ=k;
-  ["heute","woche","7","monat","quartal","jahr"].forEach(function(q){
+  ["heute","gestern","woche","7","monat","quartal","jahr"].forEach(function(q){
     var el=document.getElementById("q-"+q);
     if(el)el.className="qbtn"+(q===k?" active":"");
   });
@@ -578,11 +639,14 @@ function renderOverview(){
   var pk=getOrdio(von,bis,st);
   var pa=pk.total>0?pk.total:k.u*0.33;
   var paReal=pk.total>0;
-  var cm=k.u-k.f-pa;
+  var txOvG=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  var ldoProvOv=txOvG.reduce(function(s,r){return s+r.ldo;},0)*0.20;
+  var fkOv=getFixkostenTage(von,bis);
+  var cm=k.u-k.f-ldoProvOv-pa;
   var cmPct=k.u>0?cm/k.u:0;
-  var mi=k.u*0.12,en=k.u*0.04,so=k.u*0.08;
-  var ebitda=cm-mi-en-so;
+  var ebitda=cm-fkOv.gesamt;
   var ebitdaPct=k.u>0?ebitda/k.u:0;
+  var mi=fkOv.miete,en=fkOv.versicherung,so=fkOv.werbeReise+fkOv.sonstBetrieb+fkOv.verwaltung+fkOv.instandhaltung+fkOv.abschreibung+fkOv.personalGemein+fkOv.managementFee;
   var paPct=k.u>0?pa/k.u:0;
   var umsatzStd=pk.stunden>0?k.u/pk.stunden:0;
 
@@ -763,6 +827,18 @@ function renderUmsatz(){
 
   var totalBons=txG.reduce(function(s,r){return s+r.bons;},0);
   var totalLdo=txG.reduce(function(s,r){return s+r.ldo;},0);
+
+  // Kanal-Split pro Standort aus lsTx
+  var txMd=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort==="Mehringdamm";});
+  var txRs=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort==="Rosenthaler Straße";});
+  var mdLdo=txMd.reduce(function(s,r){return s+r.ldo;},0);
+  var mdOnprem=txMd.reduce(function(s,r){return s+r.onprem;},0);
+  var mdTakeaway=txMd.reduce(function(s,r){return s+r.takeaway;},0);
+  var mdInhouse=Math.max(km.u-mdLdo-mdTakeaway,0);
+  var rsLdo=txRs.reduce(function(s,r){return s+r.ldo;},0);
+  var rsOnprem=txRs.reduce(function(s,r){return s+r.onprem;},0);
+  var rsTakeaway=txRs.reduce(function(s,r){return s+r.takeaway;},0);
+  var rsInhouse=Math.max(kr.u-rsLdo-rsTakeaway,0);
   var totalTrinkgeld=qG.reduce(function(s,r){return s+r.trinkgeld;},0);
   var totalBar=payG.reduce(function(s,r){return s+r.bar;},0);
   var totalKarte=payG.reduce(function(s,r){return s+r.karte;},0);
@@ -792,19 +868,29 @@ function renderUmsatz(){
 
     <div id="d-md" class="drill-panel">
       <div class="drill-title">Mehringdamm — Details</div>
-      <div class="drill-row"><span>Gesamtumsatz</span><span>${fmt(km.u)}</span></div>
-      <div class="drill-row"><span>Verkäufe</span><span>${km.s.toLocaleString("de-DE")}</span></div>
+      <div class="drill-row"><span>Gesamtumsatz (Netto)</span><span>${fmt(km.u)}</span></div>
+      <div style="font-size:10px;color:#475569;padding:4px 0 2px;text-transform:uppercase;letter-spacing:0.4px">Umsatz nach Kanal</div>
+      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block"></span>Inhouse</span><span>${fmt(mdInhouse)} (${km.u>0?fmtP(mdInhouse/km.u):"—"})</span></div>
+      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f97316;display:inline-block"></span>Lieferando</span><span style="color:${mdLdo>0?'#f97316':'#64748b'}">${fmt(mdLdo)} (${km.u>0?fmtP(mdLdo/km.u):"—"})</span></div>
+      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>Take Away</span><span>${fmt(mdTakeaway)} (${km.u>0?fmtP(mdTakeaway/km.u):"—"})</span></div>
+      <div style="border-top:1px solid #1e2d40;margin:6px 0"></div>
+      <div class="drill-row"><span>Verkäufe (Bons)</span><span>${km.s.toLocaleString("de-DE")}</span></div>
       <div class="drill-row"><span>Ø Bon-Wert</span><span>${fmtD(km.at)}</span></div>
       <div class="drill-row"><span>Food Cost</span><span style="color:${km.fp>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(km.fp)}</span></div>
-      <div class="ai-box">Mehringdamm macht ${km.u+kr.u>0?((km.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${km.at>kr.at?"Höherer Bon-Wert als Rosenthaler (+"+fmtD(km.at-kr.at)+"/Bon).":"Niedrigerer Bon-Wert als Rosenthaler ("+fmtD(km.at-kr.at)+"/Bon)."}</div>
+      <div class="ai-box">Mehringdamm macht ${km.u+kr.u>0?((km.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${mdLdo>0?"Lieferando-Anteil "+fmtP(km.u>0?mdLdo/km.u:0)+".":""} ${km.at>kr.at?"Höherer Bon-Wert als Rosenthaler (+"+fmtD(km.at-kr.at)+"/Bon).":"Niedrigerer Bon-Wert als Rosenthaler ("+fmtD(km.at-kr.at)+"/Bon)."}</div>
     </div>
     <div id="d-rs" class="drill-panel">
       <div class="drill-title">Rosenthaler Straße — Details</div>
-      <div class="drill-row"><span>Gesamtumsatz</span><span>${fmt(kr.u)}</span></div>
-      <div class="drill-row"><span>Verkäufe</span><span>${kr.s.toLocaleString("de-DE")}</span></div>
+      <div class="drill-row"><span>Gesamtumsatz (Netto)</span><span>${fmt(kr.u)}</span></div>
+      <div style="font-size:10px;color:#475569;padding:4px 0 2px;text-transform:uppercase;letter-spacing:0.4px">Umsatz nach Kanal</div>
+      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block"></span>Inhouse</span><span>${fmt(rsInhouse)} (${kr.u>0?fmtP(rsInhouse/kr.u):"—"})</span></div>
+      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f97316;display:inline-block"></span>Lieferando</span><span style="color:${rsLdo>0?'#f97316':'#64748b'}">${fmt(rsLdo)} (${kr.u>0?fmtP(rsLdo/kr.u):"—"})</span></div>
+      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>Take Away</span><span>${fmt(rsTakeaway)} (${kr.u>0?fmtP(rsTakeaway/kr.u):"—"})</span></div>
+      <div style="border-top:1px solid #1e2d40;margin:6px 0"></div>
+      <div class="drill-row"><span>Verkäufe (Bons)</span><span>${kr.s.toLocaleString("de-DE")}</span></div>
       <div class="drill-row"><span>Ø Bon-Wert</span><span>${fmtD(kr.at)}</span></div>
       <div class="drill-row"><span>Food Cost</span><span style="color:${kr.fp>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(kr.fp)}</span></div>
-      <div class="ai-box">Rosenthaler macht ${km.u+kr.u>0?((kr.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${totalLdo>0?"Lieferando-Anteil: "+fmtP(totalLdo/Math.max(kr.u,1))+" — prüfe ob Lieferando-Preise ausreichend sind.":""}</div>
+      <div class="ai-box">Rosenthaler macht ${km.u+kr.u>0?((kr.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${rsLdo>0?"Lieferando-Anteil "+fmtP(kr.u>0?rsLdo/kr.u:0)+".":""} ${kr.at>km.at?"Höherer Bon-Wert als Mehringdamm (+"+fmtD(kr.at-km.at)+"/Bon).":"Niedrigerer Bon-Wert als Mehringdamm ("+fmtD(kr.at-km.at)+"/Bon)."}</div>
     </div>
 
     <div class="box">
@@ -1139,14 +1225,20 @@ function renderGuV(){
   var st=document.getElementById("standort").value;
   var k=kpi(gefiltert);
   var pk=getOrdio(von,bis,st);
+  var fk=getFixkostenTage(von,bis);
   var pa=pk.total>0?pk.total:k.u*0.33;
   var paReal=pk.total>0;
   var paPct=k.u>0?pa/k.u:0;
-  var mi=k.u*0.12,en=k.u*0.04,so=k.u*0.08;
-  var rohertrag=k.u-k.f;
+  // Lieferando-Umsatz für Provision berechnen
+  var txGuvG=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  var ldoUmsatz=txGuvG.reduce(function(s,r){return s+r.ldo;},0);
+  var ldoProv=ldoUmsatz*0.20;
+  var ldoProvPct=k.u>0?ldoProv/k.u:0;
+  var rohertrag=k.u-k.f-ldoProv;
   var cm=rohertrag-pa;
-  var ebitda=cm-mi-en-so;
   var cmPct=k.u>0?cm/k.u:0;
+  // EBITDA = CM minus alle Fixkosten
+  var ebitda=cm-fk.personalGemein-fk.managementFee-fk.miete-fk.versicherung-fk.werbeReise-fk.sonstBetrieb-fk.verwaltung-fk.instandhaltung-fk.abschreibung;
   var ebitdaPct=k.u>0?ebitda/k.u:0;
 
   var md=gefiltert.filter(function(r){return r.st==="Mehringdamm";});
@@ -1158,35 +1250,136 @@ function renderGuV(){
     <div class="grid2">
       <div class="box">
         <div class="box-title" style="color:#f97316">📄 Gewinn & Verlustrechnung</div>
-        <div class="box-sub">Zeitraum: ${document.getElementById("von").value} – ${document.getElementById("bis").value}</div>
-        ${!paReal?'<div style="background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:8px 10px;font-size:11px;color:#f97316;margin-bottom:12px">⚠️ Personalkosten sind Schätzwerte (33%). Für echte Zahlen Ordio-Daten laden.</div>':""}
+        <div class="box-sub">Zeitraum: ${von} – ${bis} · ${fk.tage} Tag${fk.tage!==1?"e":""}</div>
+        ${!paReal?'<div style="background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:8px 10px;font-size:11px;color:#f97316;margin-bottom:12px">⚠️ Operative Personalkosten sind Schätzwerte (33%). Für echte Zahlen Ordio-Daten laden.</div>':""}
 
         <div class="guv-row" style="cursor:default"><span style="color:#94a3b8">Nettoumsatz</span><span style="color:#22c55e;font-size:15px;font-weight:700">${fmt(k.u)}</span></div>
+
         <div class="guv-row" onclick="drill('d-guv-fc')"><span style="color:#94a3b8">— Food Cost (${fmtP(k.fp)}) ↓</span><span style="color:#ef4444">- ${fmt(k.f)}</span></div>
-        <div id="d-guv-fc" class="drill-panel" style="margin:0 0 0 0">
+        <div id="d-guv-fc" class="drill-panel">
           <div class="drill-row"><span>Mehringdamm</span><span style="color:${km.fp>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(km.fp)}</span></div>
           <div class="drill-row"><span>Rosenthaler</span><span style="color:${kr.fp>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(kr.fp)}</span></div>
           <div class="ai-box">${Math.abs(km.fp-kr.fp)>0.01?"Differenz "+fmtP(Math.abs(km.fp-kr.fp))+" zwischen Standorten. "+(km.fp>kr.fp?"Mehringdamm hat höheren FC.":"Rosenthaler hat höheren FC — Lieferando-Anteil prüfen."):"Beide Standorte ähnlich."}</div>
         </div>
 
+        <div class="guv-row" onclick="drill('d-guv-ldo')"><span style="color:#94a3b8">— Lieferando-Provision 20% (${fmtP(ldoProvPct)}) ↓</span><span style="color:#ef4444">- ${fmt(ldoProv)}</span></div>
+        <div id="d-guv-ldo" class="drill-panel">
+          <div class="drill-row"><span>Lieferando-Bruttoumsatz</span><span>${fmt(ldoUmsatz)}</span></div>
+          <div class="drill-row"><span>Provision 20%</span><span>${fmt(ldoProv)}</span></div>
+          <div class="drill-row"><span>Anteil am Gesamtumsatz</span><span>${fmtP(ldoProvPct)}</span></div>
+          <div class="ai-box">${ldoUmsatz>0?"Lieferando-Anteil "+fmtP(k.u>0?ldoUmsatz/k.u:0)+" vom Umsatz. Provision drückt Rohertrag um "+fmt(ldoProv)+".":"Kein Lieferando-Umsatz im Zeitraum."}</div>
+        </div>
+
         <div class="guv-row" style="cursor:default;border-top:1px solid #334155"><span style="color:#f1f5f9;font-weight:700">= Rohertrag</span><span style="color:#f1f5f9;font-weight:700">${fmt(rohertrag)} (${fmtP(k.u>0?rohertrag/k.u:0)})</span></div>
 
         <div class="guv-row" onclick="drill('d-guv-pa')">
-          <span style="color:#94a3b8">— Personal (${fmtP(paPct)}) ${paReal?'<span class="badge bb" style="font-size:9px">Ordio Live</span>':'<span class="badge by" style="font-size:9px">Schätzung</span>'} ↓</span>
+          <span style="color:#94a3b8">— Operative Personalkosten (${fmtP(paPct)}) ${paReal?'<span class="badge bb" style="font-size:9px">Ordio Live</span>':'<span class="badge by" style="font-size:9px">Schätzung</span>'} ↓</span>
           <span style="color:#8b5cf6">- ${fmt(pa)}</span>
         </div>
         <div id="d-guv-pa" class="drill-panel">
           <div class="drill-row"><span>Mehringdamm</span><span>${fmt(pkMd.total)} · ${km.u>0?fmtP(pkMd.total/km.u):"—"}</span></div>
           <div class="drill-row"><span>Rosenthaler</span><span>${fmt(pkRs.total)} · ${kr.u>0?fmtP(pkRs.total/kr.u):"—"}</span></div>
-          <div class="drill-row"><span>Gesamtstunden</span><span>${Math.round(pk.stunden)} h</span></div>
-          <div class="ai-box">${paPct>ZIELE.pa?"Personal "+fmtP(paPct-ZIELE.pa)+" über Ziel. Einsparungspotenzial: "+fmt((paPct-ZIELE.pa)*k.u)+"/Monat.":"Personal im Zielbereich."}</div>
+          <div class="drill-row"><span>Gesamtstunden (operativ)</span><span>${Math.round(pk.stunden)} h</span></div>
+          <div class="ai-box">${paPct>ZIELE.pa?"Operative Personalkosten "+fmtP(paPct-ZIELE.pa)+" über Ziel. Einsparungspotenzial: "+fmt((paPct-ZIELE.pa)*k.u)+".":"Operative Personalkosten im Zielbereich."}</div>
         </div>
 
         <div class="guv-row" style="cursor:default;border-top:2px solid #3b82f6"><span style="color:#60a5fa;font-weight:700;font-size:14px">= Contribution Margin</span><span style="color:#60a5fa;font-weight:700;font-size:14px">${fmt(cm)} (${fmtP(cmPct)})</span></div>
 
-        <div class="guv-row" style="cursor:default"><span style="color:#94a3b8">— Miete (12%)</span><span style="color:#ef4444">- ${fmt(mi)}</span></div>
-        <div class="guv-row" style="cursor:default"><span style="color:#94a3b8">— Energie (4%)</span><span style="color:#ef4444">- ${fmt(en)}</span></div>
-        <div class="guv-row" style="cursor:default"><span style="color:#94a3b8">— Sonstiges (8%)</span><span style="color:#ef4444">- ${fmt(so)}</span></div>
+        <div style="font-size:11px;color:#475569;padding:6px 0 4px;text-transform:uppercase;letter-spacing:0.5px">Fixkosten (${fk.tage} Tage anteilig)</div>
+
+        <div class="guv-row" onclick="drill('d-guv-personalgemein')"><span style="color:#94a3b8">— Personalgemeinkosten ↓</span><span style="color:#ef4444">- ${fmt(fk.personalGemein)}</span></div>
+        <div id="d-guv-personalgemein" class="drill-panel">
+          <div class="drill-row"><span>Kevin Weber</span><span>€ 4.175/Monat</span></div>
+          <div class="drill-row"><span>Jan Haring</span><span>€ 6.050/Monat</span></div>
+          <div class="drill-row"><span>Buted Deleg</span><span>€ 800/Monat</span></div>
+          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Gesamt/Monat</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.personalGemein)}</span></div>
+          <div class="drill-row"><span>Tagesanteil</span><span>${fmtD(FIXKOSTEN.personalGemein/30)}/Tag</span></div>
+        </div>
+
+        <div class="guv-row" onclick="drill('d-guv-mgmtfee')"><span style="color:#94a3b8">— Management Fee (Savory Stories) ↓</span><span style="color:#ef4444">- ${fmt(fk.managementFee)}</span></div>
+        <div id="d-guv-mgmtfee" class="drill-panel">
+          <div class="drill-row"><span>Miete/Pacht Mehringdamm</span><span>€ 3.850/Monat</span></div>
+          <div class="drill-row"><span>AFA Inventar (Anlagen)</span><span>€ 785/Monat</span></div>
+          <div class="drill-row"><span>Aufschlag 15%</span><span>€ 695/Monat</span></div>
+          <div class="drill-row"><span>Geschäftsführung (GF-Fee)</span><span>€ 6.000/Monat</span></div>
+          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Gesamt/Monat (lt. Vereinbarung)</span><span style="color:#f1f5f9">€ 11.330/Monat</span></div>
+          <div class="drill-row"><span>Tagesanteil</span><span>${fmtD(FIXKOSTEN.managementFee/30)}/Tag</span></div>
+        </div>
+
+        <div class="guv-row" onclick="drill('d-guv-miete')"><span style="color:#94a3b8">— Miete & Leasing ↓</span><span style="color:#ef4444">- ${fmt(fk.miete)}</span></div>
+        <div id="d-guv-miete" class="drill-panel">
+          <div class="drill-row"><span>Mieten und Pachten (BWA)</span><span>€ 9.971/Monat</span></div>
+          <div class="drill-row"><span>Miet- und Pachtnebenkosten</span><span>€ 1.764/Monat</span></div>
+          <div class="drill-row"><span>Mieten Einrichtungen/bewegl. WG</span><span>€ 1.662/Monat</span></div>
+          <div class="drill-row"><span>Mietleasing</span><span>€ 42/Monat</span></div>
+          <div class="drill-row" style="color:#475569;font-size:10px"><span>− davon Savory Stories (inkl. 15%)</span><span>− € 4.428/Monat</span></div>
+          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Gesamt/Monat</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.miete)}</span></div>
+          <div class="drill-row"><span>Tagesanteil</span><span>${fmtD(FIXKOSTEN.miete/30)}/Tag</span></div>
+        </div>
+
+        <div class="guv-row" onclick="drill('d-guv-werbe')"><span style="color:#94a3b8">— Werbe- & Reisekosten ↓</span><span style="color:#ef4444">- ${fmt(fk.werbeReise)}</span></div>
+        <div id="d-guv-werbe" class="drill-panel">
+          <div class="drill-row"><span>Werbekosten</span><span>€ 1.982/Monat</span></div>
+          <div class="drill-row"><span>Bewirtungskosten</span><span>€ 450/Monat</span></div>
+          <div class="drill-row"><span>Reisekosten Arbeitnehmer</span><span>€ 720/Monat</span></div>
+          <div class="drill-row"><span>Nicht abzugsfähige Bewirtung</span><span>€ 194/Monat</span></div>
+          <div class="drill-row"><span>Nicht abzugsfähige Betriebsausg.</span><span>€ 68/Monat</span></div>
+          <div class="drill-row"><span>Repräsentation, Geschenke, Aufmerksamkeiten</span><span>€ 71/Monat</span></div>
+          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Gesamt/Monat</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.werbeReise)}</span></div>
+          <div class="drill-row"><span>Tagesanteil</span><span>${fmtD(FIXKOSTEN.werbeReise/30)}/Tag</span></div>
+        </div>
+
+        <div class="guv-row" onclick="drill('d-guv-sonst')"><span style="color:#94a3b8">— Sonstige Betriebskosten ↓</span><span style="color:#ef4444">- ${fmt(fk.sonstBetrieb)}</span></div>
+        <div id="d-guv-sonst" class="drill-panel">
+          <div class="drill-row"><span>Fremdleistungen & Fremdarbeiten</span><span>€ 6.057/Monat</span></div>
+          <div class="drill-row"><span>Aufwand Lizenzen & Konzessionen</span><span>€ 1.594/Monat</span></div>
+          <div class="drill-row"><span>Küchenutensilien</span><span>€ 774/Monat</span></div>
+          <div class="drill-row"><span>Lightspeed Gebühren</span><span>€ 522/Monat</span></div>
+          <div class="drill-row"><span>Reinigungsmittel & -bedarf</span><span>€ 482/Monat</span></div>
+          <div class="drill-row"><span>Sonstiger Betriebsbedarf</span><span>€ 362/Monat</span></div>
+          <div class="drill-row"><span>Abraum- & Abfallbeseitigung</span><span>€ 229/Monat</span></div>
+          <div class="drill-row"><span>Gästebedarf, Geschirr, Besteck, Deko</span><span>€ 452/Monat</span></div>
+          <div class="drill-row"><span>Reinigung & Fremdreinigung</span><span>€ 85/Monat</span></div>
+          <div class="drill-row"><span>Fahrzeugkosten & Kfz-Leasing</span><span>€ 384/Monat</span></div>
+          <div class="drill-row"><span>Bürobedarf, Sicherheit, Sonstiges</span><span>€ 207/Monat</span></div>
+          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Gesamt/Monat (bereinigt)</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.sonstBetrieb)}</span></div>
+          <div class="drill-row"><span>Tagesanteil</span><span>${fmtD(FIXKOSTEN.sonstBetrieb/30)}/Tag</span></div>
+        </div>
+
+        <div class="guv-row" onclick="drill('d-guv-verwalt')"><span style="color:#94a3b8">— Verwaltungskosten ↓</span><span style="color:#ef4444">- ${fmt(fk.verwaltung)}</span></div>
+        <div id="d-guv-verwalt" class="drill-panel">
+          <div class="drill-row"><span>Buchführungskosten</span><span>€ 1.564/Monat</span></div>
+          <div class="drill-row"><span>Abschluss- & Prüfungskosten</span><span>€ 1.765/Monat</span></div>
+          <div class="drill-row"><span>Verpackungsmaterial</span><span>€ 1.811/Monat</span></div>
+          <div class="drill-row"><span>Rechts- & Beratungskosten</span><span>€ 254/Monat</span></div>
+          <div class="drill-row"><span>Telefon & Porto</span><span>€ 48/Monat</span></div>
+          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Gesamt/Monat</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.verwaltung)}</span></div>
+          <div class="drill-row"><span>Tagesanteil</span><span>${fmtD(FIXKOSTEN.verwaltung/30)}/Tag</span></div>
+        </div>
+
+        <div class="guv-row" onclick="drill('d-guv-instand')"><span style="color:#94a3b8">— Instandhaltung & Abschreibung ↓</span><span style="color:#ef4444">- ${fmt(fk.instandhaltung+fk.abschreibung)}</span></div>
+        <div id="d-guv-instand" class="drill-panel">
+          <div class="drill-row"><span>Reparatur & Instandhaltung Anlagen</span><span>€ 456/Monat</span></div>
+          <div class="drill-row"><span>Werkzeuge & Kleingeräte</span><span>€ 248/Monat</span></div>
+          <div class="drill-row"><span>Instandhaltung Beleuchtung</span><span>€ 13/Monat</span></div>
+          <div class="drill-row"><span>Abschreibungen Sachanlagen & Gebäude</span><span>€ 375/Monat</span></div>
+          <div class="drill-row"><span>Sofortabschreibung GWG</span><span>€ 407/Monat</span></div>
+          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Gesamt/Monat</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.instandhaltung+FIXKOSTEN.abschreibung)}</span></div>
+          <div class="drill-row"><span>Tagesanteil</span><span>${fmtD((FIXKOSTEN.instandhaltung+FIXKOSTEN.abschreibung)/30)}/Tag</span></div>
+        </div>
+
+        <div class="guv-row" onclick="drill('d-guv-versich')"><span style="color:#94a3b8">— Versicherungen & Beiträge ↓</span><span style="color:#ef4444">- ${fmt(fk.versicherung)}</span></div>
+        <div id="d-guv-versich" class="drill-panel">
+          <div class="drill-row"><span>Beiträge</span><span>€ 21/Monat</span></div>
+          <div class="drill-row"><span>Gebühren</span><span>€ 18/Monat</span></div>
+          <div class="drill-row"><span>Verspätungszuschläge</span><span>€ 5/Monat</span></div>
+          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Gesamt/Monat</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.versicherung)}</span></div>
+          <div class="drill-row"><span>Tagesanteil</span><span>${fmtD(FIXKOSTEN.versicherung/30)}/Tag</span></div>
+        </div>
+
+        <div class="guv-row" style="cursor:default;font-size:11px;color:#475569">
+          <span>Fixkosten gesamt/Monat</span><span>${fmt(FIXKOSTEN_GESAMT)}</span>
+        </div>
 
         <div class="guv-row" style="cursor:default;border-top:2px solid #f97316;margin-top:4px">
           <span style="color:#f1f5f9;font-weight:700;font-size:15px">= EBITDA</span>
@@ -1200,7 +1393,7 @@ function renderGuV(){
         <div class="box-sub">Ist vs. Ziel</div>
         ${[
           {n:"Food Cost %",w:fmtP(k.fp),z:fmtP(ZIELE.fc),ok:k.fp<=ZIELE.fc,warn:k.fp<=ZIELE.fc+0.03},
-          {n:"Personal-Quote",w:fmtP(paPct)+(paReal?" (live)":""),z:fmtP(ZIELE.pa),ok:paPct<=ZIELE.pa,warn:paPct<=ZIELE.pa+0.03},
+          {n:"Operative Personal-Quote",w:fmtP(paPct)+(paReal?" (live)":""),z:fmtP(ZIELE.pa),ok:paPct<=ZIELE.pa,warn:paPct<=ZIELE.pa+0.03},
           {n:"Contribution Margin",w:fmtP(cmPct),z:fmtP(ZIELE.cm),ok:cmPct>=ZIELE.cm,warn:cmPct>=ZIELE.cm-0.03},
           {n:"Rohertrag-Marge",w:fmtP(k.u>0?rohertrag/k.u:0),z:"65%+",ok:rohertrag/k.u>=0.65,warn:rohertrag/k.u>=0.62},
           {n:"EBITDA-Marge",w:fmtP(ebitdaPct),z:fmtP(ZIELE.ebitda),ok:ebitdaPct>=ZIELE.ebitda,warn:ebitdaPct>=ZIELE.ebitda*0.9},
@@ -1213,9 +1406,9 @@ function renderGuV(){
 
         <div class="ai-box" style="margin-top:14px">
           ${ebitdaPct>=ZIELE.ebitda&&cmPct>=ZIELE.cm?"Starke Performance — alle Hauptkennzahlen im Ziel.":
-            cmPct>=ZIELE.cm?"Contribution Margin gut. Fokus auf Fixkosten (Miete/Energie) zur EBITDA-Verbesserung.":
-            paPct>ZIELE.pa&&k.fp>ZIELE.fc?"Beide Kostenblöcke über Ziel. Priorität: Personal-Effizienz ("+fmt((paPct-ZIELE.pa)*k.u)+"/Monat Potenzial).":
-            paPct>ZIELE.pa?"Personalkosten über Ziel. "+fmt((paPct-ZIELE.pa)*k.u)+"/Monat Einsparungspotenzial.":
+            cmPct>=ZIELE.cm?"Contribution Margin gut. Fixkosten: "+fmt(fk.gesamt)+" im Zeitraum ("+fmt(FIXKOSTEN_GESAMT)+"/Monat).":
+            paPct>ZIELE.pa&&k.fp>ZIELE.fc?"Beide Kostenblöcke über Ziel. Priorität: Personal-Effizienz ("+fmt((paPct-ZIELE.pa)*k.u)+" Potenzial).":
+            paPct>ZIELE.pa?"Operative Personalkosten über Ziel. "+fmt((paPct-ZIELE.pa)*k.u)+" Einsparungspotenzial.":
             "Food Cost über Ziel. Portionsgrößen und Wareneinsatz prüfen."}
         </div>
       </div>
