@@ -826,83 +826,18 @@ function renderOverview(){
       </div>
     </div>
 
-    ${(function(){
-      var tb='';
-      var tage=new Set(gefiltert.map(function(r){return r.datum;})).size||1;
-      var vorperiode=alle.filter(function(r){
-        var vonD=new Date(von),bisD=new Date(bis);
-        var dl=bisD-vonD;
-        var vB=new Date(vonD.getTime()-1);
-        var vV=new Date(vB.getTime()-dl);
-        var vVs=vV.toISOString().slice(0,10).split('-').reverse().join('.');
-        var vBs=vB.toISOString().slice(0,10).split('-').reverse().join('.');
-        return r.datum>=vVs&&r.datum<=vBs&&(st==='Alle Standorte'||r.st===st);
-      });
-      var kVor=kpi(vorperiode);
-      var uDiff=kVor.u>0?((k.u-kVor.u)/kVor.u*100):null;
-      var paQuote=k.u>0?pa/k.u:0;
-      var uStd=pk.stunden>0?k.u/pk.stunden:0;
-      var wasteMd=waste.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort==='Mehringdamm';});
-      var wasteRs=waste.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort==='Rosenthaler Straße';});
-      var wasteMdT=wasteMd.reduce(function(s,r){return s+r.kosten;},0);
-      var wasteRsT=wasteRs.reduce(function(s,r){return s+r.kosten;},0);
-      var bonsGef=bons.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==='Alle Standorte'||r.standort===st);});
-      var bonsInh=bonsGef.filter(function(r){return r.kanal!=='Lieferando';});
-      var tkGes=bonsInh.reduce(function(s,r){return s+r.trinkgeld;},0);
-      var tkTot=bonsInh.reduce(function(s,r){return s+r.total;},0);
-      var tkQ=tkTot>0?tkGes/tkTot:0;
-      var stornosN=bonsGef.filter(function(r){return r.storniert===1;}).length;
-      var maMapTK={};
-      bonsInh.filter(function(r){return r.mitarbeiter&&r.mitarbeiter.indexOf(',')===-1&&r.mitarbeiter.indexOf('Online')===-1;}).forEach(function(r){
-        if(!maMapTK[r.mitarbeiter])maMapTK[r.mitarbeiter]={tk:0,total:0,bons:0};
-        maMapTK[r.mitarbeiter].tk+=r.trinkgeld;maMapTK[r.mitarbeiter].total+=r.total;maMapTK[r.mitarbeiter].bons++;
-      });
-      var bestTK=Object.entries(maMapTK).filter(function(e){return e[1].bons>=2;}).sort(function(a,b){return(b[1].total>0?b[1].tk/b[1].total:0)-(a[1].total>0?a[1].tk/a[1].total:0);});
-      var smAll=pk.data.filter(function(r){return r.bereich==='Social Media';});
-      var txGef=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==='Alle Standorte'||r.standort===st);});
-      var ldoBrutto=txGef.reduce(function(s,r){return s+r.ldo;},0);
-      var anomalien=[];
-      if(stornosN>tage*0.5&&stornosN>2)anomalien.push('Stornos: '+stornosN+'x - bitte prüfen');
-      if(paQuote>ZIELE.pa*1.1)anomalien.push('Personalquote '+fmtP(paQuote)+' - '+fmtP(paQuote-ZIELE.pa)+' über Ziel');
-      if(k.fp>ZIELE.fc*1.1)anomalien.push('Food Cost '+fmtP(k.fp)+' - '+fmtP(k.fp-ZIELE.fc)+' über Ziel');
-      if((st==='Alle Standorte'||st==='Mehringdamm')&&wasteMd.length===0)anomalien.push('Kein Waste erfasst: Mehringdamm');
-      if((st==='Alle Standorte'||st==='Rosenthaler Straße')&&wasteRs.length===0)anomalien.push('Kein Waste erfasst: Rosenthaler Straße');
-      if(smAll.length>0)anomalien.push('Social Media: '+smAll.map(function(r){return r.mitarbeiter+' ('+r.standort.replace('Rosenthaler Straße','Rosi')+')';}).filter(function(v,i,a){return a.indexOf(v)===i;}).join(', '));
-      if(uStd>0&&uStd<ZIELE.umsatzStd*0.7)anomalien.push('Umsatz/Stunde '+fmt(uStd)+' - deutlich unter Ziel €'+ZIELE.umsatzStd);
-      function blk(e,t,c,rows){return '<div style="background:#0a1628;border-radius:8px;border-top:3px solid '+c+';padding:12px 14px"><div style="font-size:10px;font-weight:700;color:'+c+';margin-bottom:8px;text-transform:uppercase;letter-spacing:0.6px">'+e+' '+t+'</div><div style="font-size:11px;color:#94a3b8;line-height:1.9">'+rows.join('<br>')+'</div></div>';}
-      function v(val,ok,neu){return '<span style="color:'+(ok?'#22c55e':neu?'#f97316':'#ef4444')+';font-weight:600">'+val+'</span>';}
-      var uRows=[
-        'Umsatz: '+v(fmt(k.u),true,false)+(uDiff!==null?' · '+v((uDiff>=0?'+':'')+uDiff.toFixed(1)+'% vs. Vorperiode',uDiff>=0,uDiff>=-5):'')+'  ·  '+tage+' Tag'+(tage!==1?'e':''),
-        '🟠 Mehringdamm '+v(fmt(km.u),true,false)+'  ·  🔵 Rosenthaler '+v(fmt(kr.u),true,false),
-        'Ø Bon-Wert: '+v(fmtD(bonWertData.avg),bonWertData.avg>=ZIELE.bonWert,bonWertData.avg>=ZIELE.bonWert*0.85)+(ldoBrutto>0?'  ·  🛵 Lieferando: '+fmt(ldoBrutto)+' ('+fmtP(k.u>0?ldoBrutto/k.u:0)+')':'')
-      ];
-      var paRows=[
-        'Kosten: '+v(fmt(pa),paQuote<=ZIELE.pa,paQuote<=ZIELE.pa*1.1)+'  ·  Quote: '+v(fmtP(paQuote),paQuote<=ZIELE.pa,paQuote<=ZIELE.pa*1.1)+' (Ziel '+fmtP(ZIELE.pa)+')',
-        'Umsatz/Stunde: '+v(fmt(uStd),uStd>=ZIELE.umsatzStd,uStd>=ZIELE.umsatzStd*0.85)+' (Ziel €'+ZIELE.umsatzStd+')'
-      ];
-      if(smAll.length>0)paRows.push('📱 Social Media: '+smAll.map(function(r){return '<span style="color:#8b5cf6;font-weight:600">'+r.mitarbeiter+'</span> ('+r.standort.replace('Rosenthaler Straße','Rosi')+', '+r.startZeit+'-'+r.endeZeit+')';}).filter(function(v,i,a){return a.indexOf(v)===i;}).join(', '));
-      var topW=wasteMd.concat(wasteRs).sort(function(a,b){return b.kosten-a.kosten;}).slice(0,3);
-      var wRows=[
-        'Food Cost: '+v(fmtP(k.fp),k.fp<=ZIELE.fc,k.fp<=ZIELE.fc*1.1)+' (Ziel '+fmtP(ZIELE.fc)+')',
-        '🟠 MD Waste: '+(wasteMd.length>0?v(fmt(wasteMdT),false,true)+' ('+wasteMd.length+' Pos.)':'<span style="color:#ef4444;font-weight:600">nicht erfasst ⚠️</span>'),
-        '🔵 RS Waste: '+(wasteRs.length>0?v(fmt(wasteRsT),false,true)+' ('+wasteRs.length+' Pos.)':'<span style="color:#ef4444;font-weight:600">nicht erfasst ⚠️</span>')
-      ];
-      if(topW.length>0)wRows.push('Top: '+topW.map(function(r){return r.artikel+' '+fmt(r.kosten);}).join(' · '));
-      var tkRows=[
-        'TK-Quote: '+v(fmtP(tkQ),tkQ>=0.05,tkQ>=0.03)+'  ·  '+fmt(tkGes)+' gesamt',
-        'Stornos: '+v(stornosN+'x',stornosN===0,stornosN<=tage*0.3)
-      ];
-      if(bestTK.length>0)tkRows.push('Bester MA: <span style="color:#f1f5f9;font-weight:600">'+bestTK[0][0]+'</span> ('+fmtP(bestTK[0][1].total>0?bestTK[0][1].tk/bestTK[0][1].total:0)+')');
-      var uBlk  = blk('💰','Umsatz',uDiff===null?'#64748b':uDiff>=0?'#22c55e':'#ef4444',uRows);
-      var paBlk = blk('👥','Personal',paQuote>ZIELE.pa*1.1?'#ef4444':paQuote>ZIELE.pa?'#f97316':'#22c55e',paRows);
-      var fcBlk = blk('🥩','Food Cost & Waste',k.fp>ZIELE.fc?'#ef4444':'#22c55e',wRows);
-      var tkBlk = blk('💝','Trinkgeld',tkQ>=0.05?'#22c55e':'#f97316',tkRows);
-      var anomBlk = anomalien.length>0?blk('⚠️','Besonderheiten','#f97316',anomalien.map(function(a){return a;})):'';
-      var grid = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:'+(anomalien.length>0?'10px':'0')+'">'
-        +uBlk+paBlk+fcBlk+tkBlk+'</div>';
-      if(anomalien.length>0) grid += anomBlk;
-      return '<div class="box" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div class="box-title">📋 Tagesbericht</div><div class="box-sub">'+von+(von!==bis?' - '+bis:'')+' · automatisch</div></div></div>'+grid+'</div>';
-    })()}
+    <div class="box" style="margin-top:14px" id="tagesbericht-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div>
+          <div class="box-title">📋 Tagesbericht</div>
+          <div class="box-sub">${von}${von!==bis?' - '+bis:''} · KI-Interpretation</div>
+        </div>
+        <button onclick="generiereKIBericht()" id="btn-bericht" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Aktualisieren</button>
+      </div>
+      <div id="ki-bericht-inhalt" style="font-size:12px;color:#94a3b8;line-height:1.8">
+        <div style="color:#475569;font-style:italic">Klicke "Aktualisieren" für KI-Interpretation der aktuellen Daten.</div>
+      </div>
+    </div>
     `;
 
   dc("c-ov-tag");
@@ -3373,6 +3308,172 @@ function buildTagesberichtHTML(vonParam, bisParam) {
 
   return html;
 }
+
+function generiereKIBericht() {
+  var apiKey = localStorage.getItem("bbn_ai_key") || "";
+  if(!apiKey) {
+    document.getElementById("ki-bericht-inhalt").innerHTML = 
+      '<div style="color:#f97316">⚠️ Bitte zuerst den Anthropic API Key im KI-Chat eingeben.</div>';
+    return;
+  }
+
+  var btn = document.getElementById("btn-bericht");
+  var inhalt = document.getElementById("ki-bericht-inhalt");
+  btn.disabled = true;
+  btn.textContent = "⏳ Generiere...";
+  inhalt.innerHTML = '<div style="color:#475569;font-style:italic">KI analysiert die Daten...</div>';
+
+  var von = document.getElementById("von").value;
+  var bis = document.getElementById("bis").value;
+  var st  = document.getElementById("standort").value;
+
+  // Daten aufbereiten
+  var k   = kpi(gefiltert);
+  var tage = new Set(gefiltert.map(function(r){return r.datum;})).size||1;
+  var pk  = getOrdio(von,bis,st);
+  var pa  = pk.total>0?pk.total:k.u*0.33;
+  var paReal = pk.total>0;
+  var paQuote = k.u>0?pa/k.u:0;
+  var smKosten = getSocialMediaKosten(von,bis,st);
+  var fkOv = getFixkostenTage(von,bis);
+  var ldoProv = lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);}).reduce(function(s,r){return s+r.ldo;},0)*0.20;
+  var cm = k.u-k.f-ldoProv-pa;
+  var ebitda = cm-fkOv.gesamt-smKosten;
+  var umsatzStd = pk.stunden>0?k.u/pk.stunden:0;
+
+  // Standort-Split
+  var md = gefiltert.filter(function(r){return r.st==="Mehringdamm";});
+  var rs = gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";});
+  var km = kpi(md), kr = kpi(rs);
+  var pkMd = getOrdio(von,bis,"Mehringdamm");
+  var pkRs = getOrdio(von,bis,"Rosenthaler Straße");
+  var bonWertData = getBonWert(von,bis,st);
+  var bonWertMd = getBonWert(von,bis,"Mehringdamm");
+  var bonWertRs = getBonWert(von,bis,"Rosenthaler Straße");
+
+  // Vorperiode
+  var vonD = new Date(von.split('.').reverse().join('-'));
+  var bisD = new Date(bis.split('.').reverse().join('-'));
+  var dl = bisD - vonD;
+  var vorBis = new Date(vonD.getTime()-86400000);
+  var vorVon = new Date(vorBis.getTime()-dl);
+  function fmtDE(d){return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();}
+  var vorperiode = alle.filter(function(r){return r.datum>=fmtDE(vorVon)&&r.datum<=fmtDE(vorBis)&&(st==="Alle Standorte"||r.st===st);});
+  var kVor = kpi(vorperiode);
+  var uDiff = kVor.u>0?((k.u-kVor.u)/kVor.u*100):null;
+
+  // Waste
+  var wasteMd = waste.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort==="Mehringdamm";});
+  var wasteRs = waste.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort==="Rosenthaler Straße";});
+  var wasteMdT = wasteMd.reduce(function(s,r){return s+r.kosten;},0);
+  var wasteRsT = wasteRs.reduce(function(s,r){return s+r.kosten;},0);
+
+  // Trinkgeld
+  var bonsGef = bons.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  var bonsInh = bonsGef.filter(function(r){return r.kanal!=="Lieferando";});
+  var tkGes = bonsInh.reduce(function(s,r){return s+r.trinkgeld;},0);
+  var tkTot = bonsInh.reduce(function(s,r){return s+r.total;},0);
+  var tkQ = tkTot>0?tkGes/tkTot:0;
+  var stornosN = bonsGef.filter(function(r){return r.storniert===1;}).length;
+
+  // LDO
+  var txGef = lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  var ldoBrutto = txGef.reduce(function(s,r){return s+r.ldo;},0);
+
+  // Social Media
+  var smAll = pk.data.filter(function(r){return r.bereich==="Social Media";});
+
+  // Prompt aufbauen
+  var prompt = "Du bist Betriebsanalyst für Bang Bang Noodles Berlin (2 Standorte: Mehringdamm und Rosenthaler Straße).
+
+";
+  prompt += "Schreibe einen kurzen, interpretierten Tagesbericht auf Deutsch. NICHT einfach Zahlen aufzählen — erkläre was die Zahlen BEDEUTEN, warum sie gut oder schlecht sind, und welche Rückschlüsse man ziehen kann. Struktur: 4-5 kurze Abschnitte mit Überschrift. Direkte, klare Sprache.
+
+";
+  prompt += "ZEITRAUM: "+von+(von!==bis?" bis "+bis:"")+" ("+tage+" Tag"+(tage!==1?"e":"")+")
+
+";
+  prompt += "UMSATZ:
+";
+  prompt += "- Gesamt Netto: "+fmt(k.u)+" | Ø "+fmt(k.u/tage)+"/Tag
+";
+  prompt += "- Mehringdamm: "+fmt(km.u)+" | Rosenthaler: "+fmt(kr.u)+"
+";
+  if(uDiff!==null) prompt += "- Vergleich Vorperiode: "+(uDiff>=0?"+":"")+uDiff.toFixed(1)+"% (Vorperiode: "+fmt(kVor.u)+")
+";
+  prompt += "- Lieferando Brutto: "+fmt(ldoBrutto)+" ("+( k.u>0?(ldoBrutto/k.u*100).toFixed(1):0)+"% vom Umsatz)
+";
+  prompt += "- Ø Bon-Wert: "+fmtD(bonWertData.avg)+" (MD: "+fmtD(bonWertMd.avg)+" | RS: "+fmtD(bonWertRs.avg)+") | Ziel: €22
+
+";
+  prompt += "PERSONAL:
+";
+  prompt += "- Operative Kosten: "+fmt(pa)+" ("+( k.u>0?(paQuote*100).toFixed(1):0)+"% vom Umsatz) | Ziel: 25%
+";
+  prompt += "- Mehringdamm: "+fmt(pkMd.total)+" ("+(km.u>0?(pkMd.total/km.u*100).toFixed(1):0)+"%) | Rosenthaler: "+fmt(pkRs.total)+" ("+(kr.u>0?(pkRs.total/kr.u*100).toFixed(1):0)+"%)
+";
+  prompt += "- Umsatz/Personalstunde: "+fmt(umsatzStd)+"/h | Ziel: €115
+";
+  if(smAll.length>0) prompt += "- Social Media: "+smAll.map(function(r){return r.mitarbeiter+" ("+r.standort.replace("Rosenthaler Straße","Rosi")+")";}).join(", ")+"
+";
+  prompt += "
+FOOD COST & WASTE:
+";
+  prompt += "- Food Cost: "+fmt(k.f)+" ("+fmtP(k.fp)+") | Ziel: 25%
+";
+  prompt += "- Mehringdamm FC: "+fmtP(km.fp)+" | Rosenthaler FC: "+fmtP(kr.fp)+"
+";
+  prompt += "- Waste Mehringdamm: "+(wasteMd.length>0?fmt(wasteMdT)+" ("+wasteMd.length+" Pos.)":"NICHT ERFASST")+"
+";
+  prompt += "- Waste Rosenthaler: "+(wasteRs.length>0?fmt(wasteRsT)+" ("+wasteRs.length+" Pos.)":"NICHT ERFASST")+"
+";
+  prompt += "
+TRINKGELD & STORNOS:
+";
+  prompt += "- TK-Quote: "+fmtP(tkQ)+" | Gesamt: "+fmt(tkGes)+" | Ziel: 5%
+";
+  prompt += "- Stornierungen: "+stornosN+"x
+";
+  prompt += "
+ERGEBNIS:
+";
+  prompt += "- Contribution Margin: "+fmt(cm)+" ("+fmtP(k.u>0?cm/k.u:0)+") | Ziel: 40%
+";
+  prompt += "- EBITDA (geschätzt): "+fmt(ebitda)+" ("+fmtP(k.u>0?ebitda/k.u:0)+") | Ziel: 10%
+
+";
+  prompt += "Schreibe jetzt den interpretierten Bericht. Maximal 350 Wörter. Keine Tabellen, kein Markdown. Kurze Abschnitte mit fetter Überschrift in HTML (<b>Überschrift</b>), dann 2-3 Sätze Fließtext. Fange direkt mit dem ersten Abschnitt an.";
+
+  fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 800,
+      messages: [{role: "user", content: prompt}]
+    })
+  }).then(function(r){return r.json();}).then(function(data){
+    btn.disabled = false;
+    btn.textContent = "🤖 Aktualisieren";
+    if(data.content && data.content[0]) {
+      // Format response into colored sections
+      var text = data.content[0].text;
+      inhalt.innerHTML = '<div style="line-height:1.9;font-size:12px;color:#94a3b8">'+text+'</div>';
+    } else {
+      inhalt.innerHTML = '<div style="color:#ef4444">Fehler: '+JSON.stringify(data.error||data)+'</div>';
+    }
+  }).catch(function(e){
+    btn.disabled = false;
+    btn.textContent = "🤖 Aktualisieren";
+    inhalt.innerHTML = '<div style="color:#ef4444">Fehler: '+e.message+'</div>';
+  });
+}
+
 
 function buildAiContext() {
   // Aggregiere alle verfügbaren Daten zu einem kompakten Kontext
