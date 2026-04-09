@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="de">
 <head>
 <meta charset="UTF-8">
@@ -106,8 +107,8 @@ canvas{max-height:220px}
 .ampel-dot{width:10px;height:10px;border-radius:50%}
 
 /* ============================================================
-   KI ASSISTENT — Floating Chat
-   ============================================================ */
+KI ASSISTENT — Floating Chat
+============================================================ */
 #ai-fab{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 20px #7c3aed60;z-index:1000;transition:transform 0.2s}
 #ai-fab:hover{transform:scale(1.08)}
 #ai-fab .ai-badge{position:absolute;top:-3px;right:-3px;background:#22c55e;width:12px;height:12px;border-radius:50%;border:2px solid #0a0f1e;display:none}
@@ -137,100 +138,101 @@ canvas{max-height:220px}
 #ai-send:hover{background:#6d28d9}
 #ai-send:disabled{background:#2d3f54;color:#475569;cursor:not-allowed}
 /* ============================================================
-   RESPONSIVE — Mobile (max 768px)
-   ============================================================ */
+RESPONSIVE — Mobile (max 768px)
+============================================================ */
 @media(max-width:768px){
-  /* HEADER */
-  .header{padding:10px 12px;flex-wrap:wrap;gap:8px}
-  .header h1{font-size:13px}
-  .header>div:last-child{width:100%;display:flex;justify-content:space-between}
-  .header>div:last-child select{flex:1}
+/* HEADER */
+.header{padding:10px 12px;flex-wrap:wrap;gap:8px}
+.header h1{font-size:13px}
+.header>div:last-child{width:100%;display:flex;justify-content:space-between}
+.header>div:last-child select{flex:1}
 
-  /* FILTER BAR */
-  .filterbar{padding:8px 12px;flex-wrap:wrap;gap:6px}
-  .filterbar input[type=date]{width:calc(50% - 14px);font-size:11px}
-  .filterbar>div{width:100%;display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .filterbar .apply-btn{width:100%;margin-left:0;margin-top:4px}
+/* FILTER BAR */
+.filterbar{padding:8px 12px;flex-wrap:wrap;gap:6px}
+.filterbar input[type=date]{width:calc(50% - 14px);font-size:11px}
+.filterbar>div{width:100%;display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.filterbar .apply-btn{width:100%;margin-left:0;margin-top:4px}
 
-  /* TABS — horizontaler Scroll */
-  .tabs{padding:0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
-  .tabs::-webkit-scrollbar{display:none}
-  .tab{padding:10px 12px;font-size:11px}
+/* TABS — horizontaler Scroll */
+.tabs{padding:0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:10px 12px;font-size:11px}
 
-  /* CONTENT */
-  .content{padding:12px}
+/* CONTENT */
+.content{padding:12px}
 
-  /* KPI GRID — 2 Spalten statt 4 */
-  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
-  .kpi-val{font-size:17px}
-  .kpi-label{font-size:10px}
-  .kpi-ai{font-size:9px}
+/* KPI GRID — 2 Spalten statt 4 */
+.kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+.kpi-val{font-size:17px}
+.kpi-label{font-size:10px}
+.kpi-ai{font-size:9px}
 
-  /* STANDORT CARDS — untereinander */
-  .st-cards{grid-template-columns:1fr}
-  .st-val{font-size:20px}
+/* STANDORT CARDS — untereinander */
+.st-cards{grid-template-columns:1fr}
+.st-val{font-size:20px}
 
-  /* GRID 2/3 — untereinander */
-  .grid2{grid-template-columns:1fr}
-  .grid3{grid-template-columns:1fr}
+/* GRID 2/3 — untereinander */
+.grid2{grid-template-columns:1fr}
+.grid3{grid-template-columns:1fr}
 
-  /* BOX */
-  .box{padding:12px;border-radius:8px}
-  .box-title{font-size:12px}
+/* BOX */
+.box{padding:12px;border-radius:8px}
+.box-title{font-size:12px}
 
-  /* TABELLEN — horizontal scrollbar */
-  .speise-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
-  .speise-table th,.speise-table td{padding:7px 8px;font-size:11px}
+/* TABELLEN — horizontal scrollbar */
+.speise-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+.speise-table th,.speise-table td{padding:7px 8px;font-size:11px}
 
-  /* MA ROWS */
-  .ma-row{flex-wrap:wrap;gap:4px}
-  .ma-name{min-width:100%;font-size:11px}
-  .ma-stat{min-width:auto;font-size:10px;text-align:left}
-  .ma-bar-wrap{width:100%}
+/* MA ROWS */
+.ma-row{flex-wrap:wrap;gap:4px}
+.ma-name{min-width:100%;font-size:11px}
+.ma-stat{min-width:auto;font-size:10px;text-align:left}
+.ma-bar-wrap{width:100%}
 
-  /* DRILL PANEL */
-  .drill-panel{padding:10px}
-  .drill-row{font-size:11px;flex-wrap:wrap;gap:2px}
+/* DRILL PANEL */
+.drill-panel{padding:10px}
+.drill-row{font-size:11px;flex-wrap:wrap;gap:2px}
 
-  /* GuV ROWS */
-  .guv-row{font-size:12px;padding:7px 0}
+/* GuV ROWS */
+.guv-row{font-size:12px;padding:7px 0}
 
-  /* SLIDER */
-  .slider-row{margin-bottom:12px}
-  .slider-top{font-size:11px}
+/* SLIDER */
+.slider-row{margin-bottom:12px}
+.slider-top{font-size:11px}
 
-  /* CHARTS — etwas höher auf Mobile */
-  canvas{max-height:180px}
+/* CHARTS — etwas höher auf Mobile */
+canvas{max-height:180px}
 
-  /* AMPEL */
-  .ampel-row{font-size:11px;padding:7px 0}
+/* AMPEL */
+.ampel-row{font-size:11px;padding:7px 0}
 
-  /* AI PANEL — Fullscreen auf Mobile */
-  #ai-fab{bottom:80px;right:16px;width:42px;height:42px;font-size:16px}
-  #ai-panel{bottom:0;right:0;left:0;width:100%;height:90vh;border-radius:16px 16px 0 0}
-  #ai-messages{padding:10px}
-  .ai-msg{max-width:92%;font-size:11px}
-  #ai-input{font-size:14px}
+/* AI PANEL — Fullscreen auf Mobile */
+#ai-fab{bottom:80px;right:16px;width:42px;height:42px;font-size:16px}
+#ai-panel{bottom:0;right:0;left:0;width:100%;height:90vh;border-radius:16px 16px 0 0}
+#ai-messages{padding:10px}
+.ai-msg{max-width:92%;font-size:11px}
+#ai-input{font-size:14px}
 
-  /* CLOSING ROW */
-  .closing-row{font-size:11px}
+/* CLOSING ROW */
+.closing-row{font-size:11px}
 
-  /* BADGES */
-  .badge{font-size:9px;padding:2px 5px}
+/* BADGES */
+.badge{font-size:9px;padding:2px 5px}
 
-  /* ALERT */
-  .alert{font-size:11px;padding:8px 10px}
+/* ALERT */
+.alert{font-size:11px;padding:8px 10px}
 }
 
 /* Extra klein (max 400px) */
 @media(max-width:400px){
-  .kpi-grid{grid-template-columns:1fr}
-  .kpi-val{font-size:20px}
-  .header h1{font-size:12px}
-  .tab{padding:8px 10px;font-size:10px}
-  .filterbar>div .qbtn{font-size:10px;padding:3px 6px}
+.kpi-grid{grid-template-columns:1fr}
+.kpi-val{font-size:20px}
+.header h1{font-size:12px}
+.tab{padding:8px 10px;font-size:10px}
+.filterbar>div .qbtn{font-size:10px;padding:3px 6px}
 }
 </style>
+
 </head>
 <body>
 
@@ -2897,6 +2899,7 @@ ladeDaten();
 <!-- ============================================================
      KI ASSISTENT
      ============================================================ -->
+
 <button id="ai-fab" onclick="toggleAiPanel()" title="KI Assistent">
   🤖<span class="ai-badge" id="ai-badge"></span>
 </button>
@@ -3388,65 +3391,32 @@ function generiereKIBericht() {
   var smAll = pk.data.filter(function(r){return r.bereich==="Social Media";});
 
   // Prompt aufbauen
-  var prompt = "Du bist Betriebsanalyst für Bang Bang Noodles Berlin (2 Standorte: Mehringdamm und Rosenthaler Straße).
-
-";
-  prompt += "Schreibe einen kurzen, interpretierten Tagesbericht auf Deutsch. NICHT einfach Zahlen aufzählen — erkläre was die Zahlen BEDEUTEN, warum sie gut oder schlecht sind, und welche Rückschlüsse man ziehen kann. Struktur: 4-5 kurze Abschnitte mit Überschrift. Direkte, klare Sprache.
-
-";
-  prompt += "ZEITRAUM: "+vonDE+(vonDE!==bisDE?" bis "+bisDE:"")+" ("+tage+" Tag"+(tage!==1?"e":"")+")
-
-";
-  prompt += "UMSATZ:
-";
-  prompt += "- Gesamt Netto: "+fmt(k.u)+" | Ø "+fmt(k.u/tage)+"/Tag
-";
-  prompt += "- Mehringdamm: "+fmt(km.u)+" | Rosenthaler: "+fmt(kr.u)+"
-";
-  if(uDiff!==null) prompt += "- Vergleich Vorperiode: "+(uDiff>=0?"+":"")+uDiff.toFixed(1)+"% (Vorperiode: "+fmt(kVor.u)+")
-";
-  prompt += "- Lieferando Brutto: "+fmt(ldoBrutto)+" ("+( k.u>0?(ldoBrutto/k.u*100).toFixed(1):0)+"% vom Umsatz)
-";
-  prompt += "- Ø Bon-Wert: "+fmtD(bonWertData.avg)+" (MD: "+fmtD(bonWertMd.avg)+" | RS: "+fmtD(bonWertRs.avg)+") | Ziel: €22
-
-";
-  prompt += "PERSONAL:
-";
-  prompt += "- Operative Kosten: "+fmt(pa)+" ("+( k.u>0?(paQuote*100).toFixed(1):0)+"% vom Umsatz) | Ziel: 25%
-";
-  prompt += "- Mehringdamm: "+fmt(pkMd.total)+" ("+(km.u>0?(pkMd.total/km.u*100).toFixed(1):0)+"%) | Rosenthaler: "+fmt(pkRs.total)+" ("+(kr.u>0?(pkRs.total/kr.u*100).toFixed(1):0)+"%)
-";
-  prompt += "- Umsatz/Personalstunde: "+fmt(umsatzStd)+"/h | Ziel: €115
-";
-  if(smAll.length>0) prompt += "- Social Media: "+smAll.map(function(r){return r.mitarbeiter+" ("+r.standort.replace("Rosenthaler Straße","Rosi")+")";}).join(", ")+"
-";
-  prompt += "
-FOOD COST & WASTE:
-";
-  prompt += "- Food Cost: "+fmt(k.f)+" ("+fmtP(k.fp)+") | Ziel: 25%
-";
-  prompt += "- Mehringdamm FC: "+fmtP(km.fp)+" | Rosenthaler FC: "+fmtP(kr.fp)+"
-";
-  prompt += "- Waste Mehringdamm: "+(wasteMd.length>0?fmt(wasteMdT)+" ("+wasteMd.length+" Pos.)":"NICHT ERFASST")+"
-";
-  prompt += "- Waste Rosenthaler: "+(wasteRs.length>0?fmt(wasteRsT)+" ("+wasteRs.length+" Pos.)":"NICHT ERFASST")+"
-";
-  prompt += "
-TRINKGELD & STORNOS:
-";
-  prompt += "- TK-Quote: "+fmtP(tkQ)+" | Gesamt: "+fmt(tkGes)+" | Ziel: 5%
-";
-  prompt += "- Stornierungen: "+stornosN+"x
-";
-  prompt += "
-ERGEBNIS:
-";
-  prompt += "- Contribution Margin: "+fmt(cm)+" ("+fmtP(k.u>0?cm/k.u:0)+") | Ziel: 40%
-";
-  prompt += "- EBITDA (geschätzt): "+fmt(ebitda)+" ("+fmtP(k.u>0?ebitda/k.u:0)+") | Ziel: 10%
-
-";
-  prompt += "Schreibe jetzt den interpretierten Bericht. Maximal 350 Wörter. Keine Tabellen, kein Markdown. Kurze Abschnitte mit fetter Überschrift in HTML (<b>Überschrift</b>), dann 2-3 Sätze Fließtext. Fange direkt mit dem ersten Abschnitt an.";
+  var prompt = "Du bist Betriebsanalyst fuer Bang Bang Noodles Berlin (2 Standorte: Mehringdamm und Rosenthaler Strasse).\n\n";
+  prompt += "Schreibe einen kurzen, interpretierten Tagesbericht auf Deutsch. NICHT einfach Zahlen aufzaehlen - erklaere was die Zahlen BEDEUTEN, warum sie gut oder schlecht sind, und welche Rueckschluesse man ziehen kann. Struktur: 4-5 kurze Abschnitte mit Ueberschrift. Direkte, klare Sprache.\n\n";
+  prompt += "ZEITRAUM: "+vonDE+(vonDE!==bisDE?" bis "+bisDE:"")+" ("+tage+" Tag"+(tage!==1?"e":"")+")\n\n";
+  prompt += "UMSATZ:\n";
+  prompt += "- Gesamt Netto: "+fmt(k.u)+" | Durchschnitt "+fmt(k.u/tage)+"/Tag\n";
+  prompt += "- Mehringdamm: "+fmt(km.u)+" | Rosenthaler: "+fmt(kr.u)+"\n";
+  if(uDiff!==null) prompt += "- Vergleich Vorperiode: "+(uDiff>=0?"+":"")+uDiff.toFixed(1)+"% (Vorperiode: "+fmt(kVor.u)+")\n";
+  prompt += "- Lieferando Brutto: "+fmt(ldoBrutto)+" ("+(k.u>0?(ldoBrutto/k.u*100).toFixed(1):0)+"% vom Umsatz)\n";
+  prompt += "- Bon-Wert: "+fmtD(bonWertData.avg)+" (MD: "+fmtD(bonWertMd.avg)+" | RS: "+fmtD(bonWertRs.avg)+") | Ziel: 22 Euro\n\n";
+  prompt += "PERSONAL:\n";
+  prompt += "- Operative Kosten: "+fmt(pa)+" ("+(k.u>0?(paQuote*100).toFixed(1):0)+"% vom Umsatz) | Ziel: 25%\n";
+  prompt += "- Mehringdamm: "+fmt(pkMd.total)+" ("+(km.u>0?(pkMd.total/km.u*100).toFixed(1):0)+"%) | Rosenthaler: "+fmt(pkRs.total)+" ("+(kr.u>0?(pkRs.total/kr.u*100).toFixed(1):0)+"%)\n";
+  prompt += "- Umsatz/Personalstunde: "+fmt(umsatzStd)+"/h | Ziel: 115 Euro\n";
+  if(smAll.length>0) prompt += "- Social Media: "+smAll.map(function(r){return r.mitarbeiter+" ("+r.standort.replace("Rosenthaler Strasse","Rosi")+")";}).join(", ")+"\n";
+  prompt += "\nFOOD COST & WASTE:\n";
+  prompt += "- Food Cost: "+fmt(k.f)+" ("+fmtP(k.fp)+") | Ziel: 25%\n";
+  prompt += "- Mehringdamm FC: "+fmtP(km.fp)+" | Rosenthaler FC: "+fmtP(kr.fp)+"\n";
+  prompt += "- Waste Mehringdamm: "+(wasteMd.length>0?fmt(wasteMdT)+" ("+wasteMd.length+" Positionen)":"NICHT ERFASST")+"\n";
+  prompt += "- Waste Rosenthaler: "+(wasteRs.length>0?fmt(wasteRsT)+" ("+wasteRs.length+" Positionen)":"NICHT ERFASST")+"\n\n";
+  prompt += "TRINKGELD & STORNOS:\n";
+  prompt += "- TK-Quote: "+fmtP(tkQ)+" | Gesamt: "+fmt(tkGes)+" | Ziel: 5%\n";
+  prompt += "- Stornierungen: "+stornosN+"x\n\n";
+  prompt += "ERGEBNIS:\n";
+  prompt += "- Contribution Margin: "+fmt(cm)+" ("+fmtP(k.u>0?cm/k.u:0)+") | Ziel: 40%\n";
+  prompt += "- EBITDA (geschaetzt): "+fmt(ebitda)+" ("+fmtP(k.u>0?ebitda/k.u:0)+") | Ziel: 10%\n\n";
+  prompt += "Schreibe jetzt den interpretierten Bericht. Maximal 350 Woerter. Keine Tabellen, kein Markdown. Kurze Abschnitte mit fetter Ueberschrift in HTML (<b>Ueberschrift</b>), dann 2-3 Saetze Fliestext. Fange direkt mit dem ersten Abschnitt an.";
 
   fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
