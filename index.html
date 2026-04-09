@@ -391,7 +391,7 @@ function pCSV(line){
 function kpi(d){
   var u=0,f=0,s=0;
   d.forEach(function(r){u+=r.u;f+=r.f;s+=r.s;});
-  var t=Math.max([...new Set(d.map(function(r){return r.datum;}))].length,1);
+  var _dSet={}; d.forEach(function(r){_dSet[r.datum]=1;}); var t=Math.max(Object.keys(_dSet).length,1);
   return{u:u,f:f,s:s,t:t,fp:u>0?f/u:0,at:s>0?u/s:0};
 }
 
@@ -861,13 +861,13 @@ function renderOverview(){
       var txGef=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==='Alle Standorte'||r.standort===st);});
       var ldoBrutto=txGef.reduce(function(s,r){return s+r.ldo;},0);
       var anomalien=[];
-      if(stornosN>tage*0.5&&stornosN>2)anomalien.push('Stornos: '+stornosN+'x — bitte prüfen');
-      if(paQuote>ZIELE.pa*1.1)anomalien.push('Personalquote '+fmtP(paQuote)+' — '+fmtP(paQuote-ZIELE.pa)+' über Ziel');
-      if(k.fp>ZIELE.fc*1.1)anomalien.push('Food Cost '+fmtP(k.fp)+' — '+fmtP(k.fp-ZIELE.fc)+' über Ziel');
+      if(stornosN>tage*0.5&&stornosN>2)anomalien.push('Stornos: '+stornosN+'x - bitte prüfen');
+      if(paQuote>ZIELE.pa*1.1)anomalien.push('Personalquote '+fmtP(paQuote)+' - '+fmtP(paQuote-ZIELE.pa)+' über Ziel');
+      if(k.fp>ZIELE.fc*1.1)anomalien.push('Food Cost '+fmtP(k.fp)+' - '+fmtP(k.fp-ZIELE.fc)+' über Ziel');
       if((st==='Alle Standorte'||st==='Mehringdamm')&&wasteMd.length===0)anomalien.push('Kein Waste erfasst: Mehringdamm');
       if((st==='Alle Standorte'||st==='Rosenthaler Straße')&&wasteRs.length===0)anomalien.push('Kein Waste erfasst: Rosenthaler Straße');
-      if(smAll.length>0)anomalien.push('Social Media: '+[...new Set(smAll.map(function(r){return r.mitarbeiter+' ('+r.standort.replace('Rosenthaler Straße','Rosi')+')';'}))].join(', '));
-      if(uStd>0&&uStd<ZIELE.umsatzStd*0.7)anomalien.push('Umsatz/Stunde '+fmt(uStd)+' — deutlich unter Ziel €'+ZIELE.umsatzStd);
+      if(smAll.length>0)anomalien.push('Social Media: '+smAll.map(function(r){return r.mitarbeiter+' ('+r.standort.replace('Rosenthaler Straße','Rosi')+')';}).filter(function(v,i,a){return a.indexOf(v)===i;}).join(', '));
+      if(uStd>0&&uStd<ZIELE.umsatzStd*0.7)anomalien.push('Umsatz/Stunde '+fmt(uStd)+' - deutlich unter Ziel €'+ZIELE.umsatzStd);
       function blk(e,t,c,rows){return '<div style="background:#0a1628;border-radius:8px;border-top:3px solid '+c+';padding:12px 14px"><div style="font-size:10px;font-weight:700;color:'+c+';margin-bottom:8px;text-transform:uppercase;letter-spacing:0.6px">'+e+' '+t+'</div><div style="font-size:11px;color:#94a3b8;line-height:1.9">'+rows.join('<br>')+'</div></div>';}
       function v(val,ok,neu){return '<span style="color:'+(ok?'#22c55e':neu?'#f97316':'#ef4444')+';font-weight:600">'+val+'</span>';}
       var uRows=[
@@ -879,7 +879,7 @@ function renderOverview(){
         'Kosten: '+v(fmt(pa),paQuote<=ZIELE.pa,paQuote<=ZIELE.pa*1.1)+'  ·  Quote: '+v(fmtP(paQuote),paQuote<=ZIELE.pa,paQuote<=ZIELE.pa*1.1)+' (Ziel '+fmtP(ZIELE.pa)+')',
         'Umsatz/Stunde: '+v(fmt(uStd),uStd>=ZIELE.umsatzStd,uStd>=ZIELE.umsatzStd*0.85)+' (Ziel €'+ZIELE.umsatzStd+')'
       ];
-      if(smAll.length>0)paRows.push('📱 Social Media: '+[...new Set(smAll.map(function(r){return '<span style="color:#8b5cf6;font-weight:600">'+r.mitarbeiter+'</span> ('+r.standort.replace('Rosenthaler Straße','Rosi')+', '+r.startZeit+'–'+r.endeZeit+')';}))].join(', '));
+      if(smAll.length>0)paRows.push('📱 Social Media: '+smAll.map(function(r){return '<span style="color:#8b5cf6;font-weight:600">'+r.mitarbeiter+'</span> ('+r.standort.replace('Rosenthaler Straße','Rosi')+', '+r.startZeit+'-'+r.endeZeit+')';}).filter(function(v,i,a){return a.indexOf(v)===i;}).join(', '));
       var topW=wasteMd.concat(wasteRs).sort(function(a,b){return b.kosten-a.kosten;}).slice(0,3);
       var wRows=[
         'Food Cost: '+v(fmtP(k.fp),k.fp<=ZIELE.fc,k.fp<=ZIELE.fc*1.1)+' (Ziel '+fmtP(ZIELE.fc)+')',
@@ -900,7 +900,7 @@ function renderOverview(){
       var grid = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:'+(anomalien.length>0?'10px':'0')+'">'
         +uBlk+paBlk+fcBlk+tkBlk+'</div>';
       if(anomalien.length>0) grid += anomBlk;
-      return '<div class="box" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div class="box-title">📋 Tagesbericht</div><div class="box-sub">'+von+(von!==bis?' – '+bis:'')+' · automatisch</div></div></div>'+grid+'</div>';
+      return '<div class="box" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div class="box-title">📋 Tagesbericht</div><div class="box-sub">'+von+(von!==bis?' - '+bis:'')+' · automatisch</div></div></div>'+grid+'</div>';
     })()}
     `;
 
@@ -3346,14 +3346,14 @@ function buildTagesberichtHTML(vonParam, bisParam) {
   var paText = 'Operative Personalkosten <b style="color:#f1f5f9">'+fmt(paCostG)+'</b> (<span style="color:'+(paQuoteG>ZIELE.pa?'#ef4444':'#22c55e')+'">'+fmtP(paQuoteG)+'</span>, Ziel 25%).';
   paText += ' Ø letzte 7 Tage: '+fmtP(paQuoteW)+'.';
   paText += ' Umsatz/Stunde: <span style="color:'+(umsatzStdG>=ZIELE.umsatzStd?'#22c55e':'#ef4444')+'">'+fmt(umsatzStdG)+'</span> (Ziel €115).';
-  if(smG.length>0) paText += '<br>Social Media: '+smG.map(function(r){return '<b style="color:#8b5cf6">'+r.mitarbeiter+'</b> ('+r.standort.replace("Rosenthaler Straße","Rosi")+', '+r.startZeit+'–'+r.endeZeit+')';}).join(', ')+'.';
+  if(smG.length>0) paText += '<br>Social Media: '+smG.map(function(r){return '<b style="color:#8b5cf6">'+r.mitarbeiter+'</b> ('+r.standort.replace("Rosenthaler Straße","Rosi")+', '+r.startZeit+'-'+r.endeZeit+')';}).join(', ')+'.';
   paText += ' Schichten: '+ordioG.length+' gesamt.';
 
   // Waste-Text
   var wasteText = '';
   wasteText += 'Mehringdamm: '+(wasteGMd.length>0?'<b style="color:#f1f5f9">'+fmt(wasteGMdT)+'</b> ('+wasteGMd.length+' Pos.)':'<span style="color:#ef4444">nicht erfasst</span>')+'.';
   wasteText += ' Rosenthaler: '+(wasteGRs.length>0?'<b style="color:#f1f5f9">'+fmt(wasteGRsT)+'</b> ('+wasteGRs.length+' Pos.)':'<span style="color:#ef4444">nicht erfasst</span>')+'.';
-  var topWasteAll = [...wasteGMd,...wasteGRs].sort(function(a,b){return b.kosten-a.kosten;}).slice(0,3);
+  var topWasteAll = wasteGMd.concat(wasteGRs).sort(function(a,b){return b.kosten-a.kosten;}).slice(0,3);
   if(topWasteAll.length>0) wasteText += '<br>Größte Posten: '+topWasteAll.map(function(r){return r.artikel+' '+fmt(r.kosten)+' ('+r.kategorie+')';}).join(', ')+'.';
 
   // TK-Text
