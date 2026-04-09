@@ -509,7 +509,7 @@ async function ladeDaten(){
     var r6=await fetch(CSV.ordio);var t6=await r6.text();
     ordio=t6.trim().split("\n").map(function(l){
       var v=pCSV(l);
-      return{datum:pDat(v[0]),standort:v[1]||"",mitarbeiter:v[2]||"",stunden:pStd(v[3]),kosten:pDE(v[7]),startZeit:v[9]||"",endeZeit:v[10]||"",startStunde:parseInt(v[11])||0,endeStunde:parseInt(v[12])||23};
+      return{datum:pDat(v[0]),standort:v[1]||"",mitarbeiter:v[2]||"",stunden:pStd(v[3]),kosten:pDE(v[7]),bereich:v[8]||"",startZeit:v[9]||"",endeZeit:v[10]||"",startStunde:parseInt(v[11])||0,endeStunde:parseInt(v[12])||23};
     }).filter(function(r){return r.datum&&r.standort&&r.mitarbeiter;});
 
     // LS ARTIKEL (13_ls_artikel)
