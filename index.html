@@ -828,6 +828,7 @@ function renderOverview(){
 
     ${(function(){
       var tb='';
+      var tage=new Set(gefiltert.map(function(r){return r.datum;})).size||1;
       var vorperiode=alle.filter(function(r){
         var vonD=new Date(von),bisD=new Date(bis);
         var dl=bisD-vonD;
