@@ -974,9 +974,10 @@ function renderOverview(){
   dc("c-ov-donut");
   var donutFC=k.f;
   var donutOpa=pa; // Operative Personalkosten
-  var donutPG=fkOv.personalGemein+fkOv.managementFee+smKosten; // Personalgemeinkosten inkl. Social Media
-  var donutRest=fkOv.miete+fkOv.versicherung+fkOv.werbeReise+fkOv.sonstBetrieb+fkOv.verwaltung+fkOv.instandhaltung+fkOv.abschreibung; // Rest Gemeinkosten
-  var donutEBITDA=Math.max(ebitda,0);
+  // Bei Stundenfilter: Fixkosten nicht im Donut (verzerrt die Darstellung)
+  var donutPG=hatStundenfilter()?0:fkOv.personalGemein+fkOv.managementFee+smKosten;
+  var donutRest=hatStundenfilter()?0:fkOv.miete+fkOv.versicherung+fkOv.werbeReise+fkOv.sonstBetrieb+fkOv.verwaltung+fkOv.instandhaltung+fkOv.abschreibung;
+  var donutEBITDA=hatStundenfilter()?Math.max(k.u-k.f-pa,0):Math.max(ebitda,0);
   charts["c-ov-donut"]=new Chart(document.getElementById("c-ov-donut"),{type:"doughnut",data:{labels:["Food Cost","Operative Personal","Personalgemeinkosten","Rest Gemeinkosten","EBITDA"],datasets:[{data:[donutFC,donutOpa,donutPG,donutRest,donutEBITDA],backgroundColor:["#ef4444","#8b5cf6","#3b82f6","#64748b","#22c55e"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:"72%"}});
 }
 
@@ -3474,6 +3475,18 @@ function generiereKIBericht() {
 
   // Daten aufbereiten
   var k   = kpi(gefiltert);
+  // Stundenfilter auf Prompt-Daten anwenden
+  if(hatStundenfilter()){
+    var uStdKI=getUmsatzGefiltert(von,bis,st);
+    var avgFcQKI=getAvgFcQuote(st);
+    k={u:uStdKI.u,f:uStdKI.u*avgFcQKI,s:k.s,t:k.t,fp:avgFcQKI,at:k.at};
+    km={u:getUmsatzGefiltert(von,bis,'Mehringdamm').u,f:0,s:km.s,t:km.t,fp:avgFcQKI,at:km.at};
+    kr={u:getUmsatzGefiltert(von,bis,'Rosenthaler Straße').u,f:0,s:kr.s,t:kr.t,fp:avgFcQKI,at:kr.at};
+    pk=getOrdioStunden(von,bis,st);
+    pa=pk.total>0?pk.total:k.u*0.33;
+    paQuote=k.u>0?pa/k.u:0;
+    umsatzStd=pk.stunden>0?k.u/pk.stunden:0;
+  }
   var tage = new Set(gefiltert.map(function(r){return r.datum;})).size||1;
   var pk  = getOrdio(von,bis,st);
   var pa  = pk.total>0?pk.total:k.u*0.33;
