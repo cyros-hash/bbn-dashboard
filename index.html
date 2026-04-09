@@ -982,6 +982,15 @@ function renderUmsatz(){
   var md=gefiltert.filter(function(r){return r.st==="Mehringdamm";});
   var rs=gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";});
   var km=kpi(md),kr=kpi(rs);
+  // Stundenfilter auf Standort-KPIs anwenden
+  if(hatStundenfilter()){
+    var uMdStd=getUmsatzGefiltert(von,bis,'Mehringdamm');
+    var uRsStd=getUmsatzGefiltert(von,bis,'Rosenthaler Straße');
+    var avgFcMdQ=getAvgFcQuote('Mehringdamm');
+    var avgFcRsQ=getAvgFcQuote('Rosenthaler Straße');
+    km={u:uMdStd.u,f:uMdStd.u*avgFcMdQ,s:km.s,t:km.t,fp:avgFcMdQ,at:km.at};
+    kr={u:uRsStd.u,f:uRsStd.u*avgFcRsQ,s:kr.s,t:kr.t,fp:avgFcRsQ,at:kr.at};
+  }
   var bonWertMd=getBonWert(von,bis,'Mehringdamm');
   var bonWertRs=getBonWert(von,bis,'Rosenthaler Straße');
   var tm={};
@@ -1413,6 +1422,7 @@ function renderGuV(){
   var k=kpi(gefiltert);
   var pk=getOrdio(von,bis,st);
   var fk=getFixkostenTage(von,bis);
+  if(hatStundenfilter()){var uStdG=getUmsatzGefiltert(von,bis,st);var avgFcQG=getAvgFcQuote(st);k={u:uStdG.u,f:uStdG.u*avgFcQG,s:k.s,t:k.t,fp:avgFcQG,at:k.at};pk=getOrdioStunden(von,bis,st);}
   var pa=pk.total>0?pk.total:k.u*0.33;
   var paReal=pk.total>0;
   var paPct=k.u>0?pa/k.u:0;
@@ -1613,7 +1623,8 @@ function renderPersonal(){
   var bis=document.getElementById("bis").value;
   var st=document.getElementById("standort").value;
   var k=kpi(gefiltert);
-  var pk=getOrdio(von,bis,st);
+  var pk=hatStundenfilter()?getOrdioStunden(von,bis,st):getOrdio(von,bis,st);
+  if(hatStundenfilter()){var uStdP=getUmsatzGefiltert(von,bis,st);var avgFcQP=getAvgFcQuote(st);k={u:uStdP.u,f:uStdP.u*avgFcQP,s:k.s,t:k.t,fp:avgFcQP,at:k.at};}
 
   if(pk.count===0){
     document.getElementById("t-personal").innerHTML='<div class="box" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">👥</div><div style="color:#475569">Keine Ordio-Daten für diesen Zeitraum.</div></div>';
@@ -1809,7 +1820,8 @@ function renderFoodCost(){
   var st=document.getElementById("standort").value;
 
   var k=kpi(gefiltert);
-  var pk=getOrdio(von,bis,st);
+  var pk=hatStundenfilter()?getOrdioStunden(von,bis,st):getOrdio(von,bis,st);
+  if(hatStundenfilter()){var uStdFC=getUmsatzGefiltert(von,bis,st);var avgFcQFC=getAvgFcQuote(st);k={u:uStdFC.u,f:uStdFC.u*avgFcQFC,s:k.s,t:k.t,fp:avgFcQFC,at:k.at};}
   var pa=pk.total>0?pk.total:k.u*0.33;
 
   // Waste filtern
@@ -2340,7 +2352,7 @@ function renderTrinkgeld(){
   var bis=document.getElementById("bis").value;
   var st=document.getElementById("standort").value;
 
-  var bonsG=bons.filter(function(r){
+  var bonsG=hatStundenfilter()?getBonsGefiltert(von,bis,st):bons.filter(function(r){
     return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);
   });
 
@@ -2587,7 +2599,8 @@ function renderSimulator(){
   var bis=document.getElementById("bis").value;
   var st=document.getElementById("standort").value;
   var k=kpi(gefiltert);
-  var pk=getOrdio(von,bis,st);
+  var pk=hatStundenfilter()?getOrdioStunden(von,bis,st):getOrdio(von,bis,st);
+  if(hatStundenfilter()){var uStdSim=getUmsatzGefiltert(von,bis,st);var avgFcQSim=getAvgFcQuote(st);k={u:uStdSim.u,f:uStdSim.u*avgFcQSim,s:k.s,t:k.t,fp:avgFcQSim,at:k.at};}
   var paBase=pk.total>0?pk.total:k.u*0.33;
   var paReal=pk.total>0;
   var paBasePct=k.u>0?paBase/k.u*100:33;
