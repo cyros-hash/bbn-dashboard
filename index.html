@@ -807,9 +807,19 @@ function renderOverview(){
   var md=gefiltert.filter(function(r){return r.st==="Mehringdamm";});
   var rs=gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";});
   var km=kpi(md),kr=kpi(rs);
-  var pkMd=getOrdio(von,bis,"Mehringdamm"),pkRs=getOrdio(von,bis,"Rosenthaler Straße");
-  var cmpMd=pkMd.total>0?(km.u-km.f-pkMd.total)/km.u:0;
-  var cmpRs=pkRs.total>0?(kr.u-kr.f-pkRs.total)/kr.u:0;
+  var pkMd=hatStundenfilter()?getOrdioStunden(von,bis,"Mehringdamm"):getOrdio(von,bis,"Mehringdamm");
+  var pkRs=hatStundenfilter()?getOrdioStunden(von,bis,"Rosenthaler Straße"):getOrdio(von,bis,"Rosenthaler Straße");
+  // Stundenfilter auf km/kr anwenden
+  if(hatStundenfilter()){
+    var uMdS=getUmsatzGefiltert(von,bis,"Mehringdamm");
+    var uRsS=getUmsatzGefiltert(von,bis,"Rosenthaler Straße");
+    var avgFcMd=getAvgFcQuote("Mehringdamm");
+    var avgFcRs=getAvgFcQuote("Rosenthaler Straße");
+    km={u:uMdS.u,f:uMdS.u*avgFcMd,s:km.s,t:km.t,fp:avgFcMd,at:km.at};
+    kr={u:uRsS.u,f:uRsS.u*avgFcRs,s:kr.s,t:kr.t,fp:avgFcRs,at:kr.at};
+  }
+  var cmpMd=pkMd.total>0&&km.u>0?(km.u-km.f-pkMd.total)/km.u:0;
+  var cmpRs=pkRs.total>0&&kr.u>0?(kr.u-kr.f-pkRs.total)/kr.u:0;
 
   // Tages-Chart
   var tm={};
