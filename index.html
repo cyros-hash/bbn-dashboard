@@ -1350,7 +1350,7 @@ function renderGuV(){
           <div class="drill-row"><span>Jan Haring</span><span>€ 6.050/Monat</span></div>
           <div class="drill-row"><span>Buted Deleg</span><span>€ 800/Monat</span></div>
           <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Fix Gesamt/Monat</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.personalGemein)}</span></div>
-          <div class="drill-row"><span>Social Media (variabel)</span><span style="color:#f97316">${fmt(smKosten)} (${tage} Tage)</span></div>
+          <div class="drill-row"><span>Social Media (variabel)</span><span style="color:#f97316">${fmt(smKosten)} (${fk.tage} Tage)</span></div>
           <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9;font-weight:700">Gesamt Personalgemeinkosten</span><span style="color:#ef4444;font-weight:700">${fmt(fk.personalGemein+smKosten)}</span></div>
         </div>
 
