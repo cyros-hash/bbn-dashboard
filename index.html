@@ -2907,6 +2907,7 @@ ladeDaten();
     </div>
   </div>
   <div id="ai-suggestions">
+    <button onclick="sendTagesbericht()" style="width:100%;background:#1a2538;border:1px solid #f9731640;border-radius:8px;padding:9px 12px;font-size:12px;color:#f97316;cursor:pointer;text-align:left;font-weight:600;margin-bottom:4px">📋 Tagesbericht generieren</button>
     <button class="ai-suggestion" onclick="askSuggestion(this)">📊 Wie war die Performance letzte Woche?</button>
     <button class="ai-suggestion" onclick="askSuggestion(this)">🥩 Wo verlieren wir am meisten durch Waste?</button>
     <button class="ai-suggestion" onclick="askSuggestion(this)">👥 Welcher Standort ist effizienter?</button>
@@ -2952,6 +2953,168 @@ function toggleAiPanel() {
   var panel = document.getElementById("ai-panel");
   panel.classList.toggle("open", aiOpen);
   document.getElementById("ai-badge").classList.remove("show");
+}
+
+
+function buildTagesberichtContext() {
+  // Gestern berechnen
+  var heute = new Date();
+  var gesternD = new Date(heute);
+  gesternD.setDate(gesternD.getDate() - 1);
+  var gestern = gesternD.toISOString().slice(0,10).split('-').reverse().join('.');
+  // YYYY-MM-DD für Vergleich
+  var gesternISO = gesternD.toISOString().slice(0,10);
+
+  // Vorwoche gleicher Wochentag
+  var vorwocheD = new Date(gesternD);
+  vorwocheD.setDate(vorwocheD.getDate() - 7);
+  var vorwocheISO = vorwocheD.toISOString().slice(0,10).split('-').reverse().join('.');
+
+  // Daten gestern
+  var gAll  = alle.filter(function(r){return r.datum===gestern;});
+  var gMd   = gAll.filter(function(r){return r.st==="Mehringdamm";});
+  var gRs   = gAll.filter(function(r){return r.st==="Rosenthaler Straße";});
+  var kG    = kpi(gAll), kGMd = kpi(gMd), kGRs = kpi(gRs);
+
+  // Daten vorwoche gleicher Tag
+  var vAll  = alle.filter(function(r){return r.datum===vorwocheISO;});
+  var kV    = kpi(vAll);
+
+  // Ø letzte 7 Tage (ohne gestern)
+  var letzteWoche = alle.filter(function(r){return r.datum<gestern&&r.datum>=new Date(gesternD.getTime()-7*86400000).toISOString().slice(0,10).split('-').reverse().join('.');});
+  var kW = kpi(letzteWoche);
+  var tageW = new Set(letzteWoche.map(function(r){return r.datum;})).size||1;
+
+  // Personal gestern
+  var ordioG  = ordio.filter(function(r){return r.datum===gestern;});
+  var paCostG = ordioG.filter(function(r){return r.bereich!=="Social Media"&&MGMT_MITARBEITER.indexOf(r.mitarbeiter)===-1;}).reduce(function(s,r){return s+r.kosten;},0);
+  var paStdG  = ordioG.filter(function(r){return r.bereich!=="Social Media"&&MGMT_MITARBEITER.indexOf(r.mitarbeiter)===-1;}).reduce(function(s,r){return s+r.stunden;},0);
+  var smG     = ordioG.filter(function(r){return r.bereich==="Social Media";});
+  var paQuoteG = kG.u>0?paCostG/kG.u:0;
+
+  // Ø Personalkosten-Quote letzte 7 Tage
+  var ordioW = ordio.filter(function(r){return r.datum<gestern;});
+  var paCostW = ordioW.filter(function(r){return r.bereich!=="Social Media"&&MGMT_MITARBEITER.indexOf(r.mitarbeiter)===-1;}).reduce(function(s,r){return s+r.kosten;},0);
+  var paQuoteW = kW.u>0?paCostW/kW.u:0;
+
+  // Waste gestern
+  var wasteGMd = waste.filter(function(r){return r.datum===gestern&&r.standort==="Mehringdamm";});
+  var wasteGRs = waste.filter(function(r){return r.datum===gestern&&r.standort==="Rosenthaler Straße";});
+  var wasteGMdTotal = wasteGMd.reduce(function(s,r){return s+r.kosten;},0);
+  var wasteGRsTotal = wasteGRs.reduce(function(s,r){return s+r.kosten;},0);
+
+  // Bons gestern
+  var bonsG    = bons.filter(function(r){return r.datum===gestern;});
+  var bwG      = getBonWert(gestern,gestern,"Alle Standorte");
+  var tkG      = bonsG.filter(function(r){return r.kanal!=="Lieferando";}).reduce(function(s,r){return s+r.trinkgeld;},0);
+  var tkTotalG = bonsG.filter(function(r){return r.kanal!=="Lieferando";}).reduce(function(s,r){return s+r.total;},0);
+  var tkQuoteG = tkTotalG>0?tkG/tkTotalG:0;
+  var stornosG = bonsG.filter(function(r){return r.storniert===1;}).length;
+
+  // Stornos Ø letzte 7 Tage
+  var bonsW    = bons.filter(function(r){return r.datum<gestern;});
+  var stornosW = bonsW.filter(function(r){return r.storniert===1;}).length / tageW;
+
+  // Lieferando gestern
+  var txG     = lsTx.filter(function(r){return r.datum===gestern;});
+  var ldoBruttoG = txG.reduce(function(s,r){return s+r.ldo;},0);
+  var ldoAnteilG = kG.u>0?ldoBruttoG/kG.u:0;
+
+  // Top Artikel gestern
+  var artG    = artikel.filter(function(r){return r.datum===gestern&&r.storniert===0;});
+  var artMapG = {};
+  artG.forEach(function(r){
+    if(!artMapG[r.name])artMapG[r.name]={menge:0,umsatz:0};
+    artMapG[r.name].menge+=r.menge;
+    artMapG[r.name].umsatz+=r.preisN;
+  });
+  var topArtG = Object.entries(artMapG).sort(function(a,b){return b[1].menge-a[1].menge;}).slice(0,5);
+
+  // Bester TK-Mitarbeiter gestern
+  var maMapTK = {};
+  bonsG.filter(function(r){return r.kanal!=="Lieferando"&&r.mitarbeiter.indexOf(",")===-1&&r.mitarbeiter.indexOf("Online")===-1;}).forEach(function(r){
+    if(!maMapTK[r.mitarbeiter])maMapTK[r.mitarbeiter]={tk:0,total:0};
+    maMapTK[r.mitarbeiter].tk+=r.trinkgeld;
+    maMapTK[r.mitarbeiter].total+=r.total;
+  });
+  var bestTK = Object.entries(maMapTK).sort(function(a,b){
+    return (b[1].total>0?b[1].tk/b[1].total:0)-(a[1].total>0?a[1].tk/a[1].total:0);
+  }).slice(0,1);
+
+  // Umsatz/Stunde gestern
+  var umsatzStdG = paStdG>0?kG.u/paStdG:0;
+
+  // Context zusammenbauen
+  var ctx = "Bitte erstelle einen kompakten, textbasierten Tagesbericht für Bang Bang Noodles Berlin für gestern ("+gestern+").\n";
+  ctx += "Schreibe den Bericht auf Deutsch, professionell aber direkt. Keine Tabellen — fließender Text mit kurzen Absätzen pro Thema.\n";
+  ctx += "Hebe BESONDERHEITEN hervor: was war ungewöhnlich gut, schlecht oder auffällig? Sei konkret und nenne Zahlen.\n\n";
+
+  ctx += "=== GESTRIGE DATEN ("+gestern+") ===\n";
+  ctx += "Umsatz Netto gesamt: "+fmt(kG.u)+"\n";
+  ctx += "  Mehringdamm: "+fmt(kGMd.u)+"\n";
+  ctx += "  Rosenthaler Straße: "+fmt(kGRs.u)+"\n";
+  ctx += "Vorwoche gleicher Tag ("+vorwocheISO+"): "+fmt(kV.u)+" → Differenz: "+(kV.u>0?(((kG.u-kV.u)/kV.u)*100).toFixed(1)+"%" : "keine Daten")+"\n";
+  ctx += "Ø letzte 7 Tage: "+fmt(kW.u/tageW)+"/Tag\n";
+  ctx += "Food Cost: "+fmtP(kG.fp)+" (Ziel 25%)\n";
+  ctx += "  Mehringdamm FC: "+fmtP(kGMd.fp)+"\n";
+  ctx += "  Rosenthaler FC: "+fmtP(kGRs.fp)+"\n";
+  ctx += "Ø Bon-Wert: "+fmtD(bwG.avg)+" aus "+bwG.count+" Bons (Ziel €22)\n";
+  ctx += "Lieferando Brutto: "+fmt(ldoBruttoG)+" ("+fmtP(ldoAnteilG)+" vom Umsatz)\n\n";
+
+  ctx += "=== PERSONAL ===\n";
+  ctx += "Operative Personalkosten: "+fmt(paCostG)+" ("+fmtP(paQuoteG)+" vom Umsatz, Ziel 25%)\n";
+  ctx += "Ø Personal-Quote letzte 7 Tage: "+fmtP(paQuoteW)+"\n";
+  ctx += "Umsatz/Personalstunde: "+fmt(umsatzStdG)+"/h (Ziel €115)\n";
+  if(smG.length>0){
+    ctx += "Social Media eingeplant: "+smG.map(function(r){return r.mitarbeiter+" ("+r.standort+", "+r.startZeit+"–"+r.endeZeit+")";}).join(", ")+"\n";
+  } else {
+    ctx += "Social Media: niemand eingeplant\n";
+  }
+  ctx += "Schichten gestern: "+ordioG.length+" gesamt\n";
+  var bereiche = {};
+  ordioG.forEach(function(r){bereiche[r.bereich]=(bereiche[r.bereich]||0)+1;});
+  ctx += "Bereiche: "+Object.entries(bereiche).map(function(e){return e[0]+": "+e[1];}).join(", ")+"\n\n";
+
+  ctx += "=== WASTE ===\n";
+  ctx += "Mehringdamm: "+(wasteGMd.length>0?fmt(wasteGMdTotal)+" ("+wasteGMd.length+" Positionen)":" KEIN Waste erfasst ⚠️")+"\n";
+  ctx += "Rosenthaler Straße: "+(wasteGRs.length>0?fmt(wasteGRsTotal)+" ("+wasteGRs.length+" Positionen)":" KEIN Waste erfasst ⚠️")+"\n";
+  if(wasteGMd.length>0){
+    var topWMd = wasteGMd.sort(function(a,b){return b.kosten-a.kosten;}).slice(0,3);
+    ctx += "Top Waste MD: "+topWMd.map(function(r){return r.artikel+" ("+fmt(r.kosten)+", "+r.kategorie+")";}).join(", ")+"\n";
+  }
+  if(wasteGRs.length>0){
+    var topWRs = wasteGRs.sort(function(a,b){return b.kosten-a.kosten;}).slice(0,3);
+    ctx += "Top Waste RS: "+topWRs.map(function(r){return r.artikel+" ("+fmt(r.kosten)+", "+r.kategorie+")";}).join(", ")+"\n";
+  }
+  ctx += "\n";
+
+  ctx += "=== TRINKGELD & STORNOS ===\n";
+  ctx += "TK-Quote gestern: "+fmtP(tkQuoteG)+" (Gesamtbetrag: "+fmt(tkG)+")\n";
+  if(bestTK.length>0){
+    var bTK = bestTK[0];
+    ctx += "Bester Service-MA: "+bTK[0]+" ("+fmtP(bTK[1].total>0?bTK[1].tk/bTK[1].total:0)+" Quote, "+fmt(bTK[1].tk)+" TK)\n";
+  }
+  ctx += "Stornos: "+stornosG+" (Ø letzte 7 Tage: "+stornosW.toFixed(1)+"/Tag)\n\n";
+
+  ctx += "=== TOP 5 ARTIKEL GESTERN ===\n";
+  topArtG.forEach(function(e){
+    ctx += e[0]+": "+Math.round(e[1].menge)+"x ("+fmt(e[1].umsatz)+")\n";
+  });
+  ctx += "\n";
+
+  ctx += "Bitte analysiere diese Daten und schreibe einen Tagesbericht. Struktur: kurze Zusammenfassung, dann Besonderheiten pro Thema (Umsatz, Personal, Food Cost/Waste, Trinkgeld). Keine Aufzählungslisten — Fließtext.";
+
+  return ctx;
+}
+
+function sendTagesbericht() {
+  var ctx = buildTagesberichtContext();
+  var input = document.getElementById("ai-input");
+  input.value = ctx;
+  // Panel öffnen falls zu
+  if(!aiOpen) toggleAiPanel();
+  // Direkt absenden
+  sendAiMessage();
 }
 
 function buildAiContext() {
