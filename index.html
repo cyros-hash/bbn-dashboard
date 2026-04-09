@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="de">
 <head>
 <meta charset="UTF-8">
@@ -107,8 +106,8 @@ canvas{max-height:220px}
 .ampel-dot{width:10px;height:10px;border-radius:50%}
 
 /* ============================================================
-KI ASSISTENT — Floating Chat
-============================================================ */
+   KI ASSISTENT — Floating Chat
+   ============================================================ */
 #ai-fab{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 20px #7c3aed60;z-index:1000;transition:transform 0.2s}
 #ai-fab:hover{transform:scale(1.08)}
 #ai-fab .ai-badge{position:absolute;top:-3px;right:-3px;background:#22c55e;width:12px;height:12px;border-radius:50%;border:2px solid #0a0f1e;display:none}
@@ -138,101 +137,100 @@ KI ASSISTENT — Floating Chat
 #ai-send:hover{background:#6d28d9}
 #ai-send:disabled{background:#2d3f54;color:#475569;cursor:not-allowed}
 /* ============================================================
-RESPONSIVE — Mobile (max 768px)
-============================================================ */
+   RESPONSIVE — Mobile (max 768px)
+   ============================================================ */
 @media(max-width:768px){
-/* HEADER */
-.header{padding:10px 12px;flex-wrap:wrap;gap:8px}
-.header h1{font-size:13px}
-.header>div:last-child{width:100%;display:flex;justify-content:space-between}
-.header>div:last-child select{flex:1}
+  /* HEADER */
+  .header{padding:10px 12px;flex-wrap:wrap;gap:8px}
+  .header h1{font-size:13px}
+  .header>div:last-child{width:100%;display:flex;justify-content:space-between}
+  .header>div:last-child select{flex:1}
 
-/* FILTER BAR */
-.filterbar{padding:8px 12px;flex-wrap:wrap;gap:6px}
-.filterbar input[type=date]{width:calc(50% - 14px);font-size:11px}
-.filterbar>div{width:100%;display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.filterbar .apply-btn{width:100%;margin-left:0;margin-top:4px}
+  /* FILTER BAR */
+  .filterbar{padding:8px 12px;flex-wrap:wrap;gap:6px}
+  .filterbar input[type=date]{width:calc(50% - 14px);font-size:11px}
+  .filterbar>div{width:100%;display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .filterbar .apply-btn{width:100%;margin-left:0;margin-top:4px}
 
-/* TABS — horizontaler Scroll */
-.tabs{padding:0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
-.tabs::-webkit-scrollbar{display:none}
-.tab{padding:10px 12px;font-size:11px}
+  /* TABS — horizontaler Scroll */
+  .tabs{padding:0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{padding:10px 12px;font-size:11px}
 
-/* CONTENT */
-.content{padding:12px}
+  /* CONTENT */
+  .content{padding:12px}
 
-/* KPI GRID — 2 Spalten statt 4 */
-.kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
-.kpi-val{font-size:17px}
-.kpi-label{font-size:10px}
-.kpi-ai{font-size:9px}
+  /* KPI GRID — 2 Spalten statt 4 */
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .kpi-val{font-size:17px}
+  .kpi-label{font-size:10px}
+  .kpi-ai{font-size:9px}
 
-/* STANDORT CARDS — untereinander */
-.st-cards{grid-template-columns:1fr}
-.st-val{font-size:20px}
+  /* STANDORT CARDS — untereinander */
+  .st-cards{grid-template-columns:1fr}
+  .st-val{font-size:20px}
 
-/* GRID 2/3 — untereinander */
-.grid2{grid-template-columns:1fr}
-.grid3{grid-template-columns:1fr}
+  /* GRID 2/3 — untereinander */
+  .grid2{grid-template-columns:1fr}
+  .grid3{grid-template-columns:1fr}
 
-/* BOX */
-.box{padding:12px;border-radius:8px}
-.box-title{font-size:12px}
+  /* BOX */
+  .box{padding:12px;border-radius:8px}
+  .box-title{font-size:12px}
 
-/* TABELLEN — horizontal scrollbar */
-.speise-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
-.speise-table th,.speise-table td{padding:7px 8px;font-size:11px}
+  /* TABELLEN — horizontal scrollbar */
+  .speise-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+  .speise-table th,.speise-table td{padding:7px 8px;font-size:11px}
 
-/* MA ROWS */
-.ma-row{flex-wrap:wrap;gap:4px}
-.ma-name{min-width:100%;font-size:11px}
-.ma-stat{min-width:auto;font-size:10px;text-align:left}
-.ma-bar-wrap{width:100%}
+  /* MA ROWS */
+  .ma-row{flex-wrap:wrap;gap:4px}
+  .ma-name{min-width:100%;font-size:11px}
+  .ma-stat{min-width:auto;font-size:10px;text-align:left}
+  .ma-bar-wrap{width:100%}
 
-/* DRILL PANEL */
-.drill-panel{padding:10px}
-.drill-row{font-size:11px;flex-wrap:wrap;gap:2px}
+  /* DRILL PANEL */
+  .drill-panel{padding:10px}
+  .drill-row{font-size:11px;flex-wrap:wrap;gap:2px}
 
-/* GuV ROWS */
-.guv-row{font-size:12px;padding:7px 0}
+  /* GuV ROWS */
+  .guv-row{font-size:12px;padding:7px 0}
 
-/* SLIDER */
-.slider-row{margin-bottom:12px}
-.slider-top{font-size:11px}
+  /* SLIDER */
+  .slider-row{margin-bottom:12px}
+  .slider-top{font-size:11px}
 
-/* CHARTS — etwas höher auf Mobile */
-canvas{max-height:180px}
+  /* CHARTS — etwas höher auf Mobile */
+  canvas{max-height:180px}
 
-/* AMPEL */
-.ampel-row{font-size:11px;padding:7px 0}
+  /* AMPEL */
+  .ampel-row{font-size:11px;padding:7px 0}
 
-/* AI PANEL — Fullscreen auf Mobile */
-#ai-fab{bottom:80px;right:16px;width:42px;height:42px;font-size:16px}
-#ai-panel{bottom:0;right:0;left:0;width:100%;height:90vh;border-radius:16px 16px 0 0}
-#ai-messages{padding:10px}
-.ai-msg{max-width:92%;font-size:11px}
-#ai-input{font-size:14px}
+  /* AI PANEL — Fullscreen auf Mobile */
+  #ai-fab{bottom:80px;right:16px;width:42px;height:42px;font-size:16px}
+  #ai-panel{bottom:0;right:0;left:0;width:100%;height:90vh;border-radius:16px 16px 0 0}
+  #ai-messages{padding:10px}
+  .ai-msg{max-width:92%;font-size:11px}
+  #ai-input{font-size:14px}
 
-/* CLOSING ROW */
-.closing-row{font-size:11px}
+  /* CLOSING ROW */
+  .closing-row{font-size:11px}
 
-/* BADGES */
-.badge{font-size:9px;padding:2px 5px}
+  /* BADGES */
+  .badge{font-size:9px;padding:2px 5px}
 
-/* ALERT */
-.alert{font-size:11px;padding:8px 10px}
+  /* ALERT */
+  .alert{font-size:11px;padding:8px 10px}
 }
 
 /* Extra klein (max 400px) */
 @media(max-width:400px){
-.kpi-grid{grid-template-columns:1fr}
-.kpi-val{font-size:20px}
-.header h1{font-size:12px}
-.tab{padding:8px 10px;font-size:10px}
-.filterbar>div .qbtn{font-size:10px;padding:3px 6px}
+  .kpi-grid{grid-template-columns:1fr}
+  .kpi-val{font-size:20px}
+  .header h1{font-size:12px}
+  .tab{padding:8px 10px;font-size:10px}
+  .filterbar>div .qbtn{font-size:10px;padding:3px 6px}
 }
 </style>
-
 </head>
 <body>
 
@@ -789,6 +787,23 @@ function renderOverview(){
   var bonWertData=getBonWert(von,bis,st);
   var bonWertMd=getBonWert(von,bis,'Mehringdamm');
   var bonWertRs=getBonWert(von,bis,'Rosenthaler Straße');
+  // Vorperiode für Standort-Vergleich
+  var vonD2=new Date(von), bisD2=new Date(bis);
+  var dl2=bisD2-vonD2;
+  var vorBis2=new Date(vonD2.getTime()-86400000);
+  var vorVon2=new Date(vorBis2.getTime()-dl2);
+  function fDE2(d){return d.toISOString().slice(0,10);}
+  var vorMd=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.st==="Mehringdamm";});
+  var vorRs=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.st==="Rosenthaler Straße";});
+  var kVorMd=kpi(vorMd), kVorRs=kpi(vorRs);
+  var diffMd=kVorMd.u>0?((km.u-kVorMd.u)/kVorMd.u*100):null;
+  var diffRs=kVorRs.u>0?((kr.u-kVorRs.u)/kVorRs.u*100):null;
+  function trendBadge(diff){
+    if(diff===null) return '';
+    var arrow=diff>=0?'▲':'▼';
+    var col=diff>=0?'#22c55e':'#ef4444';
+    return '<span style="font-size:11px;color:'+col+';font-weight:600;margin-left:6px">'+arrow+' '+Math.abs(diff).toFixed(1)+'%</span>';
+  }
   var smKosten=getSocialMediaKosten(von,bis,st); // Social Media → Personalgemeinkosten
   var cmPct=k.u>0?cm/k.u:0;
   var ebitda=cm-fkOv.gesamt-smKosten;
@@ -974,11 +989,18 @@ function renderOverview(){
   charts["c-ov-tag"]=new Chart(document.getElementById("c-ov-tag"),{type:"bar",data:{labels:labs,datasets:[{label:"Umsatz",data:data,backgroundColor:"#f97316",borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#475569",font:{size:9},maxTicksLimit:10},grid:{color:"#1e2d40"}},y:{ticks:{color:"#475569",font:{size:9},callback:function(v){return(v/1000).toFixed(0)+"k";}},grid:{color:"#1e2d40"}}}}});
 
   dc("c-ov-donut");
-  var donutFC=k.f;
-  var donutOpa=pa; // Operative Personalkosten
-  var donutPG=fkOv.personalGemein+fkOv.managementFee+smKosten; // immer ungefiltert
-  var donutRest=fkOv.miete+fkOv.versicherung+fkOv.werbeReise+fkOv.sonstBetrieb+fkOv.verwaltung+fkOv.instandhaltung+fkOv.abschreibung;
+  var donutFC=Math.max(k.f,0);
+  var donutOpa=Math.max(pa,0);
+  var donutPG=Math.max(fkOv.personalGemein+fkOv.managementFee+smKosten,0);
+  var donutRest=Math.max(fkOv.miete+fkOv.versicherung+fkOv.werbeReise+fkOv.sonstBetrieb+fkOv.verwaltung+fkOv.instandhaltung+fkOv.abschreibung,0);
   var donutEBITDA=Math.max(ebitda,0);
+  // Bei Stundenfilter: Fixkosten begrenzen damit Summe nicht > Umsatz
+  if(hatStundenfilter()&&k.u>0){
+    var donutSum=donutFC+donutOpa;
+    if(donutSum>k.u){donutFC=k.f/donutSum*k.u;donutOpa=pa/donutSum*k.u;}
+    donutPG=0; donutRest=0;
+    donutEBITDA=Math.max(k.u-donutFC-donutOpa,0);
+  }
   charts["c-ov-donut"]=new Chart(document.getElementById("c-ov-donut"),{type:"doughnut",data:{labels:["Food Cost","Operative Personal","Personalgemeinkosten","Rest Gemeinkosten","EBITDA"],datasets:[{data:[donutFC,donutOpa,donutPG,donutRest,donutEBITDA],backgroundColor:["#ef4444","#8b5cf6","#3b82f6","#64748b","#22c55e"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:"72%"}});
 }
 
@@ -1005,21 +1027,48 @@ function renderUmsatz(){
   }
   var bonWertMd=getBonWert(von,bis,'Mehringdamm');
   var bonWertRs=getBonWert(von,bis,'Rosenthaler Straße');
+  // Vorperiode für Standort-Vergleich
+  var vonD2=new Date(von), bisD2=new Date(bis);
+  var dl2=bisD2-vonD2;
+  var vorBis2=new Date(vonD2.getTime()-86400000);
+  var vorVon2=new Date(vorBis2.getTime()-dl2);
+  function fDE2(d){return d.toISOString().slice(0,10);}
+  var vorMd=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.st==="Mehringdamm";});
+  var vorRs=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.st==="Rosenthaler Straße";});
+  var kVorMd=kpi(vorMd), kVorRs=kpi(vorRs);
+  var diffMd=kVorMd.u>0?((km.u-kVorMd.u)/kVorMd.u*100):null;
+  var diffRs=kVorRs.u>0?((kr.u-kVorRs.u)/kVorRs.u*100):null;
+  function trendBadge(diff){
+    if(diff===null) return '';
+    var arrow=diff>=0?'▲':'▼';
+    var col=diff>=0?'#22c55e':'#ef4444';
+    return '<span style="font-size:11px;color:'+col+';font-weight:600;margin-left:6px">'+arrow+' '+Math.abs(diff).toFixed(1)+'%</span>';
+  }
   var tm={};
   gefiltert.forEach(function(r){if(!tm[r.datum])tm[r.datum]={m:0,r:0};if(r.st==="Mehringdamm")tm[r.datum].m+=r.u;else tm[r.datum].r+=r.u;});
   var labs=Object.keys(tm).sort().map(function(d){return d.slice(8)+"."+d.slice(5,7);});
   var dm=Object.keys(tm).sort().map(function(d){return Math.round(tm[d].m);});
   var dr=Object.keys(tm).sort().map(function(d){return Math.round(tm[d].r);});
 
+  // Stunden-Hilfsfunktion für lsTx/lsPay/lsStd (haben keine Stunden-Spalte → Tageswerte bleiben)
+  var sv=stundeVon!==-1?stundeVon:0, sb=stundeBis!==-1?stundeBis:23;
   var txG=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
-  var qG=lsQ.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  var qG=lsQ.filter(function(r){
+    var ok=r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);
+    if(!ok||!hatStundenfilter()) return ok;
+    return r.stunde>=sv&&r.stunde<=sb;
+  });
   var payG=lsPay.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
-  var stdG=lsStd.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  var stdG=lsStd.filter(function(r){
+    var ok=r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);
+    if(!ok||!hatStundenfilter()) return ok;
+    return r.stunde>=sv&&r.stunde<=sb;
+  });
 
-  var totalBons=txG.reduce(function(s,r){return s+r.bons;},0);
+  var totalBons=hatStundenfilter()?getBonsGefiltert(von,bis,st).length:txG.reduce(function(s,r){return s+r.bons;},0);
   var totalLdo=txG.reduce(function(s,r){return s+r.ldo;},0);
 
-  // Kanal-Split pro Standort aus lsTx
+  // Kanal-Split pro Standort
   var txMd=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort==="Mehringdamm";});
   var txRs=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort==="Rosenthaler Straße";});
   var mdLdo=txMd.reduce(function(s,r){return s+r.ldo;},0);
@@ -1039,19 +1088,25 @@ function renderUmsatz(){
 
   var stundenMap={};
   stdG.forEach(function(r){if(!stundenMap[r.stunde])stundenMap[r.stunde]=0;stundenMap[r.stunde]+=r.umsatz;});
+  // Bei Stundenfilter: nur die gefilterten Stunden anzeigen
+  if(hatStundenfilter()){
+    var artStd=getArtikelGefiltert(von,bis,st);
+    stundenMap={};
+    artStd.forEach(function(r){if(!stundenMap[r.stunde])stundenMap[r.stunde]=0;stundenMap[r.stunde]+=r.preisN;});
+  }
   var sKeys=Object.keys(stundenMap).sort(function(a,b){return parseInt(a)-parseInt(b);});
 
   document.getElementById("t-umsatz").innerHTML=`
     <div class="st-cards">
       <div class="st-card" onclick="drill('d-md')">
         <div class="st-name">Mehringdamm</div>
-        <div class="st-val" style="color:#f97316">${fmt(km.u)}</div>
+        <div class="st-val" style="color:#f97316;display:flex;align-items:center">${fmt(km.u)}${trendBadge(diffMd)}</div>
         <div class="st-meta"><span>Ø ${fmt(km.u/Math.max(km.t,1))}/Tag</span><span>FC: ${fmtP(km.fp)}</span><span>Ø Bon: ${fmtD(bonWertMd.avg)}</span></div>
         <div class="progress"><div class="progress-fill" style="width:${km.u+kr.u>0?Math.round(km.u/(km.u+kr.u)*100):50}%;background:#f97316"></div></div>
       </div>
       <div class="st-card" onclick="drill('d-rs')">
         <div class="st-name">Rosenthaler Straße</div>
-        <div class="st-val" style="color:#3b82f6">${fmt(kr.u)}</div>
+        <div class="st-val" style="color:#3b82f6;display:flex;align-items:center">${fmt(kr.u)}${trendBadge(diffRs)}</div>
         <div class="st-meta"><span>Ø ${fmt(kr.u/Math.max(kr.t,1))}/Tag</span><span>FC: ${fmtP(kr.fp)}</span><span>Ø Bon: ${fmtD(bonWertRs.avg)}</span></div>
         <div class="progress"><div class="progress-fill" style="width:${km.u+kr.u>0?Math.round(kr.u/(km.u+kr.u)*100):50}%;background:#3b82f6"></div></div>
       </div>
@@ -1665,8 +1720,9 @@ function renderPersonal(){
   // Standort-Map
   var stMap={};
   pk.data.forEach(function(r){
-    if(!stMap[r.standort])stMap[r.standort]={kosten:0,stunden:0,count:0};
+    if(!stMap[r.standort])stMap[r.standort]={kosten:0,stunden:0,count:0,ma:[]};
     stMap[r.standort].kosten+=r.kosten;stMap[r.standort].stunden+=r.stunden;stMap[r.standort].count++;
+    stMap[r.standort].ma.push(r);
   });
 
   // Mitarbeiter-Map
@@ -1733,7 +1789,18 @@ function renderPersonal(){
             '<div class="drill-row"><span>Personal-Quote</span><span style="color:'+(pct>ZIELE.pa?'#ef4444':'#22c55e')+'">'+fmtP(pct)+'</span></div>'+
             '<div class="drill-row"><span>Gesamtstunden</span><span>'+Math.round(d.stunden)+' h</span></div>'+
             '<div class="drill-row"><span>Umsatz/Personalstunde</span><span style="color:'+(stU>=ZIELE.umsatzStd?'#22c55e':'#ef4444')+'">'+fmt(stU)+'/h</span></div>'+
-            '<div class="ai-box">'+( pct>ZIELE.pa?name+' liegt '+fmtP(pct-ZIELE.pa)+' über Ziel-Personalquote. Potenzial: '+fmt((pct-ZIELE.pa)*(gefiltert.filter(function(r){return r.st===name;}).reduce(function(s,r){return s+r.u;},0)))+'/Monat.':name+' ist im Zielbereich.')+' Umsatz/h '+(stU>=ZIELE.umsatzStd?'✓ gut.':'unter Ziel — Besetzung zu hoch für Umsatzvolumen.')+' </div>'+
+            '<div style="font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.5px;padding:8px 0 4px">Mitarbeiter</div>'+
+            d.ma.sort(function(a,b){return a.startZeit.localeCompare(b.startZeit);}).map(function(m){
+              var bereichCol=m.bereich==="Kitchen"?"#f97316":m.bereich==="Service"?"#22c55e":m.bereich==="Social Media"?"#8b5cf6":"#3b82f6";
+              return'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1e2d40">'+
+                '<span style="color:#e2e8f0;font-size:12px">'+m.mitarbeiter+'</span>'+
+                '<span style="display:flex;align-items:center;gap:8px">'+
+                  '<span style="font-size:11px;color:#64748b">'+m.startZeit+'–'+m.endeZeit+'</span>'+
+                  '<span style="font-size:10px;background:'+bereichCol+'20;color:'+bereichCol+';border-radius:4px;padding:1px 6px">'+m.bereich+'</span>'+
+                '</span>'+
+              '</div>';
+            }).join("")+
+            '<div class="ai-box" style="margin-top:8px">'+( pct>ZIELE.pa?name+' liegt '+fmtP(pct-ZIELE.pa)+' über Ziel-Personalquote.':name+' ist im Zielbereich.')+' Umsatz/h '+(stU>=ZIELE.umsatzStd?'✓ gut.':'unter Ziel.')+' </div>'+
           '</div>';
         }).join("")}
       </div>
@@ -1836,12 +1903,40 @@ function renderFoodCost(){
   if(hatStundenfilter()){var uStdFC=getUmsatzGefiltert(von,bis,st);var avgFcQFC=getAvgFcQuote(st);k={u:uStdFC.u,f:uStdFC.u*avgFcQFC,s:k.s,t:k.t,fp:avgFcQFC,at:k.at};}
   var pa=pk.total>0?pk.total:k.u*0.33;
 
-  // Waste filtern
+  // Waste filtern (immer voller Tag - wird dann anteilig berechnet)
   var wasteG=waste.filter(function(r){
     return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);
   });
 
-  var totalWaste=wasteG.reduce(function(s,r){return s+r.kosten;},0);
+  // Bei Stundenfilter: Waste anteilig berechnen
+  // Anteil = Artikel in Filterzeit / Artikel gesamt (ganzer Tag)
+  var wasteAnteil = 1.0;
+  var wasteAnteilMd = 1.0, wasteAnteilRs = 1.0;
+  if(hatStundenfilter()){
+    var artGesamt = artikel.filter(function(r){
+      return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===0&&(r.gruppe==="Vorspeise"||r.gruppe==="Hauptgericht"||r.gruppe==="Main"||r.gruppe==="Starter"||r.gruppe==="main"||r.gruppe==="starter");
+    });
+    var artGFilter = getArtikelGefiltert(von,bis,st).filter(function(r){
+      return r.storniert===0&&(r.gruppe==="Vorspeise"||r.gruppe==="Hauptgericht"||r.gruppe==="Main"||r.gruppe==="Starter"||r.gruppe==="main"||r.gruppe==="starter");
+    });
+    // Fallback: alle Artikel wenn keine Haupt/Vorspeisen gefunden
+    if(artGesamt.length===0){
+      artGesamt=artikel.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===0;});
+      artGFilter=getArtikelGefiltert(von,bis,st).filter(function(r){return r.storniert===0;});
+    }
+    var gesamtMenge=artGesamt.reduce(function(s,r){return s+r.menge;},0);
+    var filterMenge=artGFilter.reduce(function(s,r){return s+r.menge;},0);
+    wasteAnteil=gesamtMenge>0?filterMenge/gesamtMenge:0;
+    // Pro Standort
+    var artGesamtMd=artGesamt.filter(function(r){return r.standort==="Mehringdamm";}).reduce(function(s,r){return s+r.menge;},0);
+    var artFilterMd=artGFilter.filter(function(r){return r.standort==="Mehringdamm";}).reduce(function(s,r){return s+r.menge;},0);
+    wasteAnteilMd=artGesamtMd>0?artFilterMd/artGesamtMd:0;
+    var artGesamtRs=artGesamt.filter(function(r){return r.standort==="Rosenthaler Straße";}).reduce(function(s,r){return s+r.menge;},0);
+    var artFilterRs=artGFilter.filter(function(r){return r.standort==="Rosenthaler Straße";}).reduce(function(s,r){return s+r.menge;},0);
+    wasteAnteilRs=artGesamtRs>0?artFilterRs/artGesamtRs:0;
+  }
+
+  var totalWaste=wasteG.reduce(function(s,r){return s+r.kosten;},0)*wasteAnteil;
   var totalFC=k.f;
   var wareneinsatz=totalFC-totalWaste; // Reiner Wareneinsatz ohne Waste
   var wasteQuote=k.u>0?totalWaste/k.u:0;
@@ -1849,12 +1944,12 @@ function renderFoodCost(){
   var wareneinsatzQuote=k.u>0?wareneinsatz/k.u:0;
   var tage=new Set(gefiltert.map(function(r){return r.datum;})).size||1;
 
-  // Waste nach Kategorie
+  // Waste nach Kategorie (anteilig bei Stundenfilter)
   var katMap={};
   wasteG.forEach(function(r){
     if(!katMap[r.kategorie])katMap[r.kategorie]={kosten:0,count:0};
-    katMap[r.kategorie].kosten+=r.kosten;
-    katMap[r.kategorie].count++;
+    katMap[r.kategorie].kosten+=r.kosten*wasteAnteil;
+    katMap[r.kategorie].count+=wasteAnteil;
   });
   var katList=Object.entries(katMap).sort(function(a,b){return b[1].kosten-a[1].kosten;});
 
@@ -1878,9 +1973,11 @@ function renderFoodCost(){
   var maxWasteKosten=topWaste.length>0?topWaste[0][1].kosten:1;
 
   // Wareneinsatz pro Artikel (aus Lightspeed Artikel-Tab)
-  var artG=artikel.filter(function(r){
-    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===0;
-  });
+  var artG=hatStundenfilter()?
+    getArtikelGefiltert(von,bis,st).filter(function(r){return r.storniert===0;}):
+    artikel.filter(function(r){
+      return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===0;
+    });
   var artUmsatzMap={};
   artG.forEach(function(r){
     if(!artUmsatzMap[r.name])artUmsatzMap[r.name]={umsatz:0,menge:0,gruppe:r.gruppe};
@@ -1902,25 +1999,27 @@ function renderFoodCost(){
   var stList = ['Mehringdamm','Rosenthaler Straße'];
   function calcStandort(stName) {
     var stWaste = waste.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort===stName;});
+    var stAnteil = stName==="Mehringdamm"?wasteAnteilMd:wasteAnteilRs;
     var stGefiltert = gefiltert.filter(function(r){return r.st===stName;});
-    var stU = stGefiltert.reduce(function(s,r){return s+r.u;},0);
-    var stFC = stGefiltert.reduce(function(s,r){return s+r.f;},0);
-    var stTotalWaste = stWaste.reduce(function(s,r){return s+r.kosten;},0);
+    // Bei Stundenfilter: Umsatz aus Artikel-Daten
+    var stU = hatStundenfilter()?getUmsatzGefiltert(von,bis,stName).u:stGefiltert.reduce(function(s,r){return s+r.u;},0);
+    var stFC = hatStundenfilter()?stU*getAvgFcQuote(stName):stGefiltert.reduce(function(s,r){return s+r.f;},0);
+    var stTotalWaste = stWaste.reduce(function(s,r){return s+r.kosten;},0)*stAnteil;
     var stWareneinsatz = stFC - stTotalWaste;
-    // Waste nach Kategorie
+    // Waste nach Kategorie (anteilig)
     var stKatMap = {};
     stWaste.forEach(function(r){
       if(!stKatMap[r.kategorie])stKatMap[r.kategorie]={kosten:0,count:0};
-      stKatMap[r.kategorie].kosten+=r.kosten;
-      stKatMap[r.kategorie].count++;
+      stKatMap[r.kategorie].kosten+=r.kosten*stAnteil;
+      stKatMap[r.kategorie].count+=stAnteil;
     });
     var stKatList = Object.entries(stKatMap).sort(function(a,b){return b[1].kosten-a[1].kosten;});
-    // Top Waste Artikel
+    // Top Waste Artikel (anteilig)
     var stArtMap = {};
     stWaste.forEach(function(r){
       if(!stArtMap[r.artikel])stArtMap[r.artikel]={kosten:0,menge:0,kategorie:r.kategorie,events:new Set()};
-      stArtMap[r.artikel].kosten+=r.kosten;
-      stArtMap[r.artikel].menge+=r.menge;
+      stArtMap[r.artikel].kosten+=r.kosten*stAnteil;
+      stArtMap[r.artikel].menge+=r.menge*stAnteil;
       stArtMap[r.artikel].events.add(r.eventId);
     });
     var stTopWaste = Object.entries(stArtMap).sort(function(a,b){return b[1].kosten-a[1].kosten;}).slice(0,5);
@@ -1959,6 +2058,8 @@ function renderFoodCost(){
   }
   var wkMd = wasteKonsistenz('Mehringdamm');
   var wkRs = wasteKonsistenz('Rosenthaler Straße');
+  // Anteil-Info für Anzeige
+  var wasteAnteilInfo = hatStundenfilter()?' ('+Math.round(wasteAnteil*100)+'% der Tagesmengen im Zeitfenster)':'';
 
   document.getElementById("t-foodcost").innerHTML=`
     <div class="kpi-grid">
@@ -1978,7 +2079,7 @@ function renderFoodCost(){
         <div class="kpi-label">Waste gesamt</div>
         <div class="kpi-val" style="color:${wasteQuote>0.02?'#ef4444':'#22c55e'}">${fmt(totalWaste)}</div>
         <div class="kpi-delta ${wasteQuote>0.02?'delta-dn':'delta-up'}">${fmtP(wasteQuote)} vom Umsatz · Ziel <2%</div>
-        <div class="kpi-ai">${wasteG.length} Positionen · ${katList.length} Kategorien · Ø ${fmt(totalWaste/tage)}/Tag</div>
+        <div class="kpi-ai">${wasteG.length} Positionen · ${katList.length} Kategorien · Ø ${fmt(totalWaste/tage)}/Tag${hatStundenfilter()?' · ⏰ '+Math.round(wasteAnteil*100)+'% Tagesanteil':''}</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Waste / Food Cost Ratio</div>
@@ -2165,9 +2266,11 @@ function renderSpeisekarte(){
   var bis=document.getElementById("bis").value;
   var st=document.getElementById("standort").value;
 
-  var artG=artikel.filter(function(r){
-    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===0;
-  });
+  var artG=hatStundenfilter()?
+    getArtikelGefiltert(von,bis,st).filter(function(r){return r.storniert===0;}):
+    artikel.filter(function(r){
+      return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===0;
+    });
 
   if(artG.length===0){
     document.getElementById("t-speisekarte").innerHTML='<div class="box" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">🍽️</div><div style="color:#475569">Keine Artikel-Daten für diesen Zeitraum.</div><div style="color:#334155;font-size:12px;margin-top:6px">Lightspeed Artikel-Import läuft täglich ab 08:00.</div></div>';
@@ -2183,10 +2286,12 @@ function renderSpeisekarte(){
     artMap[r.name].bons.add(r.bonNr);
   });
 
-  // Stornos separat
-  var artStornoG=artikel.filter(function(r){
-    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===1;
-  });
+  // Stornos separat (mit Stundenfilter)
+  var artStornoG=hatStundenfilter()?
+    getArtikelGefiltert(von,bis,st).filter(function(r){return r.storniert===1;}):
+    artikel.filter(function(r){
+      return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===1;
+    });
   artStornoG.forEach(function(r){
     if(artMap[r.name])artMap[r.name].stornos++;
   });
@@ -2760,9 +2865,11 @@ function renderLieferando(){
   var ldoAnteil=gefiltert.reduce(function(s,r){return s+r.u;},0)>0?ldoBrutto/gefiltert.reduce(function(s,r){return s+r.u;},0):0;
 
   // === RABATTAKTIONEN (Lieferando Discount in 13_ls_artikel) ===
-  var discountArtikel=artikel.filter(function(r){
-    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&
-           (r.name.toLowerCase().indexOf("lieferando discount")!==-1||r.name.toLowerCase().indexOf("discount")!==-1&&r.kanal==="Lieferando");
+  var discountBase=hatStundenfilter()?
+    getArtikelGefiltert(von,bis,st):
+    artikel.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  var discountArtikel=discountBase.filter(function(r){
+    return (r.name.toLowerCase().indexOf("lieferando discount")!==-1||r.name.toLowerCase().indexOf("discount")!==-1&&r.kanal==="Lieferando");
   });
   var discountBrutto=discountArtikel.reduce(function(s,r){return s+r.preis;},0);
   var discountNetto=discountArtikel.reduce(function(s,r){return s+r.preisN;},0);
@@ -2795,10 +2902,11 @@ function renderLieferando(){
   var garRs=garantie("Rosenthaler Straße");
 
   // === TOP SELLER AUF LIEFERANDO ===
-  var ldoArtikel=artikel.filter(function(r){
-    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&
-           r.kanal==="Lieferando"&&r.storniert===0&&
-           r.name.toLowerCase().indexOf("discount")===-1;
+  var ldoArtikelBase=hatStundenfilter()?
+    getArtikelGefiltert(von,bis,st):
+    artikel.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  var ldoArtikel=ldoArtikelBase.filter(function(r){
+    return r.kanal==="Lieferando"&&r.storniert===0&&r.name.toLowerCase().indexOf("discount")===-1;
   });
   var ldoArtMap={};
   ldoArtikel.forEach(function(r){
@@ -3040,7 +3148,6 @@ ladeDaten();
 <!-- ============================================================
      KI ASSISTENT
      ============================================================ -->
-
 <button id="ai-fab" onclick="toggleAiPanel()" title="KI Assistent">
   🤖<span class="ai-badge" id="ai-badge"></span>
 </button>
