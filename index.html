@@ -408,7 +408,8 @@ function getOrdio(von,bis,st){
   var d=ordio.filter(function(r){
     return r.datum>=von&&r.datum<=bis&&
            (st==="Alle Standorte"||r.standort===st)&&
-           MGMT_MITARBEITER.indexOf(r.mitarbeiter)===-1; // Managementkosten raus
+           MGMT_MITARBEITER.indexOf(r.mitarbeiter)===-1&& // Managementkosten raus
+           r.bereich!=="Social Media"; // Social Media → Personalgemeinkosten
   });
   return{
     total:d.reduce(function(s,r){return s+r.kosten;},0),
@@ -416,6 +417,16 @@ function getOrdio(von,bis,st){
     count:d.length,
     data:d
   };
+}
+
+// Social Media Kosten (variabel, gehört zu Personalgemeinkosten)
+function getSocialMediaKosten(von,bis,st){
+  var d=ordio.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&
+           (st==="Alle Standorte"||r.standort===st)&&
+           r.bereich==="Social Media";
+  });
+  return d.reduce(function(s,r){return s+r.kosten;},0);
 }
 
 function drill(id){
@@ -658,8 +669,9 @@ function renderOverview(){
   var bonWertData=getBonWert(von,bis,st);
   var bonWertMd=getBonWert(von,bis,'Mehringdamm');
   var bonWertRs=getBonWert(von,bis,'Rosenthaler Straße');
+  var smKosten=getSocialMediaKosten(von,bis,st); // Social Media → Personalgemeinkosten
   var cmPct=k.u>0?cm/k.u:0;
-  var ebitda=cm-fkOv.gesamt;
+  var ebitda=cm-fkOv.gesamt-smKosten;
   var ebitdaPct=k.u>0?ebitda/k.u:0;
   var mi=fkOv.miete,en=fkOv.versicherung,so=fkOv.werbeReise+fkOv.sonstBetrieb+fkOv.verwaltung+fkOv.instandhaltung+fkOv.abschreibung+fkOv.personalGemein+fkOv.managementFee;
   var paPct=k.u>0?pa/k.u:0;
@@ -673,6 +685,7 @@ function renderOverview(){
 
   // Standort split
   var bonWertData=getBonWert(von,bis,st);
+  var smKosten=getSocialMediaKosten(von,bis,st); // Social Media → Personalgemeinkosten
   var md=gefiltert.filter(function(r){return r.st==="Mehringdamm";});
   var rs=gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";});
   var km=kpi(md),kr=kpi(rs);
@@ -819,7 +832,7 @@ function renderOverview(){
   dc("c-ov-donut");
   var donutFC=k.f;
   var donutOpa=pa; // Operative Personalkosten
-  var donutPG=fkOv.personalGemein+fkOv.managementFee; // Personalgemeinkosten
+  var donutPG=fkOv.personalGemein+fkOv.managementFee+smKosten; // Personalgemeinkosten inkl. Social Media
   var donutRest=fkOv.miete+fkOv.versicherung+fkOv.werbeReise+fkOv.sonstBetrieb+fkOv.verwaltung+fkOv.instandhaltung+fkOv.abschreibung; // Rest Gemeinkosten
   var donutEBITDA=Math.max(ebitda,0);
   charts["c-ov-donut"]=new Chart(document.getElementById("c-ov-donut"),{type:"doughnut",data:{labels:["Food Cost","Operative Personal","Personalgemeinkosten","Rest Gemeinkosten","EBITDA"],datasets:[{data:[donutFC,donutOpa,donutPG,donutRest,donutEBITDA],backgroundColor:["#ef4444","#8b5cf6","#3b82f6","#64748b","#22c55e"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:"72%"}});
@@ -833,6 +846,7 @@ function renderUmsatz(){
   var bis=document.getElementById("bis").value;
   var st=document.getElementById("standort").value;
   var bonWertData=getBonWert(von,bis,st);
+  var smKosten=getSocialMediaKosten(von,bis,st); // Social Media → Personalgemeinkosten
   var md=gefiltert.filter(function(r){return r.st==="Mehringdamm";});
   var rs=gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";});
   var km=kpi(md),kr=kpi(rs);
@@ -1111,7 +1125,8 @@ function renderArtikelProStunde(von, bis, st) {
     var hInt = parseInt(h);
     var tageInStunde = new Set(artG.filter(function(r){return r.stunde===hInt;}).map(function(r){return r.datum;}));
     var alleMA = {};
-    var maZeiten = {}; // Schichtzeiten pro MA
+    var maZeiten   = {}; // Schichtzeiten pro MA
+    var maBereiche = {}; // Bereich pro MA
     tageInStunde.forEach(function(tag){
       ordio.filter(function(r){
         return r.datum === tag &&
@@ -1119,9 +1134,11 @@ function renderArtikelProStunde(von, bis, st) {
                r.startStunde <= hInt && r.endeStunde > hInt;
       }).forEach(function(r){
         alleMA[r.mitarbeiter] = (alleMA[r.mitarbeiter]||0)+1;
-        // Letzte bekannte Schichtzeit speichern
         if(r.startZeit && r.endeZeit) {
           maZeiten[r.mitarbeiter] = r.startZeit + '–' + r.endeZeit;
+        }
+        if(r.bereich) {
+          maBereiche[r.mitarbeiter] = r.bereich;
         }
       });
     });
@@ -1144,9 +1161,17 @@ function renderArtikelProStunde(von, bis, st) {
         (maListe.length>0
           ? '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
               maListe.map(function(ma){
-                var zeit = maZeiten[ma] || '';
-                return '<span style="background:#1a2538;border:1px solid #2d3f54;border-radius:4px;padding:3px 10px;font-size:11px;color:#e2e8f0">'+
-                  ma+(zeit?'<span style="color:#60a5fa;margin-left:5px;font-size:10px">'+zeit+'</span>':'')+
+                var zeit    = maZeiten[ma] || '';
+                var bereich = maBereiche[ma] || '';
+                var bCol = bereich==='Kitchen'?'#f97316':
+                           bereich==='Social Media'?'#8b5cf6':
+                           bereich==='Service'?'#22c55e':
+                           bereich?'#3b82f6':'#475569';
+                return '<span style="background:#1a2538;border:1px solid '+bCol+'40;border-radius:4px;padding:3px 10px;font-size:11px;color:#e2e8f0;display:inline-flex;align-items:center;gap:5px">'+
+                  (bereich?'<span style="width:6px;height:6px;border-radius:50%;background:'+bCol+';display:inline-block;flex-shrink:0"></span>':'')+
+                  '<span>'+ma+'</span>'+
+                  (zeit?'<span style="color:#60a5fa;font-size:10px">'+zeit+'</span>':'')+
+                  (bereich?'<span style="color:'+bCol+';font-size:10px;font-weight:600">'+bereich+'</span>':'')+
                   '</span>';
               }).join("")+
             '</div>'
@@ -1268,10 +1293,11 @@ function renderGuV(){
   var cm=rohertrag-pa;
   var cmPct=k.u>0?cm/k.u:0;
   // EBITDA = CM minus alle Fixkosten
-  var ebitda=cm-fk.personalGemein-fk.managementFee-fk.miete-fk.versicherung-fk.werbeReise-fk.sonstBetrieb-fk.verwaltung-fk.instandhaltung-fk.abschreibung;
+  var ebitda=cm-fk.personalGemein-fk.managementFee-smKosten-fk.miete-fk.versicherung-fk.werbeReise-fk.sonstBetrieb-fk.verwaltung-fk.instandhaltung-fk.abschreibung;
   var ebitdaPct=k.u>0?ebitda/k.u:0;
 
   var bonWertData=getBonWert(von,bis,st);
+  var smKosten=getSocialMediaKosten(von,bis,st); // Social Media → Personalgemeinkosten
   var md=gefiltert.filter(function(r){return r.st==="Mehringdamm";});
   var rs=gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";});
   var km=kpi(md),kr=kpi(rs);
@@ -1318,13 +1344,14 @@ function renderGuV(){
 
         <div style="font-size:11px;color:#475569;padding:6px 0 4px;text-transform:uppercase;letter-spacing:0.5px">Fixkosten (${fk.tage} Tage anteilig)</div>
 
-        <div class="guv-row" onclick="drill('d-guv-personalgemein')"><span style="color:#94a3b8">— Personalgemeinkosten ↓</span><span style="color:#ef4444">- ${fmt(fk.personalGemein)}</span></div>
+        <div class="guv-row" onclick="drill('d-guv-personalgemein')"><span style="color:#94a3b8">— Personalgemeinkosten ↓</span><span style="color:#ef4444">- ${fmt(fk.personalGemein+smKosten)}</span></div>
         <div id="d-guv-personalgemein" class="drill-panel">
           <div class="drill-row"><span>Kevin Weber</span><span>€ 4.175/Monat</span></div>
           <div class="drill-row"><span>Jan Haring</span><span>€ 6.050/Monat</span></div>
           <div class="drill-row"><span>Buted Deleg</span><span>€ 800/Monat</span></div>
-          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Gesamt/Monat</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.personalGemein)}</span></div>
-          <div class="drill-row"><span>Tagesanteil</span><span>${fmtD(FIXKOSTEN.personalGemein/30)}/Tag</span></div>
+          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Fix Gesamt/Monat</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.personalGemein)}</span></div>
+          <div class="drill-row"><span>Social Media (variabel)</span><span style="color:#f97316">${fmt(smKosten)} (${tage} Tage)</span></div>
+          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9;font-weight:700">Gesamt Personalgemeinkosten</span><span style="color:#ef4444;font-weight:700">${fmt(fk.personalGemein+smKosten)}</span></div>
         </div>
 
         <div class="guv-row" onclick="drill('d-guv-mgmtfee')"><span style="color:#94a3b8">— Management Fee (Savory Stories) ↓</span><span style="color:#ef4444">- ${fmt(fk.managementFee)}</span></div>
@@ -2446,7 +2473,8 @@ function renderSimulator(){
   var rohertraA=uA-fcA-ldoProvA;
   var paOpaA=paBase;
   var cmA=rohertraA-paOpaA;
-  var paGemA=fkSim.personalGemein+fkSim.managementFee;
+  var smKostenSim=getSocialMediaKosten(von,bis,st);
+  var paGemA=fkSim.personalGemein+fkSim.managementFee+smKostenSim;
   var mieteA=fkSim.miete+fkSim.versicherung;
   var werbeA=fkSim.werbeReise;
   var sonstA=fkSim.sonstBetrieb+fkSim.verwaltung+fkSim.instandhaltung+fkSim.abschreibung;
