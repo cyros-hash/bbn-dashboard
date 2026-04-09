@@ -803,7 +803,19 @@ function renderOverview(){
   var ebitdaPct=k.u>0?ebitda/k.u:0;
   var mi=fkOv.miete,en=fkOv.versicherung,so=fkOv.werbeReise+fkOv.sonstBetrieb+fkOv.verwaltung+fkOv.instandhaltung+fkOv.abschreibung+fkOv.personalGemein+fkOv.managementFee;
   var paPct=k.u>0?pa/k.u:0;
-  var umsatzStd=pk.stunden>0?k.u/pk.stunden:0;
+  // Umsatz/Stunde: nur Tage mit Umsatz>0 UND Stunden>0
+  var aktivOvMap={};
+  pk.data.forEach(function(r){
+    if(!aktivOvMap[r.datum])aktivOvMap[r.datum]={stunden:0};
+    aktivOvMap[r.datum].stunden+=r.stunden;
+  });
+  gefiltert.forEach(function(r){
+    if(aktivOvMap[r.datum])aktivOvMap[r.datum].umsatz=(aktivOvMap[r.datum].umsatz||0)+r.u;
+  });
+  var aktivOvTage=Object.values(aktivOvMap).filter(function(d){return (d.umsatz||0)>0&&d.stunden>0;});
+  var umsatzStd=aktivOvTage.length>0?
+    aktivOvTage.reduce(function(s,d){return s+d.umsatz;},0)/aktivOvTage.reduce(function(s,d){return s+d.stunden;},0):
+    pk.stunden>0?k.u/pk.stunden:0;
 
   // Vorperiode
   var pp=prevPeriod(von,bis);
@@ -1701,8 +1713,6 @@ function renderPersonal(){
 
   var paPct=k.u>0?pk.total/k.u:0;
   var stdKosten=pk.stunden>0?pk.total/pk.stunden:0;
-  var umsatzStd=pk.stunden>0?k.u/pk.stunden:0;
-
   // Tag-Map
   var tagMap={};
   var umsatzStdMap={};
@@ -1716,6 +1726,11 @@ function renderPersonal(){
   gefiltert.forEach(function(r){
     if(umsatzStdMap[r.datum])umsatzStdMap[r.datum].umsatz+=r.u;
   });
+  // Umsatz/Stunde: nur Tage mit Umsatz>0 UND Stunden>0 (keine Schließtage)
+  var aktiveTage=Object.values(umsatzStdMap).filter(function(d){return d.umsatz>0&&d.stunden>0;});
+  var totalAktivU=aktiveTage.reduce(function(s,d){return s+d.umsatz;},0);
+  var totalAktivStd=aktiveTage.reduce(function(s,d){return s+d.stunden;},0);
+  var umsatzStd=totalAktivStd>0?totalAktivU/totalAktivStd:0;
   var tagKeys=Object.keys(tagMap).sort();
 
   // Standort-Map
