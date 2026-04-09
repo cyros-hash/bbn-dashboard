@@ -796,14 +796,6 @@ function renderOverview(){
   var vorMd=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.st==="Mehringdamm";});
   var vorRs=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.st==="Rosenthaler Straße";});
   var kVorMd=kpi(vorMd), kVorRs=kpi(vorRs);
-  var diffMd=kVorMd.u>0?((km.u-kVorMd.u)/kVorMd.u*100):null;
-  var diffRs=kVorRs.u>0?((kr.u-kVorRs.u)/kVorRs.u*100):null;
-  function trendBadge(diff){
-    if(diff===null) return '';
-    var arrow=diff>=0?'▲':'▼';
-    var col=diff>=0?'#22c55e':'#ef4444';
-    return '<span style="font-size:11px;color:'+col+';font-weight:600;margin-left:6px">'+arrow+' '+Math.abs(diff).toFixed(1)+'%</span>';
-  }
   var smKosten=getSocialMediaKosten(von,bis,st); // Social Media → Personalgemeinkosten
   var cmPct=k.u>0?cm/k.u:0;
   var ebitda=cm-fkOv.gesamt-smKosten;
@@ -837,6 +829,14 @@ function renderOverview(){
   }
   var cmpMd=pkMd.total>0&&km.u>0?(km.u-km.f-pkMd.total)/km.u:0;
   var cmpRs=pkRs.total>0&&kr.u>0?(kr.u-kr.f-pkRs.total)/kr.u:0;
+  var diffMd=kVorMd.u>0?((km.u-kVorMd.u)/kVorMd.u*100):null;
+  var diffRs=kVorRs.u>0?((kr.u-kVorRs.u)/kVorRs.u*100):null;
+  function trendBadge(diff){
+    if(diff===null) return '';
+    var arrow=diff>=0?'▲':'▼';
+    var col=diff>=0?'#22c55e':'#ef4444';
+    return '<span style="font-size:11px;color:'+col+';font-weight:600;margin-left:6px">'+arrow+' '+Math.abs(diff).toFixed(1)+'%</span>';
+  }
 
   // Tages-Chart
   var tm={};
