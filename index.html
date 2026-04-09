@@ -15,6 +15,9 @@ body{font-family:system-ui,sans-serif;background:#0a0f1e;color:#e2e8f0;min-heigh
 /* FILTER */
 .filterbar{background:#0f1829;padding:8px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #1e2d40;flex-wrap:wrap}
 input[type=date]{background:#1a2538;border:1px solid #2d3f54;border-radius:6px;padding:4px 8px;color:#e2e8f0;font-size:12px}
+.wtbtn{background:transparent;border:none;color:#475569;font-size:10px;font-weight:600;padding:3px 6px;border-radius:4px;cursor:pointer;transition:all 0.15s}
+.wtbtn.active{background:#f9731620;color:#f97316}
+.wtbtn:hover{color:#e2e8f0}
 .qbtn{background:#1a2538;border:1px solid #2d3f54;border-radius:6px;padding:4px 10px;color:#64748b;font-size:11px;cursor:pointer;transition:all 0.15s}
 .qbtn.active{background:#f9731615;border-color:#f97316;color:#f97316}
 .apply-btn{margin-left:auto;background:#f97316;border:none;border-radius:6px;padding:5px 16px;color:#fff;font-size:12px;font-weight:600;cursor:pointer}
@@ -258,10 +261,18 @@ canvas{max-height:220px}
     <button class="qbtn" id="q-heute" onclick="setQuick('heute')">Heute</button>
     <button class="qbtn active" id="q-gestern" onclick="setQuick('gestern')">Gestern</button>
     <button class="qbtn" id="q-woche" onclick="setQuick('woche')">Diese Woche</button>
-    <button class="qbtn" id="q-7" onclick="setQuick('7')">7 Tage</button>
+    <button class="qbtn" id="q-letzteWoche" onclick="setQuick('letzteWoche')">Letzte Woche</button>
     <button class="qbtn" id="q-monat" onclick="setQuick('monat')">Monat</button>
-    <button class="qbtn" id="q-quartal" onclick="setQuick('quartal')">Quartal</button>
     <button class="qbtn" id="q-jahr" onclick="setQuick('jahr')">Jahr</button>
+    <div id="wochentag-filter" style="display:flex;gap:3px;background:#1a2538;border:1px solid #2d3f54;border-radius:6px;padding:3px">
+      <button class="wtbtn active" id="wt-1" onclick="toggleWT(1)" title="Montag">Mo</button>
+      <button class="wtbtn active" id="wt-2" onclick="toggleWT(2)" title="Dienstag">Di</button>
+      <button class="wtbtn active" id="wt-3" onclick="toggleWT(3)" title="Mittwoch">Mi</button>
+      <button class="wtbtn active" id="wt-4" onclick="toggleWT(4)" title="Donnerstag">Do</button>
+      <button class="wtbtn active" id="wt-5" onclick="toggleWT(5)" title="Freitag">Fr</button>
+      <button class="wtbtn active" id="wt-6" onclick="toggleWT(6)" title="Samstag">Sa</button>
+      <button class="wtbtn active" id="wt-0" onclick="toggleWT(0)" title="Sonntag">So</button>
+    </div>
   </div>
   <div style="display:flex;align-items:center;gap:6px;background:#1a2538;border:1px solid #2d3f54;border-radius:6px;padding:3px 8px">
     <span style="font-size:10px;color:#475569">🕐</span>
@@ -323,6 +334,7 @@ var CSV = {
 var alle=[],lsTx=[],lsStd=[],lsQ=[],lsPay=[],ordio=[],artikel=[],bons=[],waste=[];
 var gefiltert=[];
 var stundeVon=-1, stundeBis=-1; // -1 = kein Stundenfilter
+var aktivWT=new Set([0,1,2,3,4,5,6]); // aktive Wochentage (0=So...6=Sa)
 var charts={}, simV={p:0,v:0,f:0,a:0}, aktQ="gestern";
 var ZIELE={fc:0.25,pa:0.25,cm:0.40,ebitda:0.10,bonWert:22,umsatzStd:115};
 
@@ -421,7 +433,8 @@ function getOrdio(von,bis,st){
     return r.datum>=von&&r.datum<=bis&&
            (st==="Alle Standorte"||r.standort===st)&&
            MGMT_MITARBEITER.indexOf(r.mitarbeiter)===-1&& // Managementkosten raus
-           r.bereich!=="Social Media"; // Social Media → Personalgemeinkosten
+           r.bereich!=="Social Media"&& // Social Media → Personalgemeinkosten
+           datumPasstWT(r.datum);
   });
   return{
     total:d.reduce(function(s,r){return s+r.kosten;},0),
@@ -438,7 +451,7 @@ function getOrdio(von,bis,st){
 // Gibt gefilterte Artikel zurück (mit optionalem Stundenfilter)
 function getArtikelGefiltert(von, bis, st) {
   return artikel.filter(function(r){
-    var inDatum = r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===0;
+    var inDatum = r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===0&&datumPasstWT(r.datum);
     if(!inDatum) return false;
     if(stundeVon===-1&&stundeBis===-1) return true;
     var sv = stundeVon!==-1?stundeVon:0;
@@ -450,7 +463,7 @@ function getArtikelGefiltert(von, bis, st) {
 // Gibt gefilterte Bons zurück (mit optionalem Stundenfilter)
 function getBonsGefiltert(von, bis, st) {
   return bons.filter(function(r){
-    var inDatum = r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);
+    var inDatum = r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);
     if(!inDatum) return false;
     if(stundeVon===-1&&stundeBis===-1) return true;
     var sv = stundeVon!==-1?stundeVon:0;
@@ -487,6 +500,7 @@ function getOrdioStunden(von, bis, st) {
            (st==="Alle Standorte"||r.standort===st)&&
            r.bereich!=="Social Media"&&
            MGMT_MITARBEITER.indexOf(r.mitarbeiter)===-1&&
+           datumPasstWT(r.datum)&&
            r.startStunde<=sb&&r.endeStunde>sv; // Überlappung prüfen
   });
   // Anteilige Kosten berechnen
@@ -684,7 +698,9 @@ function applyFilter(){
   var sbEl=document.getElementById("bis-stunde");
   stundeVon = svEl&&svEl.value!==""?parseInt(svEl.value):-1;
   stundeBis = sbEl&&sbEl.value!==""?parseInt(sbEl.value):-1;
-  gefiltert=alle.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.st===st);});
+  gefiltert=alle.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.st===st)&&datumPasstWT(r.datum);
+  });
   renderAll();
 }
 
@@ -713,27 +729,56 @@ function setQuick(k){
     mon.setDate(today.getDate() - diffToMon);
     document.getElementById("von").value = mon.toISOString().split("T")[0];
     document.getElementById("bis").value = todayStr;
-  } else if(k==="7"){
-    var d = new Date(today);
-    d.setDate(d.getDate() - 6);
-    document.getElementById("von").value = d.toISOString().split("T")[0];
-    document.getElementById("bis").value = todayStr;
   } else if(k==="monat"){
     document.getElementById("von").value = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0];
     document.getElementById("bis").value = todayStr;
-  } else if(k==="quartal"){
-    var qStart = new Date(today.getFullYear(), Math.floor(today.getMonth()/3)*3, 1);
-    document.getElementById("von").value = qStart.toISOString().split("T")[0];
-    document.getElementById("bis").value = todayStr;
+  } else if(k==="letzteWoche"){
+    var day2=today.getDay();
+    var diffToMon2=(day2===0)?6:day2-1;
+    var diesenMo=new Date(today);
+    diesenMo.setDate(today.getDate()-diffToMon2);
+    var letztenMo=new Date(diesenMo);
+    letztenMo.setDate(diesenMo.getDate()-7);
+    var letztenSo=new Date(diesenMo);
+    letztenSo.setDate(diesenMo.getDate()-1);
+    document.getElementById("von").value=letztenMo.toISOString().split("T")[0];
+    document.getElementById("bis").value=letztenSo.toISOString().split("T")[0];
   } else if(k==="jahr"){
     document.getElementById("von").value = new Date(today.getFullYear(), 0, 1).toISOString().split("T")[0];
     document.getElementById("bis").value = todayStr;
   }
 }
 
+function toggleWT(day){
+  if(aktivWT.size===7){
+    // Wenn alle aktiv: nur diesen Tag aktivieren
+    aktivWT=new Set([day]);
+  } else if(aktivWT.has(day)&&aktivWT.size===1){
+    // Wenn nur dieser aktiv: alle aktivieren
+    aktivWT=new Set([0,1,2,3,4,5,6]);
+  } else {
+    // Toggle
+    if(aktivWT.has(day)) aktivWT.delete(day); else aktivWT.add(day);
+    if(aktivWT.size===0) aktivWT=new Set([0,1,2,3,4,5,6]);
+  }
+  [0,1,2,3,4,5,6].forEach(function(d){
+    var el=document.getElementById("wt-"+d);
+    if(el)el.className="wtbtn"+(aktivWT.has(d)?" active":"");
+  });
+}
+
+function hatWTFilter(){return aktivWT.size<7;}
+
+function datumPasstWT(datumStr){
+  if(!hatWTFilter()) return true;
+  // datumStr ist YYYY-MM-DD
+  var d=new Date(datumStr+"T12:00:00");
+  return aktivWT.has(d.getDay());
+}
+
 function setQ(k){
   aktQ=k;
-  ["heute","gestern","woche","7","monat","quartal","jahr"].forEach(function(q){
+  ["heute","gestern","woche","letzteWoche","monat","jahr"].forEach(function(q){
     var el=document.getElementById("q-"+q);
     if(el)el.className="qbtn"+(q===k?" active":"");
   });
@@ -812,7 +857,7 @@ function renderOverview(){
   gefiltert.forEach(function(r){
     if(aktivOvMap[r.datum])aktivOvMap[r.datum].umsatz=(aktivOvMap[r.datum].umsatz||0)+r.u;
   });
-  var aktivOvTage=Object.values(aktivOvMap).filter(function(d){return (d.umsatz||0)>0&&d.stunden>0;});
+  var aktivOvTage=Object.values(aktivOvMap).filter(function(d){return (d.umsatz||0)>0;});
   var umsatzStd=aktivOvTage.length>0?
     aktivOvTage.reduce(function(s,d){return s+d.umsatz;},0)/aktivOvTage.reduce(function(s,d){return s+d.stunden;},0):
     pk.stunden>0?k.u/pk.stunden:0;
@@ -1726,11 +1771,15 @@ function renderPersonal(){
   gefiltert.forEach(function(r){
     if(umsatzStdMap[r.datum])umsatzStdMap[r.datum].umsatz+=r.u;
   });
-  // Umsatz/Stunde: nur Tage mit Umsatz>0 UND Stunden>0 (keine Schließtage)
+  // Umsatz/Stunde: Gesamtumsatz / Gesamtstunden (nur Tage mit Umsatz>0)
+  // Schichten ohne Umsatz (Schließtage) werden ausgeschlossen
+  // Nur Tage mit BEIDEN Werten > 0 (keine Schließtage, keine Import-Lücken)
   var aktiveTage=Object.values(umsatzStdMap).filter(function(d){return d.umsatz>0&&d.stunden>0;});
   var totalAktivU=aktiveTage.reduce(function(s,d){return s+d.umsatz;},0);
   var totalAktivStd=aktiveTage.reduce(function(s,d){return s+d.stunden;},0);
-  var umsatzStd=totalAktivStd>0?totalAktivU/totalAktivStd:0;
+  var umsatzStd=totalAktivStd>0?totalAktivU/totalAktivStd:pk.stunden>0?k.u/pk.stunden:0;
+  // Debug-Info in KPI-Karte
+  var aktiveTageAnzahl=aktiveTage.length;
   var tagKeys=Object.keys(tagMap).sort();
 
   // Standort-Map
@@ -1921,7 +1970,7 @@ function renderFoodCost(){
 
   // Waste filtern (immer voller Tag - wird dann anteilig berechnet)
   var wasteG=waste.filter(function(r){
-    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);
+    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);
   });
 
   // Bei Stundenfilter: Waste anteilig berechnen
