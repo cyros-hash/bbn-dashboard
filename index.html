@@ -830,7 +830,7 @@ function renderOverview(){
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <div>
           <div class="box-title">📋 Tagesbericht</div>
-          <div class="box-sub">${von}${von!==bis?' - '+bis:''} · KI-Interpretation</div>
+          <div class="box-sub">${von.split("-").reverse().join(".")}${von!==bis?' - '+bis.split("-").reverse().join("."):''} · KI-Interpretation</div>
         </div>
         <button onclick="generiereKIBericht()" id="btn-bericht" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Aktualisieren</button>
       </div>
@@ -3323,9 +3323,13 @@ function generiereKIBericht() {
   btn.textContent = "⏳ Generiere...";
   inhalt.innerHTML = '<div style="color:#475569;font-style:italic">KI analysiert die Daten...</div>';
 
-  var von = document.getElementById("von").value;
-  var bis = document.getElementById("bis").value;
+  var von = document.getElementById("von").value; // YYYY-MM-DD
+  var bis = document.getElementById("bis").value; // YYYY-MM-DD
   var st  = document.getElementById("standort").value;
+  // Display format für Prompt (DD.MM.YYYY)
+  function toDE(s){return s?s.split("-").reverse().join("."):"";} 
+  var vonDE = toDE(von);
+  var bisDE = toDE(bis);
 
   // Daten aufbereiten
   var k   = kpi(gefiltert);
@@ -3390,7 +3394,7 @@ function generiereKIBericht() {
   prompt += "Schreibe einen kurzen, interpretierten Tagesbericht auf Deutsch. NICHT einfach Zahlen aufzählen — erkläre was die Zahlen BEDEUTEN, warum sie gut oder schlecht sind, und welche Rückschlüsse man ziehen kann. Struktur: 4-5 kurze Abschnitte mit Überschrift. Direkte, klare Sprache.
 
 ";
-  prompt += "ZEITRAUM: "+von+(von!==bis?" bis "+bis:"")+" ("+tage+" Tag"+(tage!==1?"e":"")+")
+  prompt += "ZEITRAUM: "+vonDE+(vonDE!==bisDE?" bis "+bisDE:"")+" ("+tage+" Tag"+(tage!==1?"e":"")+")
 
 ";
   prompt += "UMSATZ:
