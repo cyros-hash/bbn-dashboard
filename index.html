@@ -884,7 +884,7 @@ function renderOverview(){
       var wRows=[
         'Food Cost: '+v(fmtP(k.fp),k.fp<=ZIELE.fc,k.fp<=ZIELE.fc*1.1)+' (Ziel '+fmtP(ZIELE.fc)+')',
         '🟠 MD Waste: '+(wasteMd.length>0?v(fmt(wasteMdT),false,true)+' ('+wasteMd.length+' Pos.)':'<span style="color:#ef4444;font-weight:600">nicht erfasst ⚠️</span>'),
-        '🔵 RS Waste: '+(wasteRs.length>0?v(fmt(wasteRsT),false,true)+' ('+wasteRs.length+' Pos.'):'<span style="color:#ef4444;font-weight:600">nicht erfasst ⚠️</span>')
+        '🔵 RS Waste: '+(wasteRs.length>0?v(fmt(wasteRsT),false,true)+' ('+wasteRs.length+' Pos.)':'<span style="color:#ef4444;font-weight:600">nicht erfasst ⚠️</span>')
       ];
       if(topW.length>0)wRows.push('Top: '+topW.map(function(r){return r.artikel+' '+fmt(r.kosten);}).join(' · '));
       var tkRows=[
