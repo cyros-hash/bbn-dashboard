@@ -824,7 +824,82 @@ function renderOverview(){
           return'<div class="ampel-row"><span style="color:#64748b">'+a.n+'</span><div style="display:flex;align-items:center;gap:8px"><span style="color:#f1f5f9;font-weight:600">'+a.w+'</span><span style="font-size:10px;color:#475569">Ziel '+a.z+'</span><div class="ampel-dot" style="background:'+col+'"></div></div></div>';
         }).join("")}
       </div>
-    </div>`;
+    </div>
+
+    ${(function(){
+      var tb='';
+      var vorperiode=alle.filter(function(r){
+        var vonD=new Date(von),bisD=new Date(bis);
+        var dl=bisD-vonD;
+        var vB=new Date(vonD.getTime()-1);
+        var vV=new Date(vB.getTime()-dl);
+        var vVs=vV.toISOString().slice(0,10).split('-').reverse().join('.');
+        var vBs=vB.toISOString().slice(0,10).split('-').reverse().join('.');
+        return r.datum>=vVs&&r.datum<=vBs&&(st==='Alle Standorte'||r.st===st);
+      });
+      var kVor=kpi(vorperiode);
+      var uDiff=kVor.u>0?((k.u-kVor.u)/kVor.u*100):null;
+      var paQuote=k.u>0?pa/k.u:0;
+      var uStd=pk.stunden>0?k.u/pk.stunden:0;
+      var wasteMd=waste.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort==='Mehringdamm';});
+      var wasteRs=waste.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort==='Rosenthaler Straße';});
+      var wasteMdT=wasteMd.reduce(function(s,r){return s+r.kosten;},0);
+      var wasteRsT=wasteRs.reduce(function(s,r){return s+r.kosten;},0);
+      var bonsGef=bons.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==='Alle Standorte'||r.standort===st);});
+      var bonsInh=bonsGef.filter(function(r){return r.kanal!=='Lieferando';});
+      var tkGes=bonsInh.reduce(function(s,r){return s+r.trinkgeld;},0);
+      var tkTot=bonsInh.reduce(function(s,r){return s+r.total;},0);
+      var tkQ=tkTot>0?tkGes/tkTot:0;
+      var stornosN=bonsGef.filter(function(r){return r.storniert===1;}).length;
+      var maMapTK={};
+      bonsInh.filter(function(r){return r.mitarbeiter&&r.mitarbeiter.indexOf(',')===-1&&r.mitarbeiter.indexOf('Online')===-1;}).forEach(function(r){
+        if(!maMapTK[r.mitarbeiter])maMapTK[r.mitarbeiter]={tk:0,total:0,bons:0};
+        maMapTK[r.mitarbeiter].tk+=r.trinkgeld;maMapTK[r.mitarbeiter].total+=r.total;maMapTK[r.mitarbeiter].bons++;
+      });
+      var bestTK=Object.entries(maMapTK).filter(function(e){return e[1].bons>=2;}).sort(function(a,b){return(b[1].total>0?b[1].tk/b[1].total:0)-(a[1].total>0?a[1].tk/a[1].total:0);});
+      var smAll=pk.data.filter(function(r){return r.bereich==='Social Media';});
+      var txGef=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==='Alle Standorte'||r.standort===st);});
+      var ldoBrutto=txGef.reduce(function(s,r){return s+r.ldo;},0);
+      var anomalien=[];
+      if(stornosN>tage*0.5&&stornosN>2)anomalien.push('Stornos: '+stornosN+'x — bitte prüfen');
+      if(paQuote>ZIELE.pa*1.1)anomalien.push('Personalquote '+fmtP(paQuote)+' — '+fmtP(paQuote-ZIELE.pa)+' über Ziel');
+      if(k.fp>ZIELE.fc*1.1)anomalien.push('Food Cost '+fmtP(k.fp)+' — '+fmtP(k.fp-ZIELE.fc)+' über Ziel');
+      if((st==='Alle Standorte'||st==='Mehringdamm')&&wasteMd.length===0)anomalien.push('Kein Waste erfasst: Mehringdamm');
+      if((st==='Alle Standorte'||st==='Rosenthaler Straße')&&wasteRs.length===0)anomalien.push('Kein Waste erfasst: Rosenthaler Straße');
+      if(smAll.length>0)anomalien.push('Social Media: '+[...new Set(smAll.map(function(r){return r.mitarbeiter+' ('+r.standort.replace('Rosenthaler Straße','Rosi')+')';'}))].join(', '));
+      if(uStd>0&&uStd<ZIELE.umsatzStd*0.7)anomalien.push('Umsatz/Stunde '+fmt(uStd)+' — deutlich unter Ziel €'+ZIELE.umsatzStd);
+      function blk(e,t,c,rows){return '<div style="margin-bottom:10px;padding:12px 14px;background:#0a1628;border-radius:8px;border-left:3px solid '+c+'"><div style="font-size:11px;font-weight:700;color:'+c+';margin-bottom:7px;text-transform:uppercase;letter-spacing:0.5px">'+e+' '+t+'</div><div style="font-size:12px;color:#94a3b8;line-height:1.9">'+rows.join('<br>')+'</div></div>';}
+      function v(val,ok,neu){return '<span style="color:'+(ok?'#22c55e':neu?'#f97316':'#ef4444')+';font-weight:600">'+val+'</span>';}
+      var uRows=[
+        'Umsatz: '+v(fmt(k.u),true,false)+(uDiff!==null?' · '+v((uDiff>=0?'+':'')+uDiff.toFixed(1)+'% vs. Vorperiode',uDiff>=0,uDiff>=-5):'')+'  ·  '+tage+' Tag'+(tage!==1?'e':''),
+        '🟠 Mehringdamm '+v(fmt(km.u),true,false)+'  ·  🔵 Rosenthaler '+v(fmt(kr.u),true,false),
+        'Ø Bon-Wert: '+v(fmtD(bonWertData.avg),bonWertData.avg>=ZIELE.bonWert,bonWertData.avg>=ZIELE.bonWert*0.85)+(ldoBrutto>0?'  ·  🛵 Lieferando: '+fmt(ldoBrutto)+' ('+fmtP(k.u>0?ldoBrutto/k.u:0)+')':'')
+      ];
+      var paRows=[
+        'Kosten: '+v(fmt(pa),paQuote<=ZIELE.pa,paQuote<=ZIELE.pa*1.1)+'  ·  Quote: '+v(fmtP(paQuote),paQuote<=ZIELE.pa,paQuote<=ZIELE.pa*1.1)+' (Ziel '+fmtP(ZIELE.pa)+')',
+        'Umsatz/Stunde: '+v(fmt(uStd),uStd>=ZIELE.umsatzStd,uStd>=ZIELE.umsatzStd*0.85)+' (Ziel €'+ZIELE.umsatzStd+')'
+      ];
+      if(smAll.length>0)paRows.push('📱 Social Media: '+[...new Set(smAll.map(function(r){return '<span style="color:#8b5cf6;font-weight:600">'+r.mitarbeiter+'</span> ('+r.standort.replace('Rosenthaler Straße','Rosi')+', '+r.startZeit+'–'+r.endeZeit+')';}))].join(', '));
+      var topW=wasteMd.concat(wasteRs).sort(function(a,b){return b.kosten-a.kosten;}).slice(0,3);
+      var wRows=[
+        'Food Cost: '+v(fmtP(k.fp),k.fp<=ZIELE.fc,k.fp<=ZIELE.fc*1.1)+' (Ziel '+fmtP(ZIELE.fc)+')',
+        '🟠 MD Waste: '+(wasteMd.length>0?v(fmt(wasteMdT),false,true)+' ('+wasteMd.length+' Pos.)':'<span style="color:#ef4444;font-weight:600">nicht erfasst ⚠️</span>'),
+        '🔵 RS Waste: '+(wasteRs.length>0?v(fmt(wasteRsT),false,true)+' ('+wasteRs.length+' Pos.'):'<span style="color:#ef4444;font-weight:600">nicht erfasst ⚠️</span>')
+      ];
+      if(topW.length>0)wRows.push('Top: '+topW.map(function(r){return r.artikel+' '+fmt(r.kosten);}).join(' · '));
+      var tkRows=[
+        'TK-Quote: '+v(fmtP(tkQ),tkQ>=0.05,tkQ>=0.03)+'  ·  '+fmt(tkGes)+' gesamt',
+        'Stornos: '+v(stornosN+'x',stornosN===0,stornosN<=tage*0.3)
+      ];
+      if(bestTK.length>0)tkRows.push('Bester MA: <span style="color:#f1f5f9;font-weight:600">'+bestTK[0][0]+'</span> ('+fmtP(bestTK[0][1].total>0?bestTK[0][1].tk/bestTK[0][1].total:0)+')');
+      tb+=blk('💰','Umsatz',uDiff===null?'#64748b':uDiff>=0?'#22c55e':'#ef4444',uRows);
+      tb+=blk('👥','Personal',paQuote>ZIELE.pa*1.1?'#ef4444':paQuote>ZIELE.pa?'#f97316':'#22c55e',paRows);
+      tb+=blk('🗑️','Food Cost & Waste',k.fp>ZIELE.fc?'#ef4444':'#22c55e',wRows);
+      tb+=blk('💝','Trinkgeld & Stornos',tkQ>=0.05?'#22c55e':'#f97316',tkRows);
+      if(anomalien.length>0)tb+=blk('⚠️','Besonderheiten','#f97316',anomalien.map(function(a){return '⚠️ '+a;}));
+      return '<div class="box" style="margin-top:14px"><div class="box-title">📋 Tagesbericht</div><div class="box-sub">Zeitraum: '+von+' – '+bis+'</div>'+tb+'</div>';
+    })()}
+    `;
 
   dc("c-ov-tag");
   charts["c-ov-tag"]=new Chart(document.getElementById("c-ov-tag"),{type:"bar",data:{labels:labs,datasets:[{label:"Umsatz",data:data,backgroundColor:"#f97316",borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#475569",font:{size:9},maxTicksLimit:10},grid:{color:"#1e2d40"}},y:{ticks:{color:"#475569",font:{size:9},callback:function(v){return(v/1000).toFixed(0)+"k";}},grid:{color:"#1e2d40"}}}}});
@@ -2961,9 +3036,9 @@ function buildTagesberichtContext() {
   var heute = new Date();
   var gesternD = new Date(heute);
   gesternD.setDate(gesternD.getDate() - 1);
-  var gestern = gesternD.toISOString().slice(0,10).split('-').reverse().join('.');
-  // YYYY-MM-DD für Vergleich
-  var gesternISO = gesternD.toISOString().slice(0,10);
+  // Lokale Zeit verwenden (nicht UTC) um Zeitzonenfehler zu vermeiden
+  var gestern = String(gesternD.getDate()).padStart(2,'0')+'.'+String(gesternD.getMonth()+1).padStart(2,'0')+'.'+gesternD.getFullYear();
+  var gesternISO = gestern; // gleich DD.MM.YYYY
 
   // Vorwoche gleicher Wochentag
   var vorwocheD = new Date(gesternD);
@@ -3115,7 +3190,7 @@ function sendTagesbericht() {
 
   // Sichtbare Nachricht im Chat (kurz)
   var gesternD = new Date(); gesternD.setDate(gesternD.getDate()-1);
-  var gestern = gesternD.toISOString().slice(0,10).split('-').reverse().join('.');
+  var gestern = String(gesternD.getDate()).padStart(2,'0')+'.'+String(gesternD.getMonth()+1).padStart(2,'0')+'.'+gesternD.getFullYear();
   addAiMessage("user", "📋 Tagesbericht für " + gestern + " generieren");
 
   // Langen Kontext unsichtbar an API schicken
@@ -3165,7 +3240,7 @@ function buildTagesberichtHTML(vonParam, bisParam) {
   // Standard: gestern
   var gesternD = new Date();
   gesternD.setDate(gesternD.getDate()-1);
-  var gestern = gesternD.toISOString().slice(0,10).split('-').reverse().join('.');
+  var gestern = String(gesternD.getDate()).padStart(2,'0')+'.'+String(gesternD.getMonth()+1).padStart(2,'0')+'.'+gesternD.getFullYear();
   var zieldatum = vonParam || gestern;
 
   // Vorwoche gleicher Tag
