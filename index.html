@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="de">
 <head>
 <meta charset="UTF-8">
@@ -106,8 +107,8 @@ canvas{max-height:220px}
 .ampel-dot{width:10px;height:10px;border-radius:50%}
 
 /* ============================================================
-   KI ASSISTENT — Floating Chat
-   ============================================================ */
+KI ASSISTENT — Floating Chat
+============================================================ */
 #ai-fab{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 20px #7c3aed60;z-index:1000;transition:transform 0.2s}
 #ai-fab:hover{transform:scale(1.08)}
 #ai-fab .ai-badge{position:absolute;top:-3px;right:-3px;background:#22c55e;width:12px;height:12px;border-radius:50%;border:2px solid #0a0f1e;display:none}
@@ -137,100 +138,101 @@ canvas{max-height:220px}
 #ai-send:hover{background:#6d28d9}
 #ai-send:disabled{background:#2d3f54;color:#475569;cursor:not-allowed}
 /* ============================================================
-   RESPONSIVE — Mobile (max 768px)
-   ============================================================ */
+RESPONSIVE — Mobile (max 768px)
+============================================================ */
 @media(max-width:768px){
-  /* HEADER */
-  .header{padding:10px 12px;flex-wrap:wrap;gap:8px}
-  .header h1{font-size:13px}
-  .header>div:last-child{width:100%;display:flex;justify-content:space-between}
-  .header>div:last-child select{flex:1}
+/* HEADER */
+.header{padding:10px 12px;flex-wrap:wrap;gap:8px}
+.header h1{font-size:13px}
+.header>div:last-child{width:100%;display:flex;justify-content:space-between}
+.header>div:last-child select{flex:1}
 
-  /* FILTER BAR */
-  .filterbar{padding:8px 12px;flex-wrap:wrap;gap:6px}
-  .filterbar input[type=date]{width:calc(50% - 14px);font-size:11px}
-  .filterbar>div{width:100%;display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .filterbar .apply-btn{width:100%;margin-left:0;margin-top:4px}
+/* FILTER BAR */
+.filterbar{padding:8px 12px;flex-wrap:wrap;gap:6px}
+.filterbar input[type=date]{width:calc(50% - 14px);font-size:11px}
+.filterbar>div{width:100%;display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.filterbar .apply-btn{width:100%;margin-left:0;margin-top:4px}
 
-  /* TABS — horizontaler Scroll */
-  .tabs{padding:0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
-  .tabs::-webkit-scrollbar{display:none}
-  .tab{padding:10px 12px;font-size:11px}
+/* TABS — horizontaler Scroll */
+.tabs{padding:0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:10px 12px;font-size:11px}
 
-  /* CONTENT */
-  .content{padding:12px}
+/* CONTENT */
+.content{padding:12px}
 
-  /* KPI GRID — 2 Spalten statt 4 */
-  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
-  .kpi-val{font-size:17px}
-  .kpi-label{font-size:10px}
-  .kpi-ai{font-size:9px}
+/* KPI GRID — 2 Spalten statt 4 */
+.kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+.kpi-val{font-size:17px}
+.kpi-label{font-size:10px}
+.kpi-ai{font-size:9px}
 
-  /* STANDORT CARDS — untereinander */
-  .st-cards{grid-template-columns:1fr}
-  .st-val{font-size:20px}
+/* STANDORT CARDS — untereinander */
+.st-cards{grid-template-columns:1fr}
+.st-val{font-size:20px}
 
-  /* GRID 2/3 — untereinander */
-  .grid2{grid-template-columns:1fr}
-  .grid3{grid-template-columns:1fr}
+/* GRID 2/3 — untereinander */
+.grid2{grid-template-columns:1fr}
+.grid3{grid-template-columns:1fr}
 
-  /* BOX */
-  .box{padding:12px;border-radius:8px}
-  .box-title{font-size:12px}
+/* BOX */
+.box{padding:12px;border-radius:8px}
+.box-title{font-size:12px}
 
-  /* TABELLEN — horizontal scrollbar */
-  .speise-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
-  .speise-table th,.speise-table td{padding:7px 8px;font-size:11px}
+/* TABELLEN — horizontal scrollbar */
+.speise-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+.speise-table th,.speise-table td{padding:7px 8px;font-size:11px}
 
-  /* MA ROWS */
-  .ma-row{flex-wrap:wrap;gap:4px}
-  .ma-name{min-width:100%;font-size:11px}
-  .ma-stat{min-width:auto;font-size:10px;text-align:left}
-  .ma-bar-wrap{width:100%}
+/* MA ROWS */
+.ma-row{flex-wrap:wrap;gap:4px}
+.ma-name{min-width:100%;font-size:11px}
+.ma-stat{min-width:auto;font-size:10px;text-align:left}
+.ma-bar-wrap{width:100%}
 
-  /* DRILL PANEL */
-  .drill-panel{padding:10px}
-  .drill-row{font-size:11px;flex-wrap:wrap;gap:2px}
+/* DRILL PANEL */
+.drill-panel{padding:10px}
+.drill-row{font-size:11px;flex-wrap:wrap;gap:2px}
 
-  /* GuV ROWS */
-  .guv-row{font-size:12px;padding:7px 0}
+/* GuV ROWS */
+.guv-row{font-size:12px;padding:7px 0}
 
-  /* SLIDER */
-  .slider-row{margin-bottom:12px}
-  .slider-top{font-size:11px}
+/* SLIDER */
+.slider-row{margin-bottom:12px}
+.slider-top{font-size:11px}
 
-  /* CHARTS — etwas höher auf Mobile */
-  canvas{max-height:180px}
+/* CHARTS — etwas höher auf Mobile */
+canvas{max-height:180px}
 
-  /* AMPEL */
-  .ampel-row{font-size:11px;padding:7px 0}
+/* AMPEL */
+.ampel-row{font-size:11px;padding:7px 0}
 
-  /* AI PANEL — Fullscreen auf Mobile */
-  #ai-fab{bottom:80px;right:16px;width:42px;height:42px;font-size:16px}
-  #ai-panel{bottom:0;right:0;left:0;width:100%;height:90vh;border-radius:16px 16px 0 0}
-  #ai-messages{padding:10px}
-  .ai-msg{max-width:92%;font-size:11px}
-  #ai-input{font-size:14px}
+/* AI PANEL — Fullscreen auf Mobile */
+#ai-fab{bottom:80px;right:16px;width:42px;height:42px;font-size:16px}
+#ai-panel{bottom:0;right:0;left:0;width:100%;height:90vh;border-radius:16px 16px 0 0}
+#ai-messages{padding:10px}
+.ai-msg{max-width:92%;font-size:11px}
+#ai-input{font-size:14px}
 
-  /* CLOSING ROW */
-  .closing-row{font-size:11px}
+/* CLOSING ROW */
+.closing-row{font-size:11px}
 
-  /* BADGES */
-  .badge{font-size:9px;padding:2px 5px}
+/* BADGES */
+.badge{font-size:9px;padding:2px 5px}
 
-  /* ALERT */
-  .alert{font-size:11px;padding:8px 10px}
+/* ALERT */
+.alert{font-size:11px;padding:8px 10px}
 }
 
 /* Extra klein (max 400px) */
 @media(max-width:400px){
-  .kpi-grid{grid-template-columns:1fr}
-  .kpi-val{font-size:20px}
-  .header h1{font-size:12px}
-  .tab{padding:8px 10px;font-size:10px}
-  .filterbar>div .qbtn{font-size:10px;padding:3px 6px}
+.kpi-grid{grid-template-columns:1fr}
+.kpi-val{font-size:20px}
+.header h1{font-size:12px}
+.tab{padding:8px 10px;font-size:10px}
+.filterbar>div .qbtn{font-size:10px;padding:3px 6px}
 }
 </style>
+
 </head>
 <body>
 
@@ -974,10 +976,9 @@ function renderOverview(){
   dc("c-ov-donut");
   var donutFC=k.f;
   var donutOpa=pa; // Operative Personalkosten
-  // Bei Stundenfilter: Fixkosten nicht im Donut (verzerrt die Darstellung)
-  var donutPG=hatStundenfilter()?0:fkOv.personalGemein+fkOv.managementFee+smKosten;
-  var donutRest=hatStundenfilter()?0:fkOv.miete+fkOv.versicherung+fkOv.werbeReise+fkOv.sonstBetrieb+fkOv.verwaltung+fkOv.instandhaltung+fkOv.abschreibung;
-  var donutEBITDA=hatStundenfilter()?Math.max(k.u-k.f-pa,0):Math.max(ebitda,0);
+  var donutPG=fkOv.personalGemein+fkOv.managementFee+smKosten; // immer ungefiltert
+  var donutRest=fkOv.miete+fkOv.versicherung+fkOv.werbeReise+fkOv.sonstBetrieb+fkOv.verwaltung+fkOv.instandhaltung+fkOv.abschreibung;
+  var donutEBITDA=Math.max(ebitda,0);
   charts["c-ov-donut"]=new Chart(document.getElementById("c-ov-donut"),{type:"doughnut",data:{labels:["Food Cost","Operative Personal","Personalgemeinkosten","Rest Gemeinkosten","EBITDA"],datasets:[{data:[donutFC,donutOpa,donutPG,donutRest,donutEBITDA],backgroundColor:["#ef4444","#8b5cf6","#3b82f6","#64748b","#22c55e"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:"72%"}});
 }
 
@@ -3039,6 +3040,7 @@ ladeDaten();
 <!-- ============================================================
      KI ASSISTENT
      ============================================================ -->
+
 <button id="ai-fab" onclick="toggleAiPanel()" title="KI Assistent">
   🤖<span class="ai-badge" id="ai-badge"></span>
 </button>
@@ -3473,24 +3475,28 @@ function generiereKIBericht() {
   var vonDE = toDE(von);
   var bisDE = toDE(bis);
 
-  // Daten aufbereiten
-  var k   = kpi(gefiltert);
-  // Stundenfilter auf Prompt-Daten anwenden
-  if(hatStundenfilter()){
-    var uStdKI=getUmsatzGefiltert(von,bis,st);
-    var avgFcQKI=getAvgFcQuote(st);
-    k={u:uStdKI.u,f:uStdKI.u*avgFcQKI,s:k.s,t:k.t,fp:avgFcQKI,at:k.at};
-    km={u:getUmsatzGefiltert(von,bis,'Mehringdamm').u,f:0,s:km.s,t:km.t,fp:avgFcQKI,at:km.at};
-    kr={u:getUmsatzGefiltert(von,bis,'Rosenthaler Straße').u,f:0,s:kr.s,t:kr.t,fp:avgFcQKI,at:kr.at};
-    pk=getOrdioStunden(von,bis,st);
-    pa=pk.total>0?pk.total:k.u*0.33;
-    paQuote=k.u>0?pa/k.u:0;
-    umsatzStd=pk.stunden>0?k.u/pk.stunden:0;
-  }
+  // Daten aufbereiten — erst alles definieren, dann Stundenfilter anwenden
   var tage = new Set(gefiltert.map(function(r){return r.datum;})).size||1;
-  var pk  = getOrdio(von,bis,st);
+  var md = gefiltert.filter(function(r){return r.st==="Mehringdamm";});
+  var rs = gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";});
+  var k   = kpi(gefiltert);
+  var km  = kpi(md), kr = kpi(rs);
+  var pk  = hatStundenfilter()?getOrdioStunden(von,bis,st):getOrdio(von,bis,st);
+  var pkMd = hatStundenfilter()?getOrdioStunden(von,bis,"Mehringdamm"):getOrdio(von,bis,"Mehringdamm");
+  var pkRs = hatStundenfilter()?getOrdioStunden(von,bis,"Rosenthaler Straße"):getOrdio(von,bis,"Rosenthaler Straße");
+
+  // Stundenfilter anwenden (nach Definition aller Variablen)
+  if(hatStundenfilter()){
+    var avgFcQKI = getAvgFcQuote(st);
+    var uStdKI   = getUmsatzGefiltert(von,bis,st);
+    var uMdStdKI = getUmsatzGefiltert(von,bis,"Mehringdamm");
+    var uRsStdKI = getUmsatzGefiltert(von,bis,"Rosenthaler Straße");
+    k  = {u:uStdKI.u,   f:uStdKI.u*avgFcQKI,   s:k.s,  t:k.t,  fp:avgFcQKI, at:k.at};
+    km = {u:uMdStdKI.u, f:uMdStdKI.u*avgFcQKI, s:km.s, t:km.t, fp:avgFcQKI, at:km.at};
+    kr = {u:uRsStdKI.u, f:uRsStdKI.u*avgFcQKI, s:kr.s, t:kr.t, fp:avgFcQKI, at:kr.at};
+  }
+
   var pa  = pk.total>0?pk.total:k.u*0.33;
-  var paReal = pk.total>0;
   var paQuote = k.u>0?pa/k.u:0;
   var smKosten = getSocialMediaKosten(von,bis,st);
   var fkOv = getFixkostenTage(von,bis);
@@ -3498,13 +3504,6 @@ function generiereKIBericht() {
   var cm = k.u-k.f-ldoProv-pa;
   var ebitda = cm-fkOv.gesamt-smKosten;
   var umsatzStd = pk.stunden>0?k.u/pk.stunden:0;
-
-  // Standort-Split
-  var md = gefiltert.filter(function(r){return r.st==="Mehringdamm";});
-  var rs = gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";});
-  var km = kpi(md), kr = kpi(rs);
-  var pkMd = getOrdio(von,bis,"Mehringdamm");
-  var pkRs = getOrdio(von,bis,"Rosenthaler Straße");
   var bonWertData = getBonWert(von,bis,st);
   var bonWertMd = getBonWert(von,bis,"Mehringdamm");
   var bonWertRs = getBonWert(von,bis,"Rosenthaler Straße");
@@ -3542,7 +3541,7 @@ function generiereKIBericht() {
   var smAll = pk.data.filter(function(r){return r.bereich==="Social Media";});
 
   // Prompt aufbauen
-  var prompt = "Du bist Betriebsanalyst fuer Bang Bang Noodles Berlin (2 Standorte: Mehringdamm und Rosenthaler Strasse).\n\n";
+  var stundenInfo = hatStundenfilter()?" im Zeitraum "+stundenLabel():""; var prompt = "Betriebsanalyst Bang Bang Noodles Berlin. Tagesbericht"+stundenInfo+" fuer "+vonDE+(vonDE!==bisDE?"-"+bisDE:"")+". Kurz, direkt, Zahlen nennen.\n\n";
   prompt += "Schreibe einen kurzen, interpretierten Tagesbericht auf Deutsch. NICHT einfach Zahlen aufzaehlen - erklaere was die Zahlen BEDEUTEN, warum sie gut oder schlecht sind, und welche Rueckschluesse man ziehen kann. Struktur: 4-5 kurze Abschnitte mit Ueberschrift. Direkte, klare Sprache.\n\n";
   prompt += "ZEITRAUM: "+vonDE+(vonDE!==bisDE?" bis "+bisDE:"")+" ("+tage+" Tag"+(tage!==1?"e":"")+")\n\n";
   prompt += "UMSATZ:\n";
