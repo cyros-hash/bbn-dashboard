@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="de">
 <head>
 <meta charset="UTF-8">
@@ -107,8 +106,8 @@ canvas{max-height:220px}
 .ampel-dot{width:10px;height:10px;border-radius:50%}
 
 /* ============================================================
-KI ASSISTENT — Floating Chat
-============================================================ */
+   KI ASSISTENT — Floating Chat
+   ============================================================ */
 #ai-fab{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 20px #7c3aed60;z-index:1000;transition:transform 0.2s}
 #ai-fab:hover{transform:scale(1.08)}
 #ai-fab .ai-badge{position:absolute;top:-3px;right:-3px;background:#22c55e;width:12px;height:12px;border-radius:50%;border:2px solid #0a0f1e;display:none}
@@ -138,101 +137,100 @@ KI ASSISTENT — Floating Chat
 #ai-send:hover{background:#6d28d9}
 #ai-send:disabled{background:#2d3f54;color:#475569;cursor:not-allowed}
 /* ============================================================
-RESPONSIVE — Mobile (max 768px)
-============================================================ */
+   RESPONSIVE — Mobile (max 768px)
+   ============================================================ */
 @media(max-width:768px){
-/* HEADER */
-.header{padding:10px 12px;flex-wrap:wrap;gap:8px}
-.header h1{font-size:13px}
-.header>div:last-child{width:100%;display:flex;justify-content:space-between}
-.header>div:last-child select{flex:1}
+  /* HEADER */
+  .header{padding:10px 12px;flex-wrap:wrap;gap:8px}
+  .header h1{font-size:13px}
+  .header>div:last-child{width:100%;display:flex;justify-content:space-between}
+  .header>div:last-child select{flex:1}
 
-/* FILTER BAR */
-.filterbar{padding:8px 12px;flex-wrap:wrap;gap:6px}
-.filterbar input[type=date]{width:calc(50% - 14px);font-size:11px}
-.filterbar>div{width:100%;display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.filterbar .apply-btn{width:100%;margin-left:0;margin-top:4px}
+  /* FILTER BAR */
+  .filterbar{padding:8px 12px;flex-wrap:wrap;gap:6px}
+  .filterbar input[type=date]{width:calc(50% - 14px);font-size:11px}
+  .filterbar>div{width:100%;display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .filterbar .apply-btn{width:100%;margin-left:0;margin-top:4px}
 
-/* TABS — horizontaler Scroll */
-.tabs{padding:0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
-.tabs::-webkit-scrollbar{display:none}
-.tab{padding:10px 12px;font-size:11px}
+  /* TABS — horizontaler Scroll */
+  .tabs{padding:0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{padding:10px 12px;font-size:11px}
 
-/* CONTENT */
-.content{padding:12px}
+  /* CONTENT */
+  .content{padding:12px}
 
-/* KPI GRID — 2 Spalten statt 4 */
-.kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
-.kpi-val{font-size:17px}
-.kpi-label{font-size:10px}
-.kpi-ai{font-size:9px}
+  /* KPI GRID — 2 Spalten statt 4 */
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .kpi-val{font-size:17px}
+  .kpi-label{font-size:10px}
+  .kpi-ai{font-size:9px}
 
-/* STANDORT CARDS — untereinander */
-.st-cards{grid-template-columns:1fr}
-.st-val{font-size:20px}
+  /* STANDORT CARDS — untereinander */
+  .st-cards{grid-template-columns:1fr}
+  .st-val{font-size:20px}
 
-/* GRID 2/3 — untereinander */
-.grid2{grid-template-columns:1fr}
-.grid3{grid-template-columns:1fr}
+  /* GRID 2/3 — untereinander */
+  .grid2{grid-template-columns:1fr}
+  .grid3{grid-template-columns:1fr}
 
-/* BOX */
-.box{padding:12px;border-radius:8px}
-.box-title{font-size:12px}
+  /* BOX */
+  .box{padding:12px;border-radius:8px}
+  .box-title{font-size:12px}
 
-/* TABELLEN — horizontal scrollbar */
-.speise-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
-.speise-table th,.speise-table td{padding:7px 8px;font-size:11px}
+  /* TABELLEN — horizontal scrollbar */
+  .speise-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+  .speise-table th,.speise-table td{padding:7px 8px;font-size:11px}
 
-/* MA ROWS */
-.ma-row{flex-wrap:wrap;gap:4px}
-.ma-name{min-width:100%;font-size:11px}
-.ma-stat{min-width:auto;font-size:10px;text-align:left}
-.ma-bar-wrap{width:100%}
+  /* MA ROWS */
+  .ma-row{flex-wrap:wrap;gap:4px}
+  .ma-name{min-width:100%;font-size:11px}
+  .ma-stat{min-width:auto;font-size:10px;text-align:left}
+  .ma-bar-wrap{width:100%}
 
-/* DRILL PANEL */
-.drill-panel{padding:10px}
-.drill-row{font-size:11px;flex-wrap:wrap;gap:2px}
+  /* DRILL PANEL */
+  .drill-panel{padding:10px}
+  .drill-row{font-size:11px;flex-wrap:wrap;gap:2px}
 
-/* GuV ROWS */
-.guv-row{font-size:12px;padding:7px 0}
+  /* GuV ROWS */
+  .guv-row{font-size:12px;padding:7px 0}
 
-/* SLIDER */
-.slider-row{margin-bottom:12px}
-.slider-top{font-size:11px}
+  /* SLIDER */
+  .slider-row{margin-bottom:12px}
+  .slider-top{font-size:11px}
 
-/* CHARTS — etwas höher auf Mobile */
-canvas{max-height:180px}
+  /* CHARTS — etwas höher auf Mobile */
+  canvas{max-height:180px}
 
-/* AMPEL */
-.ampel-row{font-size:11px;padding:7px 0}
+  /* AMPEL */
+  .ampel-row{font-size:11px;padding:7px 0}
 
-/* AI PANEL — Fullscreen auf Mobile */
-#ai-fab{bottom:80px;right:16px;width:42px;height:42px;font-size:16px}
-#ai-panel{bottom:0;right:0;left:0;width:100%;height:90vh;border-radius:16px 16px 0 0}
-#ai-messages{padding:10px}
-.ai-msg{max-width:92%;font-size:11px}
-#ai-input{font-size:14px}
+  /* AI PANEL — Fullscreen auf Mobile */
+  #ai-fab{bottom:80px;right:16px;width:42px;height:42px;font-size:16px}
+  #ai-panel{bottom:0;right:0;left:0;width:100%;height:90vh;border-radius:16px 16px 0 0}
+  #ai-messages{padding:10px}
+  .ai-msg{max-width:92%;font-size:11px}
+  #ai-input{font-size:14px}
 
-/* CLOSING ROW */
-.closing-row{font-size:11px}
+  /* CLOSING ROW */
+  .closing-row{font-size:11px}
 
-/* BADGES */
-.badge{font-size:9px;padding:2px 5px}
+  /* BADGES */
+  .badge{font-size:9px;padding:2px 5px}
 
-/* ALERT */
-.alert{font-size:11px;padding:8px 10px}
+  /* ALERT */
+  .alert{font-size:11px;padding:8px 10px}
 }
 
 /* Extra klein (max 400px) */
 @media(max-width:400px){
-.kpi-grid{grid-template-columns:1fr}
-.kpi-val{font-size:20px}
-.header h1{font-size:12px}
-.tab{padding:8px 10px;font-size:10px}
-.filterbar>div .qbtn{font-size:10px;padding:3px 6px}
+  .kpi-grid{grid-template-columns:1fr}
+  .kpi-val{font-size:20px}
+  .header h1{font-size:12px}
+  .tab{padding:8px 10px;font-size:10px}
+  .filterbar>div .qbtn{font-size:10px;padding:3px 6px}
 }
 </style>
-
 </head>
 <body>
 
@@ -264,6 +262,16 @@ canvas{max-height:180px}
     <button class="qbtn" id="q-monat" onclick="setQuick('monat')">Monat</button>
     <button class="qbtn" id="q-quartal" onclick="setQuick('quartal')">Quartal</button>
     <button class="qbtn" id="q-jahr" onclick="setQuick('jahr')">Jahr</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;background:#1a2538;border:1px solid #2d3f54;border-radius:6px;padding:3px 8px">
+    <span style="font-size:10px;color:#475569">🕐</span>
+    <select id="von-stunde" style="background:transparent;border:none;color:#94a3b8;font-size:11px;cursor:pointer;outline:none" onchange="clearQuick()">
+      <option value="">Von Uhr</option><option value="0">00:00</option><option value="1">01:00</option><option value="2">02:00</option><option value="3">03:00</option><option value="4">04:00</option><option value="5">05:00</option><option value="6">06:00</option><option value="7">07:00</option><option value="8">08:00</option><option value="9">09:00</option><option value="10">10:00</option><option value="11">11:00</option><option value="12">12:00</option><option value="13">13:00</option><option value="14">14:00</option><option value="15">15:00</option><option value="16">16:00</option><option value="17">17:00</option><option value="18">18:00</option><option value="19">19:00</option><option value="20">20:00</option><option value="21">21:00</option><option value="22">22:00</option><option value="23">23:00</option>
+    </select>
+    <span style="color:#2d3f54;font-size:10px">–</span>
+    <select id="bis-stunde" style="background:transparent;border:none;color:#94a3b8;font-size:11px;cursor:pointer;outline:none" onchange="clearQuick()">
+      <option value="">Bis Uhr</option><option value="0">00:59</option><option value="1">01:59</option><option value="2">02:59</option><option value="3">03:59</option><option value="4">04:59</option><option value="5">05:59</option><option value="6">06:59</option><option value="7">07:59</option><option value="8">08:59</option><option value="9">09:59</option><option value="10">10:59</option><option value="11">11:59</option><option value="12">12:59</option><option value="13">13:59</option><option value="14">14:59</option><option value="15">15:59</option><option value="16">16:59</option><option value="17">17:59</option><option value="18">18:59</option><option value="19">19:59</option><option value="20">20:59</option><option value="21">21:59</option><option value="22">22:59</option><option value="23">23:59</option>
+    </select>
   </div>
   <button class="apply-btn" onclick="applyFilter()">Anwenden</button>
 </div>
@@ -314,6 +322,7 @@ var CSV = {
 // ============================================================
 var alle=[],lsTx=[],lsStd=[],lsQ=[],lsPay=[],ordio=[],artikel=[],bons=[],waste=[];
 var gefiltert=[];
+var stundeVon=-1, stundeBis=-1; // -1 = kein Stundenfilter
 var charts={}, simV={p:0,v:0,f:0,a:0}, aktQ="gestern";
 var ZIELE={fc:0.25,pa:0.25,cm:0.40,ebitda:0.10,bonWert:22,umsatzStd:115};
 
@@ -420,6 +429,98 @@ function getOrdio(von,bis,st){
     data:d
   };
 }
+
+// ============================================================
+// STUNDENFILTER HILFSFUNKTIONEN
+// ============================================================
+
+// Gibt gefilterte Artikel zurück (mit optionalem Stundenfilter)
+function getArtikelGefiltert(von, bis, st) {
+  return artikel.filter(function(r){
+    var inDatum = r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===0;
+    if(!inDatum) return false;
+    if(stundeVon===-1&&stundeBis===-1) return true;
+    var sv = stundeVon!==-1?stundeVon:0;
+    var sb = stundeBis!==-1?stundeBis:23;
+    return r.stunde>=sv&&r.stunde<=sb;
+  });
+}
+
+// Gibt gefilterte Bons zurück (mit optionalem Stundenfilter)
+function getBonsGefiltert(von, bis, st) {
+  return bons.filter(function(r){
+    var inDatum = r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);
+    if(!inDatum) return false;
+    if(stundeVon===-1&&stundeBis===-1) return true;
+    var sv = stundeVon!==-1?stundeVon:0;
+    var sb = stundeBis!==-1?stundeBis:23;
+    return r.stunde>=sv&&r.stunde<=sb;
+  });
+}
+
+// Umsatz aus Artikel (für Stundenfilter genauer als lsTx)
+function getUmsatzGefiltert(von, bis, st) {
+  var artF = getArtikelGefiltert(von, bis, st);
+  var u = artF.reduce(function(s,r){return s+r.preisN;},0);
+  var md = artF.filter(function(r){return r.standort==="Mehringdamm";}).reduce(function(s,r){return s+r.preisN;},0);
+  var rs = artF.filter(function(r){return r.standort==="Rosenthaler Straße";}).reduce(function(s,r){return s+r.preisN;},0);
+  return {u:u, md:md, rs:rs};
+}
+
+// Historischer Ø Food Cost Quote aus allen Apicbase-Daten
+function getAvgFcQuote(st) {
+  var d = alle.filter(function(r){return st==="Alle Standorte"||r.st===st;});
+  var totalU = d.reduce(function(s,r){return s+r.u;},0);
+  var totalF = d.reduce(function(s,r){return s+r.f;},0);
+  return totalU>0?totalF/totalU:0.25;
+}
+
+// Personalkosten anteilig für Stundenbereich
+function getOrdioStunden(von, bis, st) {
+  if(stundeVon===-1&&stundeBis===-1) return getOrdio(von,bis,st);
+  var sv = stundeVon!==-1?stundeVon:0;
+  var sb = stundeBis!==-1?stundeBis:23;
+  var anzahlStunden = sb-sv+1;
+  var d = ordio.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&
+           (st==="Alle Standorte"||r.standort===st)&&
+           r.bereich!=="Social Media"&&
+           MGMT_MITARBEITER.indexOf(r.mitarbeiter)===-1&&
+           r.startStunde<=sb&&r.endeStunde>sv; // Überlappung prüfen
+  });
+  // Anteilige Kosten berechnen
+  var d2 = d.map(function(r){
+    var schichtStunden = Math.max(r.endeStunde-r.startStunde,1);
+    var overlap = Math.min(sb+1,r.endeStunde)-Math.max(sv,r.startStunde);
+    var anteil = overlap/schichtStunden;
+    return {
+      datum:r.datum, standort:r.standort, mitarbeiter:r.mitarbeiter,
+      stunden:r.stunden*anteil, kosten:r.kosten*anteil,
+      bereich:r.bereich, startZeit:r.startZeit, endeZeit:r.endeZeit,
+      startStunde:r.startStunde, endeStunde:r.endeStunde
+    };
+  });
+  return {
+    total:d2.reduce(function(s,r){return s+r.kosten;},0),
+    stunden:d2.reduce(function(s,r){return s+r.stunden;},0),
+    count:d2.length,
+    data:d2
+  };
+}
+
+// Ist Stundenfilter aktiv?
+function hatStundenfilter() {
+  return stundeVon!==-1||stundeBis!==-1;
+}
+
+// Stundenfilter Label für Anzeige
+function stundenLabel() {
+  if(!hatStundenfilter()) return "";
+  var sv = stundeVon!==-1?String(stundeVon).padStart(2,'0')+":00":"00:00";
+  var sb = stundeBis!==-1?String(stundeBis).padStart(2,'0')+":59":"23:59";
+  return " · ⏰ "+sv+"–"+sb;
+}
+
 
 // Social Media Kosten (variabel, gehört zu Personalgemeinkosten)
 function getSocialMediaKosten(von,bis,st){
@@ -578,6 +679,10 @@ function applyFilter(){
   var von=document.getElementById("von").value;
   var bis=document.getElementById("bis").value;
   var st=document.getElementById("standort").value;
+  var svEl=document.getElementById("von-stunde");
+  var sbEl=document.getElementById("bis-stunde");
+  stundeVon = svEl&&svEl.value!==""?parseInt(svEl.value):-1;
+  stundeBis = sbEl&&sbEl.value!==""?parseInt(sbEl.value):-1;
   gefiltert=alle.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.st===st);});
   renderAll();
 }
@@ -660,10 +765,21 @@ function renderOverview(){
   var von=document.getElementById("von").value;
   var bis=document.getElementById("bis").value;
   var st=document.getElementById("standort").value;
+  // Stundenfilter: Umsatz aus Artikel, FC aus historischem Ø, Personal anteilig
   var k=kpi(gefiltert);
-  var pk=getOrdio(von,bis,st);
+  var pk=hatStundenfilter()?getOrdioStunden(von,bis,st):getOrdio(von,bis,st);
   var pa=pk.total>0?pk.total:k.u*0.33;
   var paReal=pk.total>0;
+
+  // Bei Stundenfilter: Umsatz und FC aus Artikel-Daten überschreiben
+  if(hatStundenfilter()){
+    var umsatzStd=getUmsatzGefiltert(von,bis,st);
+    var avgFcQ=getAvgFcQuote(st);
+    // Überschreibe k mit Stunden-Werten
+    var kStd={u:umsatzStd.u,f:umsatzStd.u*avgFcQ,s:k.s,t:k.t,
+              fp:avgFcQ,at:k.at};
+    k=kStd;
+  }
   var txOvG=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
   var ldoProvOv=txOvG.reduce(function(s,r){return s+r.ldo;},0)*0.20;
   var fkOv=getFixkostenTage(von,bis);
@@ -706,7 +822,7 @@ function renderOverview(){
 
   document.getElementById("t-overview").innerHTML=`
     <div class="alert">
-      <b>Tages-Briefing:</b>
+      <b>Tages-Briefing${hatStundenfilter()?" ⏰ "+stundenLabel():""}:</b>
       Umsatz ${deltaU>=0?"+"+deltaU.toFixed(1):deltaU.toFixed(1)}% vs. Vorperiode ·
       Food Cost ${fmtP(k.fp)} (Ziel ${fmtP(ZIELE.fc)}) ·
       Personal ${fmtP(paPct)} ${paReal?"(Ordio Live)":"(Schätzung)"} ·
@@ -832,7 +948,7 @@ function renderOverview(){
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <div>
           <div class="box-title">📋 Tagesbericht</div>
-          <div class="box-sub">${von.split("-").reverse().join(".")}${von!==bis?' - '+bis.split("-").reverse().join("."):''} · KI-Interpretation</div>
+          <div class="box-sub">${von.split("-").reverse().join(".")}${von!==bis?' - '+bis.split("-").reverse().join("."):''}${stundenLabel()} · KI-Interpretation</div>
         </div>
         <button onclick="generiereKIBericht()" id="btn-bericht" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Aktualisieren</button>
       </div>
@@ -2899,7 +3015,6 @@ ladeDaten();
 <!-- ============================================================
      KI ASSISTENT
      ============================================================ -->
-
 <button id="ai-fab" onclick="toggleAiPanel()" title="KI Assistent">
   🤖<span class="ai-badge" id="ai-badge"></span>
 </button>
