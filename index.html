@@ -336,7 +336,7 @@ var gefiltert=[];
 var stundeVon=-1, stundeBis=-1; // -1 = kein Stundenfilter
 var aktivWT=new Set([0,1,2,3,4,5,6]); // aktive Wochentage (0=So...6=Sa)
 var charts={}, simV={p:0,v:0,f:0,a:0}, aktQ="gestern";
-var ZIELE={fc:0.25,pa:0.25,cm:0.40,ebitda:0.10,bonWert:22,umsatzStd:115};
+var ZIELE={fc:0.25,pa:0.22,cm:0.40,ebitda:0.10,bonWert:22,umsatzStd:75};
 
 // ============================================================
 // FIXKOSTEN (monatliche Durchschnittswerte aus BWA)
@@ -2131,7 +2131,7 @@ function renderFoodCost(){
       <div class="kpi-card" onclick="drill('d-fc-fc')">
         <div class="kpi-label">Food Cost gesamt <span class="badge bb">Apicbase</span></div>
         <div class="kpi-val" style="color:${fcQuote>0.25?'#ef4444':'#22c55e'}">${fmt(totalFC)}</div>
-        <div class="kpi-delta ${fcQuote>0.25?'delta-dn':'delta-up'}">${fmtP(fcQuote)} vom Umsatz · Ziel 25%</div>
+        <div class="kpi-delta ${fcQuote>0.25?'delta-dn':'delta-up'}">${fmtP(fcQuote)} vom Umsatz · Ziel 22%</div>
         <div class="kpi-ai">Wareneinsatz: ${fmt(wareneinsatz)} · Waste: ${fmt(totalWaste)}</div>
       </div>
       <div class="kpi-card" onclick="drill('d-fc-we')">
@@ -3385,16 +3385,16 @@ function buildTagesberichtContext() {
   ctx += "  Rosenthaler Straße: "+fmt(kGRs.u)+"\n";
   ctx += "Vorwoche gleicher Tag ("+vorwocheISO+"): "+fmt(kV.u)+" → Differenz: "+(kV.u>0?(((kG.u-kV.u)/kV.u)*100).toFixed(1)+"%" : "keine Daten")+"\n";
   ctx += "Ø letzte 7 Tage: "+fmt(kW.u/tageW)+"/Tag\n";
-  ctx += "Food Cost: "+fmtP(kG.fp)+" (Ziel 25%)\n";
+  ctx += "Food Cost: "+fmtP(kG.fp)+" (Ziel 22%)\n";
   ctx += "  Mehringdamm FC: "+fmtP(kGMd.fp)+"\n";
   ctx += "  Rosenthaler FC: "+fmtP(kGRs.fp)+"\n";
   ctx += "Ø Bon-Wert: "+fmtD(bwG.avg)+" aus "+bwG.count+" Bons (Ziel €22)\n";
   ctx += "Lieferando Brutto: "+fmt(ldoBruttoG)+" ("+fmtP(ldoAnteilG)+" vom Umsatz)\n\n";
 
   ctx += "=== PERSONAL ===\n";
-  ctx += "Operative Personalkosten: "+fmt(paCostG)+" ("+fmtP(paQuoteG)+" vom Umsatz, Ziel 25%)\n";
+  ctx += "Operative Personalkosten: "+fmt(paCostG)+" ("+fmtP(paQuoteG)+" vom Umsatz, Ziel 22%)\n";
   ctx += "Ø Personal-Quote letzte 7 Tage: "+fmtP(paQuoteW)+"\n";
-  ctx += "Umsatz/Personalstunde: "+fmt(umsatzStdG)+"/h (Ziel €115)\n";
+  ctx += "Umsatz/Personalstunde: "+fmt(umsatzStdG)+"/h (Ziel €75)\n";
   if(smG.length>0){
     ctx += "Social Media eingeplant: "+smG.map(function(r){return r.mitarbeiter+" ("+r.standort+", "+r.startZeit+"–"+r.endeZeit+")";}).join(", ")+"\n";
   } else {
@@ -3595,9 +3595,9 @@ function buildTagesberichtHTML(vonParam, bisParam) {
   if(ldoBruttoG>0) umsatzText += ' Lieferando: '+fmt(ldoBruttoG)+' ('+fmtP(ldoAnteilG)+' vom Umsatz).';
 
   // Personal-Text
-  var paText = 'Operative Personalkosten <b style="color:#f1f5f9">'+fmt(paCostG)+'</b> (<span style="color:'+(paQuoteG>ZIELE.pa?'#ef4444':'#22c55e')+'">'+fmtP(paQuoteG)+'</span>, Ziel 25%).';
+  var paText = 'Operative Personalkosten <b style="color:#f1f5f9">'+fmt(paCostG)+'</b> (<span style="color:'+(paQuoteG>ZIELE.pa?'#ef4444':'#22c55e')+'">'+fmtP(paQuoteG)+'</span>, Ziel 22%).';
   paText += ' Ø letzte 7 Tage: '+fmtP(paQuoteW)+'.';
-  paText += ' Umsatz/Stunde: <span style="color:'+(umsatzStdG>=ZIELE.umsatzStd?'#22c55e':'#ef4444')+'">'+fmt(umsatzStdG)+'</span> (Ziel €115).';
+  paText += ' Umsatz/Stunde: <span style="color:'+(umsatzStdG>=ZIELE.umsatzStd?'#22c55e':'#ef4444')+'">'+fmt(umsatzStdG)+'</span> (Ziel €75).';
   if(smG.length>0) paText += '<br>Social Media: '+smG.map(function(r){return '<b style="color:#8b5cf6">'+r.mitarbeiter+'</b> ('+r.standort.replace("Rosenthaler Straße","Rosi")+', '+r.startZeit+'-'+r.endeZeit+')';}).join(', ')+'.';
   paText += ' Schichten: '+ordioG.length+' gesamt.';
 
@@ -3723,12 +3723,12 @@ function generiereKIBericht() {
   prompt += "- Lieferando Brutto: "+fmt(ldoBrutto)+" ("+(k.u>0?(ldoBrutto/k.u*100).toFixed(1):0)+"% vom Umsatz)\n";
   prompt += "- Bon-Wert: "+fmtD(bonWertData.avg)+" (MD: "+fmtD(bonWertMd.avg)+" | RS: "+fmtD(bonWertRs.avg)+") | Ziel: 22 Euro\n\n";
   prompt += "PERSONAL:\n";
-  prompt += "- Operative Kosten: "+fmt(pa)+" ("+(k.u>0?(paQuote*100).toFixed(1):0)+"% vom Umsatz) | Ziel: 25%\n";
+  prompt += "- Operative Kosten: "+fmt(pa)+" ("+(k.u>0?(paQuote*100).toFixed(1):0)+"% vom Umsatz) | Ziel: 22%\n";
   prompt += "- Mehringdamm: "+fmt(pkMd.total)+" ("+(km.u>0?(pkMd.total/km.u*100).toFixed(1):0)+"%) | Rosenthaler: "+fmt(pkRs.total)+" ("+(kr.u>0?(pkRs.total/kr.u*100).toFixed(1):0)+"%)\n";
-  prompt += "- Umsatz/Personalstunde: "+fmt(umsatzStd)+"/h | Ziel: 115 Euro\n";
+  prompt += "- Umsatz/Personalstunde: "+fmt(umsatzStd)+"/h | Ziel: 75 Euro\n";
   if(smAll.length>0) prompt += "- Social Media: "+smAll.map(function(r){return r.mitarbeiter+" ("+r.standort.replace("Rosenthaler Strasse","Rosi")+")";}).join(", ")+"\n";
   prompt += "\nFOOD COST & WASTE:\n";
-  prompt += "- Food Cost: "+fmt(k.f)+" ("+fmtP(k.fp)+") | Ziel: 25%\n";
+  prompt += "- Food Cost: "+fmt(k.f)+" ("+fmtP(k.fp)+") | Ziel: 22%\n";
   prompt += "- Mehringdamm FC: "+fmtP(km.fp)+" | Rosenthaler FC: "+fmtP(kr.fp)+"\n";
   prompt += "- Waste Mehringdamm: "+(wasteMd.length>0?fmt(wasteMdT)+" ("+wasteMd.length+" Positionen)":"NICHT ERFASST")+"\n";
   prompt += "- Waste Rosenthaler: "+(wasteRs.length>0?fmt(wasteRsT)+" ("+wasteRs.length+" Positionen)":"NICHT ERFASST")+"\n\n";
@@ -3786,7 +3786,7 @@ function buildAiContext() {
   var kAll = kpi(alle);
   ctx += "=== GESAMTE KPIs (alle verfügbaren Daten) ===\n";
   ctx += "Umsatz Netto gesamt: " + fmt(kAll.u) + "\n";
-  ctx += "Food Cost gesamt: " + fmt(kAll.f) + " (" + fmtP(kAll.fp) + " vom Umsatz, Ziel 25%)\n";
+  ctx += "Food Cost gesamt: " + fmt(kAll.f) + " (" + fmtP(kAll.fp) + " vom Umsatz, Ziel 22%)\n";
   ctx += "Ø Bon-Wert: " + fmtD(kAll.at) + " (Ziel €22)\n";
   ctx += "Verkäufe gesamt: " + kAll.s.toLocaleString("de-DE") + "\n\n";
 
@@ -3804,9 +3804,9 @@ function buildAiContext() {
     var totalStunden = ordio.reduce(function(s,r){return s+r.stunden;},0);
     var paQuote = kAll.u > 0 ? totalKosten/kAll.u : 0;
     ctx += "=== PERSONAL (Ordio) ===\n";
-    ctx += "Personalkosten gesamt: " + fmt(totalKosten) + " (" + fmtP(paQuote) + " vom Umsatz, Ziel 30%)\n";
+    ctx += "Personalkosten gesamt: " + fmt(totalKosten) + " (" + fmtP(paQuote) + " vom Umsatz, Ziel 22%)\n";
     ctx += "Gesamtstunden: " + Math.round(totalStunden) + "h\n";
-    ctx += "Ø Umsatz/Personalstunde: " + fmt(kAll.u / Math.max(totalStunden,1)) + " (Ziel €115)\n";
+    ctx += "Ø Umsatz/Personalstunde: " + fmt(kAll.u / Math.max(totalStunden,1)) + " (Ziel €75)\n";
 
     // Mitarbeiter-Liste
     var maMap = {};
@@ -3871,7 +3871,7 @@ function buildAiContext() {
 
   // Zielwerte
   ctx += "=== ZIELWERTE ===\n";
-  ctx += "Food Cost: 25% | Personal: 30% | Contribution Margin: 40% | EBITDA: 12% | Ø Bon-Wert: €22 | Umsatz/Personalstunde: €115\n";
+  ctx += "Food Cost: 25% | Personal: 22% | Contribution Margin: 40% | EBITDA: 12% | Ø Bon-Wert: €22 | Umsatz/Personalstunde: €75\n";
 
   return ctx;
 }
