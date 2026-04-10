@@ -1842,8 +1842,14 @@ function renderPersonal(){
         <div class="box-sub">Personalkosten und Effizienz</div>
         ${Object.entries(stMap).map(function(e){
           var name=e[0],d=e[1];
-          var stUmsatzPct=gefiltert.filter(function(r){return r.st===name;}).reduce(function(s,r){return s+r.u;},0); var pct=stUmsatzPct>0?d.kosten/stUmsatzPct:0;
-          var stU=d.stunden>0?(gefiltert.filter(function(r){return r.st===name;}).reduce(function(s,r){return s+r.u;},0)/d.stunden):0;
+          var stUmsatzGes=gefiltert.filter(function(r){return r.st===name;}).reduce(function(s,r){return s+r.u;},0);
+          var pct=stUmsatzGes>0?d.kosten/stUmsatzGes:0;
+          // Umsatz/h: nur Tage mit BEIDEN Werten > 0 pro Standort
+          var aktivStTage=Object.values(umsatzStdMapSt).filter(function(x){return x.datum&&x.stunden>0&&x.umsatz>0&&(x.standort===name||(name==="Mehringdamm"&&x.datum&&Object.keys(umsatzStdMapSt).some(function(k){return k===x.datum+"|"+name;})));});
+          var stAktivEntries=Object.entries(umsatzStdMapSt).filter(function(e){return e[0].indexOf("|"+name)>-1&&e[1].umsatz>0&&e[1].stunden>0;});
+          var stAktivU=stAktivEntries.reduce(function(s,e){return s+e[1].umsatz;},0);
+          var stAktivStd=stAktivEntries.reduce(function(s,e){return s+e[1].stunden;},0);
+          var stU=stAktivStd>0?stAktivU/stAktivStd:d.stunden>0?stUmsatzGes/d.stunden:0;
           return'<div style="padding:10px 0;border-bottom:1px solid #1e2d40;cursor:pointer" onclick="drill(\'d-pa-st-'+name.replace(/\s/g,'')+'\')" >'+
             '<div style="display:flex;justify-content:space-between;margin-bottom:4px">'+
               '<span style="color:#f1f5f9;font-weight:600;font-size:13px">'+name+'</span>'+
