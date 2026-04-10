@@ -325,7 +325,9 @@ var CSV = {
   ordio:   "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=2107312650",
   artikel: "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=1631404254",
   bons:    "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=412324913",
-  waste:   "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=1076995386"
+  waste:   "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=1076995386",
+  fcReal:  "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=PLACEHOLDER_FC_REAL",
+  bestand: "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=1296587739"
 };
 
 // ============================================================
@@ -333,6 +335,8 @@ var CSV = {
 // ============================================================
 var alle=[],lsTx=[],lsStd=[],lsQ=[],lsPay=[],ordio=[],artikel=[],bons=[],waste=[];
 var gefiltert=[];
+var fcReal=[]; // Reale FC: Inventuren + Bestellungen
+var bestandDaten=[]; // Bestandsbericht (Sheet 18)
 var stundeVon=-1, stundeBis=-1; // -1 = kein Stundenfilter
 var aktivWT=new Set([0,1,2,3,4,5,6]); // aktive Wochentage (0=So...6=Sa)
 var charts={}, simV={p:0,v:0,f:0,a:0}, aktQ="gestern";
@@ -651,6 +655,54 @@ async function ladeDaten(){
         storniert:parseInt(v[9])||0,kanal:v[10]||"",mitarbeiter:v[11]||"",
         tisch:v[12]||"",gedecke:pStd(v[13])};
     }).filter(function(r){return r.datum;});
+
+    // FC REAL (16_fc_real) — Inventuren + Bestellungen
+    try {
+      var r10=await fetch(CSV.fcReal); var t10=await r10.text();
+      if(t10&&t10.trim().length>10) {
+        fcReal=t10.trim().split("\n").slice(1).map(function(l){
+          var v=pCSV(l);
+          return{
+            typ:v[0]||"",standort:v[1]||"",vonDatum:v[2]||"",bisDatum:v[3]||"",
+            tage:parseInt(v[4])||0,anfang:parseFloat(v[5])||0,
+            einkaufe:parseFloat(v[6])||0,ende:parseFloat(v[7])||0,
+            realerWE:parseFloat(v[8])||0,lieferungen:parseInt(v[9])||0,
+            // Inventur-Konsistenz Felder
+            invDatum:v[2]||"",invStatus:v[4]||"",invWert:parseFloat(v[6])||0,
+            // Bestellung Felder
+            bestellStatus:v[4]||"",bestellOffen:v[7]==="⚠️ Offen",
+            lieferant:v[3]||""
+          };
+        }).filter(function(r){return r.typ==="";});
+        console.log("✓ FC Real: "+fcReal.length+" Einträge");
+      }
+    } catch(e){ console.warn("FC Real nicht verfügbar:", e.message); fcReal=[]; }
+
+    // BESTANDSBERICHT (18_apicbase_bestandsbericht)
+    try {
+      var r11=await fetch(CSV.bestand); var t11=await r11.text();
+      if(t11&&t11.trim().length>10&&!t11.includes('DOCTYPE')) {
+        var b11lines=t11.trim().split("\n");
+        var b11h=pCSV(b11lines[0]);
+        bestandDaten=b11lines.slice(1).map(function(l){
+          var v=pCSV(l),o={};b11h.forEach(function(hh,i){o[hh]=v[i]||"";});
+          return{
+            standort:    o["Standort"]||"",
+            von:         o["Von"]||"",
+            bis:         o["Bis"]||"",
+            artikel:     o["Artikel"]||"",
+            kategorie:   o["Kategorie"]||"",
+            offen:       parseFloat(o["Öffne Bestandswert (€)"])||0,
+            waren:       parseFloat(o["Waren erhalten (€)"])||0,
+            verkauft:    parseFloat(o["Verkauft (€)"])||0,
+            verschwendet:parseFloat(o["Verschwendet (€)"])||0,
+            unkontrolliert:parseFloat(o["Unkontrolliert/Schwund (€)"])||0,
+            schluss:     parseFloat(o["Schliesse Bestandswert (€)"])||0
+          };
+        }).filter(function(r){return r.standort&&r.artikel;});
+        console.log("✓ Bestandsdaten: "+bestandDaten.length+" Einträge");
+      }
+    } catch(e){ console.warn("Bestandsdaten nicht verfügbar:", e.message); bestandDaten=[]; }
 
     // WASTE (15_apicbase_waste)
     // Spalten: Datum|Standort|Event_ID|Event_Name|Artikel|Waste_Kategorie|Menge|Einheit|Kosten
@@ -2318,7 +2370,140 @@ function renderFoodCost(){
       <div class="box-title">📅 Waste-Kosten pro Erfassungstag</div>
       <div class="box-sub">${tagKeys.length} Tage mit Waste-Erfassung</div>
       ${tagKeys.length>0?'<canvas id="c-waste-tag" style="max-height:160px"></canvas>':'<div style="color:#475569;font-size:12px;padding:12px">Keine Waste-Daten im Zeitraum.</div>'}
-    </div>`;
+    </div>
+
+    ${(function(){
+      // === WARENWIRTSCHAFT BLOCK ===
+      var heute = new Date();
+      var vor90 = new Date(); vor90.setDate(heute.getDate()-90);
+      var vor90s = vor90.toISOString().slice(0,10).split('-').reverse().join('.');
+
+      // Inventur-Daten aus fcReal
+      var invRows = fcReal.filter(function(r){return r.typ==='';});
+      var invMd = fcReal.filter(function(r){return r.standort==='Mehringdamm'&&r.vonDatum;});
+      var invRs = fcReal.filter(function(r){return r.standort==='Rosenthaler Straße'&&r.vonDatum;});
+
+      // Bestellung-Daten
+      var bestRows = fcReal.filter(function(r){return r.bestellStatus;});
+      var offenMd = bestRows.filter(function(r){return r.standort==='Mehringdamm'&&r.bestellOffen;});
+      var offenRs = bestRows.filter(function(r){return r.standort==='Rosenthaler Straße'&&r.bestellOffen;});
+
+      // Letzten 4 Wochen: Inventur-Konsistenz
+      function invKonsistenz(rows, standort) {
+        var wochen = 0;
+        for(var w=0;w<4;w++){
+          var wEnd=new Date(heute); wEnd.setDate(heute.getDate()-w*7);
+          var wStart=new Date(heute); wStart.setDate(heute.getDate()-(w+1)*7);
+          var wEndS=wEnd.toISOString().slice(0,10).split('-').reverse().join('.');
+          var wStartS=wStart.toISOString().slice(0,10).split('-').reverse().join('.');
+          var hat=rows.some(function(r){return r.vonDatum>=wStartS&&r.vonDatum<=wEndS;});
+          if(hat) wochen++;
+        }
+        return {wochen:wochen, von4:4, ok:wochen>=3};
+      }
+      var ikMd = invKonsistenz(invMd, 'Mehringdamm');
+      var ikRs = invKonsistenz(invRs, 'Rosenthaler Straße');
+
+      // Bestandsdaten aus Sheet 18
+      if(bestandDaten.length===0){
+        return '<div class="box" style="margin-top:14px"><div class="box-title">📦 Warenwirtschaft — Reale Food Cost</div>' +
+          '<div style="color:#475569;font-size:12px;padding:12px 0">Noch keine Bestandsberichte verfügbar. Script bestandsbericht_import.gs einrichten und ersten Bericht hochladen.</div></div>';
+      }
+
+      // Reale FC aus Bestandsdaten berechnen
+      var stBestand = bestandDaten.filter(function(r){ return r.standort===name||
+        (name==='Alle Standorte'); });
+
+      // Neuester Zeitraum pro Standort
+      function getNeuesteBis(st) {
+        var rows = bestandDaten.filter(function(r){ return r.standort===st; });
+        if(!rows.length) return '';
+        return rows.reduce(function(max,r){ return r.bis>max?r.bis:max; }, '');
+      }
+
+      function getKPIs(st) {
+        var bis = getNeuesteBis(st);
+        var rows = bestandDaten.filter(function(r){ return r.standort===st && r.bis===bis; });
+        var von = rows.length ? rows[0].von : '';
+        return {
+          von: von, bis: bis,
+          offen:   rows.reduce(function(s,r){return s+r.offen;},0),
+          waren:   rows.reduce(function(s,r){return s+r.waren;},0),
+          verkauft:rows.reduce(function(s,r){return s+r.verkauft;},0),
+          schluss: rows.reduce(function(s,r){return s+r.schluss;},0),
+          schwund: rows.reduce(function(s,r){return s+r.unkontrolliert;},0),
+          artikel: rows.length
+        };
+      }
+
+      function getTopSchwund(st, limit) {
+        var bis = getNeuesteBis(st);
+        var rows = bestandDaten.filter(function(r){ return r.standort===st && r.bis===bis && r.unkontrolliert!==0; });
+        return rows.slice().sort(function(a,b){ return a.unkontrolliert-b.unkontrolliert; }).slice(0,limit||5);
+      }
+
+      var kpiMd = getKPIs('Mehringdamm');
+      var kpiRs = getKPIs('Rosenthaler Straße');
+      var schwundMd = getTopSchwund('Mehringdamm', 5);
+      var schwundRs = getTopSchwund('Rosenthaler Straße', 5);
+
+      function kpiCard(emoji, stName, kpi) {
+        var realFC = kpi.offen + kpi.waren - kpi.schluss;
+        return '<div style="padding:12px;background:#0a1628;border-radius:8px;border-left:3px solid #8b5cf6;margin-bottom:10px">' +
+          '<div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:8px">' + emoji + ' ' + stName + ' — ' + (kpi.von||'') + ' → ' + (kpi.bis||'') + '</div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">' +
+            '<div><div style="font-size:10px;color:#475569">Anfangsbestand</div><div style="font-weight:700;color:#f1f5f9">' + fmt(kpi.offen) + '</div></div>' +
+            '<div><div style="font-size:10px;color:#475569">+ Einkäufe</div><div style="font-weight:700;color:#22c55e">' + fmt(kpi.waren) + '</div></div>' +
+            '<div><div style="font-size:10px;color:#475569">Endbestand</div><div style="font-weight:700;color:#f1f5f9">' + fmt(kpi.schluss) + '</div></div>' +
+            '<div><div style="font-size:10px;color:#475569">Realer Wareneinsatz</div><div style="font-weight:700;color:#f97316;font-size:14px">' + fmt(realFC) + '</div></div>' +
+            '<div><div style="font-size:10px;color:#475569">Schwund/Varianz</div><div style="font-weight:700;color:' + (kpi.schwund<0?'#ef4444':'#22c55e') + '">' + fmt(kpi.schwund) + '</div></div>' +
+            '<div><div style="font-size:10px;color:#475569">Artikel</div><div style="font-weight:700;color:#94a3b8">' + kpi.artikel + '</div></div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function schwundListe(rows, stName) {
+        if(!rows.length) return '<div style="color:#475569;font-size:11px">Keine Abweichungen</div>';
+        return rows.map(function(r) {
+          var col = r.unkontrolliert < 0 ? '#ef4444' : '#22c55e';
+          var icon = r.unkontrolliert < 0 ? '▼' : '▲';
+          return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1e2d40;font-size:11px">' +
+            '<span style="color:#94a3b8;flex:1">' + r.artikel.substring(0,35) + (r.artikel.length>35?'...':'') + '</span>' +
+            '<span style="color:' + col + ';font-weight:700;margin-left:8px">' + icon + ' ' + fmt(Math.abs(r.unkontrolliert)) + '</span>' +
+          '</div>';
+        }).join('');
+      }
+
+      function konsCard(emoji, name, ik, offen) {
+        var col = ik.ok ? '#22c55e' : ik.wochen>=2 ? '#f97316' : '#ef4444';
+        var icon = ik.ok ? '✓' : '⚠️';
+        return '<div style="padding:12px;background:#0a1628;border-radius:8px;border-left:3px solid '+col+';margin-bottom:10px">' +
+          '<div style="font-size:11px;font-weight:700;color:'+col+';margin-bottom:6px">'+emoji+' '+name+'</div>' +
+          '<div style="display:flex;justify-content:space-between;font-size:12px;color:#94a3b8;margin-bottom:4px">' +
+            '<span>Inventuren (letzte 4 Wochen)</span>' +
+            '<span style="color:'+col+';font-weight:600">'+icon+' '+ik.wochen+'/4 Wochen</span>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;font-size:12px;color:#94a3b8">' +
+            '<span>Offene Bestellungen</span>' +
+            '<span style="color:'+(offen>0?'#ef4444':'#22c55e')+';font-weight:600">'+(offen>0?'⚠️ '+offen+' offen':'✓ Alle angenommen')+'</span>' +
+          '</div>' +
+        '</div>';
+      }
+
+      return '<div class="box" style="margin-top:14px">' +
+        '<div class="box-title">📦 Warenwirtschaft — Reale Food Cost</div>' +
+        '<div class="box-sub">Bestandsbericht zwischen Inventuren (Apicbase)</div>' +
+        '<div class="grid2" style="margin-top:12px">' +
+          kpiCard('🟠', 'Mehringdamm', kpiMd) +
+          kpiCard('🔵', 'Rosenthaler Straße', kpiRs) +
+        '</div>' +
+        '<div class="grid2" style="margin-top:14px">' +
+          '<div><div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:6px">🟠 MD — Top Schwund</div>' + schwundListe(schwundMd, "Mehringdamm") + '</div>' +
+          '<div><div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:6px">🔵 RS — Top Schwund</div>' + schwundListe(schwundRs, "Rosenthaler Straße") + '</div>' +
+        '</div>' +
+      '</div>';
+    })()}
+    `;
 
   // Donut Chart FC Aufschlüsselung
 
