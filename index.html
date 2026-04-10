@@ -1767,19 +1767,25 @@ function renderPersonal(){
     if(!umsatzStdMap[r.datum])umsatzStdMap[r.datum]={umsatz:0,stunden:0};
     umsatzStdMap[r.datum].stunden+=r.stunden;
   });
-  // Umsatz pro Tag aus gefiltert
+  // Umsatz pro Tag aus gefiltert (pro Standort getrennt)
+  var umsatzStdMapSt={}; // {datum+standort -> {umsatz, stunden}}
+  pk.data.forEach(function(r){
+    var key=r.datum+"|"+r.standort;
+    if(!umsatzStdMapSt[key])umsatzStdMapSt[key]={umsatz:0,stunden:0,datum:r.datum};
+    umsatzStdMapSt[key].stunden+=r.stunden;
+  });
   gefiltert.forEach(function(r){
+    var key=r.datum+"|"+r.st;
+    if(umsatzStdMapSt[key])umsatzStdMapSt[key].umsatz+=r.u;
+    // Auch in umsatzStdMap für Chart
     if(umsatzStdMap[r.datum])umsatzStdMap[r.datum].umsatz+=r.u;
   });
-  // Umsatz/Stunde: Gesamtumsatz / Gesamtstunden (nur Tage mit Umsatz>0)
-  // Schichten ohne Umsatz (Schließtage) werden ausgeschlossen
-  // Nur Tage mit BEIDEN Werten > 0 (keine Schließtage, keine Import-Lücken)
-  var aktiveTage=Object.values(umsatzStdMap).filter(function(d){return d.umsatz>0&&d.stunden>0;});
-  var totalAktivU=aktiveTage.reduce(function(s,d){return s+d.umsatz;},0);
-  var totalAktivStd=aktiveTage.reduce(function(s,d){return s+d.stunden;},0);
+  // Nur Standort-Tage mit BEIDEN Werten > 0 zählen
+  var aktiveSt=Object.values(umsatzStdMapSt).filter(function(d){return d.umsatz>0&&d.stunden>0;});
+  var totalAktivU=aktiveSt.reduce(function(s,d){return s+d.umsatz;},0);
+  var totalAktivStd=aktiveSt.reduce(function(s,d){return s+d.stunden;},0);
   var umsatzStd=totalAktivStd>0?totalAktivU/totalAktivStd:pk.stunden>0?k.u/pk.stunden:0;
-  // Debug-Info in KPI-Karte
-  var aktiveTageAnzahl=aktiveTage.length;
+  var aktiveTageAnzahl=new Set(aktiveSt.map(function(d){return d.datum;})).size;
   var tagKeys=Object.keys(tagMap).sort();
 
   // Standort-Map
