@@ -1747,7 +1747,11 @@ function renderPersonal(){
   var von=document.getElementById("von").value;
   var bis=document.getElementById("bis").value;
   var st=document.getElementById("standort").value;
-  var k=kpi(gefiltert);
+  // Lokal gefiltert neu berechnen damit von/bis korrekt ist
+  var lokalGefiltert=alle.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.st===st)&&datumPasstWT(r.datum);
+  });
+  var k=kpi(lokalGefiltert);
   var pk=hatStundenfilter()?getOrdioStunden(von,bis,st):getOrdio(von,bis,st);
   if(hatStundenfilter()){var uStdP=getUmsatzGefiltert(von,bis,st);var avgFcQP=getAvgFcQuote(st);k={u:uStdP.u,f:uStdP.u*avgFcQP,s:k.s,t:k.t,fp:avgFcQP,at:k.at};}
 
@@ -1774,7 +1778,7 @@ function renderPersonal(){
     if(!umsatzStdMapSt[key])umsatzStdMapSt[key]={umsatz:0,stunden:0,datum:r.datum};
     umsatzStdMapSt[key].stunden+=r.stunden;
   });
-  gefiltert.forEach(function(r){
+  lokalGefiltert.forEach(function(r){
     var key=r.datum+"|"+r.st;
     if(umsatzStdMapSt[key])umsatzStdMapSt[key].umsatz+=r.u;
     // Auch in umsatzStdMap für Chart
@@ -1842,7 +1846,7 @@ function renderPersonal(){
         <div class="box-sub">Personalkosten und Effizienz</div>
         ${Object.entries(stMap).map(function(e){
           var name=e[0],d=e[1];
-          var stUmsatzGes=gefiltert.filter(function(r){return r.st===name;}).reduce(function(s,r){return s+r.u;},0);
+          var stUmsatzGes=lokalGefiltert.filter(function(r){return r.st===name;}).reduce(function(s,r){return s+r.u;},0);
           var pct=stUmsatzGes>0?d.kosten/stUmsatzGes:0;
           // Umsatz/h: nur Tage mit BEIDEN Werten > 0 pro Standort
           var aktivStTage=Object.values(umsatzStdMapSt).filter(function(x){return x.datum&&x.stunden>0&&x.umsatz>0&&(x.standort===name||(name==="Mehringdamm"&&x.datum&&Object.keys(umsatzStdMapSt).some(function(k){return k===x.datum+"|"+name;})));});
