@@ -568,10 +568,11 @@ function ampelDot(ok,warn){
 }
 
 function prevPeriod(von,bis){
+  // Vergleich: gleiche Wochentage der Vorwoche (VW)
+  // z.B. Mo+Di diese Woche → Mo+Di letzte Woche
   var v=new Date(von+"T12:00:00"),b=new Date(bis+"T12:00:00");
-  var diff=b-v;
-  var pBis=new Date(v.getTime()-86400000);
-  var pVon=new Date(pBis.getTime()-diff);
+  var pVon=new Date(v.getTime()-7*86400000);
+  var pBis=new Date(b.getTime()-7*86400000);
   return{von:pVon.toISOString().split("T")[0],bis:pBis.toISOString().split("T")[0]};
 }
 
@@ -885,14 +886,25 @@ function renderOverview(){
   var bonWertData=getBonWert(von,bis,st);
   var bonWertMd=getBonWert(von,bis,'Mehringdamm');
   var bonWertRs=getBonWert(von,bis,'Rosenthaler Straße');
-  // Vorperiode für Standort-Vergleich
+  // VW: gleiche Wochentage der Vorwoche
+  // z.B. Gestern (Sa) → letzten Sa; Mo+Di → letzten Mo+Di
   var vonD2=new Date(von), bisD2=new Date(bis);
-  var dl2=bisD2-vonD2;
-  var vorBis2=new Date(vonD2.getTime()-86400000);
-  var vorVon2=new Date(vorBis2.getTime()-dl2);
   function fDE2(d){return d.toISOString().slice(0,10);}
-  var vorMd=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.st==="Mehringdamm";});
-  var vorRs=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.st==="Rosenthaler Straße";});
+  // Alle Wochentage im aktuellen Zeitraum ermitteln
+  var wochentageIst = {};
+  for(var d=new Date(vonD2); d<=bisD2; d.setDate(d.getDate()+1)) {
+    wochentageIst[d.getDay()] = true;
+  }
+  // Vorwoche: gleiche Wochentage 7 Tage früher
+  var vorVon2 = new Date(vonD2.getTime() - 7*86400000);
+  var vorBis2 = new Date(bisD2.getTime() - 7*86400000);
+  // Nur Tage mit gleichen Wochentagen filtern
+  function gleicheWT(datumStr) {
+    var d = new Date(datumStr);
+    return !!wochentageIst[d.getDay()];
+  }
+  var vorMd=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.st==="Mehringdamm"&&gleicheWT(r.datum);});
+  var vorRs=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.st==="Rosenthaler Straße"&&gleicheWT(r.datum);});
   var kVorMd=kpi(vorMd), kVorRs=kpi(vorRs);
   var smKosten=getSocialMediaKosten(von,bis,st); // Social Media → Personalgemeinkosten
   var cmPct=k.u>0?cm/k.u:0;
@@ -960,7 +972,7 @@ function renderOverview(){
   document.getElementById("t-overview").innerHTML=`
     <div class="alert">
       <b>Tages-Briefing${hatStundenfilter()?" ⏰ "+stundenLabel():""}:</b>
-      Umsatz ${deltaU>=0?"+"+deltaU.toFixed(1):deltaU.toFixed(1)}% vs. Vorperiode ·
+      Umsatz ${deltaU>=0?"+"+deltaU.toFixed(1):deltaU.toFixed(1)}% vs. VW ·
       Food Cost ${fmtP(k.fp)} (Ziel ${fmtP(ZIELE.fc)}) ·
       Personal ${fmtP(paPct)} ${paReal?"(Ordio Live)":"(Schätzung)"} ·
       Contribution Margin <b>${fmtP(cmPct)}</b>
@@ -971,7 +983,7 @@ function renderOverview(){
       <div class="kpi-card" onclick="drill('d-ov-umsatz')">
         <div class="kpi-label">💰 Umsatz gesamt</div>
         <div class="kpi-val" style="color:#22c55e">${fmt(k.u)}</div>
-        <div class="kpi-delta ${deltaU>=0?'delta-up':'delta-dn'}">${deltaU>=0?"▲":"▼"} ${Math.abs(deltaU).toFixed(1)}% vs. Vorperiode</div>
+        <div class="kpi-delta ${deltaU>=0?'delta-up':'delta-dn'}">${deltaU>=0?"▲":"▼"} ${Math.abs(deltaU).toFixed(1)}% vs. VW</div>
         <div class="kpi-ai">Ø ${fmt(k.u/k.t)}/Tag · ${k.t} Tage · ${bonWertData.count} Bons · Ø Bon: ${fmtD(bonWertData.avg)}</div>
       </div>
       <div class="kpi-card" onclick="drill('d-ov-pa')">
@@ -1000,7 +1012,7 @@ function renderOverview(){
       <div class="drill-row"><span>Rosenthaler Straße</span><span>${fmt(kr.u)} · Ø ${fmt(kr.u/Math.max(kr.t,1))}/Tag</span></div>
       <div class="drill-row"><span>Ø Bon-Wert gesamt</span><span>${fmtD(bonWertData.avg)} (${bonWertData.count} Bons)</span></div>
       <div class="drill-row"><span>Ø Tagesumsatz</span><span>${fmt(k.u/k.t)}</span></div>
-      <div class="ai-box">${km.u>kr.u?"Mehringdamm liegt "+((km.u/kr.u-1)*100).toFixed(1)+"% über Rosenthaler im gewählten Zeitraum.":"Rosenthaler liegt "+((kr.u/km.u-1)*100).toFixed(1)+"% über Mehringdamm im gewählten Zeitraum."} Vorperiode: ${fmtP(Math.abs(deltaU)/100)} ${deltaU>=0?"Wachstum":"Rückgang"}.</div>
+      <div class="ai-box">${km.u>kr.u?"Mehringdamm liegt "+((km.u/kr.u-1)*100).toFixed(1)+"% über Rosenthaler im gewählten Zeitraum.":"Rosenthaler liegt "+((kr.u/km.u-1)*100).toFixed(1)+"% über Mehringdamm im gewählten Zeitraum."} VW: ${fmtP(Math.abs(deltaU)/100)} ${deltaU>=0?"Wachstum":"Rückgang"}.</div>
     </div>
 
     <div id="d-ov-pa" class="drill-panel">
@@ -1137,14 +1149,25 @@ function renderUmsatz(){
   }
   var bonWertMd=getBonWert(von,bis,'Mehringdamm');
   var bonWertRs=getBonWert(von,bis,'Rosenthaler Straße');
-  // Vorperiode für Standort-Vergleich
+  // VW: gleiche Wochentage der Vorwoche
+  // z.B. Gestern (Sa) → letzten Sa; Mo+Di → letzten Mo+Di
   var vonD2=new Date(von), bisD2=new Date(bis);
-  var dl2=bisD2-vonD2;
-  var vorBis2=new Date(vonD2.getTime()-86400000);
-  var vorVon2=new Date(vorBis2.getTime()-dl2);
   function fDE2(d){return d.toISOString().slice(0,10);}
-  var vorMd=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.st==="Mehringdamm";});
-  var vorRs=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.st==="Rosenthaler Straße";});
+  // Alle Wochentage im aktuellen Zeitraum ermitteln
+  var wochentageIst = {};
+  for(var d=new Date(vonD2); d<=bisD2; d.setDate(d.getDate()+1)) {
+    wochentageIst[d.getDay()] = true;
+  }
+  // Vorwoche: gleiche Wochentage 7 Tage früher
+  var vorVon2 = new Date(vonD2.getTime() - 7*86400000);
+  var vorBis2 = new Date(bisD2.getTime() - 7*86400000);
+  // Nur Tage mit gleichen Wochentagen filtern
+  function gleicheWT(datumStr) {
+    var d = new Date(datumStr);
+    return !!wochentageIst[d.getDay()];
+  }
+  var vorMd=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.st==="Mehringdamm"&&gleicheWT(r.datum);});
+  var vorRs=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.st==="Rosenthaler Straße"&&gleicheWT(r.datum);});
   var kVorMd=kpi(vorMd), kVorRs=kpi(vorRs);
   var diffMd=kVorMd.u>0?((km.u-kVorMd.u)/kVorMd.u*100):null;
   var diffRs=kVorRs.u>0?((kr.u-kVorRs.u)/kVorRs.u*100):null;
@@ -3903,8 +3926,8 @@ function generiereKIBericht() {
   var vonD = new Date(von.split('.').reverse().join('-'));
   var bisD = new Date(bis.split('.').reverse().join('-'));
   var dl = bisD - vonD;
-  var vorBis = new Date(vonD.getTime()-86400000);
-  var vorVon = new Date(vorBis.getTime()-dl);
+  var vorBis = new Date(bisD.getTime()-7*86400000);
+  var vorVon = new Date(vonD.getTime()-7*86400000);
   function fmtDE(d){return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();}
   var vorperiode = alle.filter(function(r){return r.datum>=fmtDE(vorVon)&&r.datum<=fmtDE(vorBis)&&(st==="Alle Standorte"||r.st===st);});
   var kVor = kpi(vorperiode);
@@ -3938,7 +3961,7 @@ function generiereKIBericht() {
   prompt += "UMSATZ:\n";
   prompt += "- Gesamt Netto: "+fmt(k.u)+" | Durchschnitt "+fmt(k.u/tage)+"/Tag\n";
   prompt += "- Mehringdamm: "+fmt(km.u)+" | Rosenthaler: "+fmt(kr.u)+"\n";
-  if(uDiff!==null) prompt += "- Vergleich Vorperiode: "+(uDiff>=0?"+":"")+uDiff.toFixed(1)+"% (Vorperiode: "+fmt(kVor.u)+")\n";
+  if(uDiff!==null) prompt += "- Vergleich VW: "+(uDiff>=0?"+":"")+uDiff.toFixed(1)+"% (VW: "+fmt(kVor.u)+")\n";
   prompt += "- Lieferando Brutto: "+fmt(ldoBrutto)+" ("+(k.u>0?(ldoBrutto/k.u*100).toFixed(1):0)+"% vom Umsatz)\n";
   prompt += "- Bon-Wert: "+fmtD(bonWertData.avg)+" (MD: "+fmtD(bonWertMd.avg)+" | RS: "+fmtD(bonWertRs.avg)+") | Ziel: 22 Euro\n\n";
   prompt += "PERSONAL:\n";
