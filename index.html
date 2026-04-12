@@ -957,7 +957,7 @@ function renderOverview(){
     if(diff===null) return '';
     var arrow=diff>=0?'▲':'▼';
     var col=diff>=0?'#22c55e':'#ef4444';
-    return '<span style="font-size:11px;color:'+col+';font-weight:600;margin-left:6px">'+arrow+' '+Math.abs(diff).toFixed(1)+'%</span>';
+    return '<span style="font-size:11px;color:'+col+';font-weight:600;margin-left:6px">'+arrow+' '+Math.abs(diff).toFixed(1)+'% vs. VW</span>';
   }
 
   // Tages-Chart
@@ -1175,7 +1175,7 @@ function renderUmsatz(){
     if(diff===null) return '';
     var arrow=diff>=0?'▲':'▼';
     var col=diff>=0?'#22c55e':'#ef4444';
-    return '<span style="font-size:11px;color:'+col+';font-weight:600;margin-left:6px">'+arrow+' '+Math.abs(diff).toFixed(1)+'%</span>';
+    return '<span style="font-size:11px;color:'+col+';font-weight:600;margin-left:6px">'+arrow+' '+Math.abs(diff).toFixed(1)+'% vs. VW</span>';
   }
   var tm={};
   gefiltert.forEach(function(r){if(!tm[r.datum])tm[r.datum]={m:0,r:0};if(r.st==="Mehringdamm")tm[r.datum].m+=r.u;else tm[r.datum].r+=r.u;});
@@ -1236,7 +1236,7 @@ function renderUmsatz(){
     if(!vw||vw===0) return '';
     var pct=(now-vw)/vw*100;
     var col=pct>=0?'#22c55e':'#ef4444';
-    return ' <span style="font-size:10px;color:'+col+'">'+(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%</span>';
+    return ' <span style="font-size:10px;color:'+col+'">'+(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'% vs. VW</span>';
   }
   var totalTrinkgeld=qG.reduce(function(s,r){return s+r.trinkgeld;},0);
   var totalBar=payG.reduce(function(s,r){return s+r.bar;},0);
