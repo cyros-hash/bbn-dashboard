@@ -1225,6 +1225,12 @@ function renderUmsatz(){
   var vwMdInhouse=Math.max(vwMdU-vwMdLdo-vwMdTakeaway,0);
   var vwRsInhouse=Math.max(vwRsU-vwRsLdo-vwRsTakeaway,0);
 
+  // VW Bon-Wert korrekt aus Transaktionen
+  var vwMdBons=txVwMd.reduce(function(s,r){return s+r.bons;},0);
+  var vwRsBons=txVwRs.reduce(function(s,r){return s+r.bons;},0);
+  var vwMdBonWert=vwMdBons>0?vwMdU/vwMdBons:0;
+  var vwRsBonWert=vwRsBons>0?vwRsU/vwRsBons:0;
+
   // VW Diff Hilfsfunktion
   function vwDiff(now, vw) {
     if(!vw||vw===0) return '';
@@ -1274,7 +1280,7 @@ function renderUmsatz(){
       <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>Take Away</span><span>${fmt(mdTakeaway)} (${km.u>0?fmtP(mdTakeaway/km.u):"—"})${vwDiff(mdTakeaway,vwMdTakeaway)}</span></div>
       <div style="border-top:1px solid #1e2d40;margin:6px 0"></div>
       <div class="drill-row"><span>Verkäufe (Bons)</span><span>${km.s.toLocaleString("de-DE")}${vwDiff(km.s,kVorMd.s)}</span></div>
-      <div class="drill-row"><span>Ø Bon-Wert</span><span>${fmtD(bonWertMd.avg)} (${bonWertMd.count} Bons)${vwDiff(bonWertMd.avg, kVorMd.at>0?kVorMd.u/kVorMd.at:0)}</span></div>
+      <div class="drill-row"><span>Ø Bon-Wert</span><span>${fmtD(bonWertMd.avg)} (${bonWertMd.count} Bons)${vwDiff(bonWertMd.avg, vwMdBonWert)}</span></div>
       <div class="drill-row"><span>Food Cost</span><span style="color:${km.fp>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(km.fp)}</span></div>
       <div class="ai-box">Mehringdamm macht ${km.u+kr.u>0?((km.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${mdLdo>0?"Lieferando-Anteil "+fmtP(km.u>0?mdLdo/km.u:0)+".":""} ${bonWertMd.avg>bonWertRs.avg?"Höherer Bon-Wert als Rosenthaler (+"+fmtD(bonWertMd.avg-bonWertRs.avg)+"/Bon).":"Niedrigerer Bon-Wert als Rosenthaler ("+fmtD(bonWertMd.avg-bonWertRs.avg)+"/Bon)."}</div>
     </div>
@@ -1287,7 +1293,7 @@ function renderUmsatz(){
       <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>Take Away</span><span>${fmt(rsTakeaway)} (${kr.u>0?fmtP(rsTakeaway/kr.u):"—"})${vwDiff(rsTakeaway,vwRsTakeaway)}</span></div>
       <div style="border-top:1px solid #1e2d40;margin:6px 0"></div>
       <div class="drill-row"><span>Verkäufe (Bons)</span><span>${kr.s.toLocaleString("de-DE")}${vwDiff(kr.s,kVorRs.s)}</span></div>
-      <div class="drill-row"><span>Ø Bon-Wert</span><span>${fmtD(bonWertRs.avg)} (${bonWertRs.count} Bons)${vwDiff(bonWertRs.avg, kVorRs.at>0?kVorRs.u/kVorRs.at:0)}</span></div>
+      <div class="drill-row"><span>Ø Bon-Wert</span><span>${fmtD(bonWertRs.avg)} (${bonWertRs.count} Bons)${vwDiff(bonWertRs.avg, vwRsBonWert)}</span></div>
       <div class="drill-row"><span>Food Cost</span><span style="color:${kr.fp>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(kr.fp)}</span></div>
       <div class="ai-box">Rosenthaler macht ${km.u+kr.u>0?((kr.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${rsLdo>0?"Lieferando-Anteil "+fmtP(kr.u>0?rsLdo/kr.u:0)+".":""} ${bonWertRs.avg>bonWertMd.avg?"Höherer Bon-Wert als Mehringdamm (+"+fmtD(bonWertRs.avg-bonWertMd.avg)+"/Bon).":"Niedrigerer Bon-Wert als Mehringdamm ("+fmtD(bonWertRs.avg-bonWertMd.avg)+"/Bon)."}</div>
     </div>
