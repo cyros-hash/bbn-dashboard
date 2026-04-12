@@ -1312,30 +1312,48 @@ function renderUmsatz(){
   var kanalLabs = Object.keys(kanalDaten).sort();
 
   if(kanalLabs.length === 1) {
-    // Heute-Ansicht: statt Datum die Stunden auf X-Achse
-    var stdLdo = {}, stdInhouse = {};
+    // Heute/Gestern-Ansicht: Stunden auf X-Achse, mit LDO-Split aus Transaktionen
+    var stdInhouse = {}, stdLdo = {};
+    // Stündliche Daten aus lsStd (Inhouse = Gesamt - LDO)
+    // LDO-Tageswert aus lsTx — wird anteilig auf Stunden verteilt
+    var tagLdoTotal = txG.reduce(function(s,r){return s+r.ldo;},0);
+    var tagUmsatzTotal = txG.reduce(function(s,r){return s+r.umsatz;},0);
+    var ldoAnteil = tagUmsatzTotal > 0 ? tagLdoTotal / tagUmsatzTotal : 0;
+
     lsStd.filter(function(r){
       return r.datum>=von && r.datum<=bis && (st==="Alle Standorte"||r.standort===st);
     }).forEach(function(r){
-      if(!stdLdo[r.stunde]) { stdLdo[r.stunde]=0; stdInhouse[r.stunde]=0; }
-      // Stunden haben keinen LDO-Split → zeige Gesamt als Inhouse
-      stdInhouse[r.stunde] += r.umsatz;
+      if(!stdInhouse[r.stunde]) { stdInhouse[r.stunde]=0; stdLdo[r.stunde]=0; }
+      // LDO anteilig aus Tagesquote
+      var stLdo = r.umsatz * ldoAnteil;
+      stdLdo[r.stunde]     += stLdo;
+      stdInhouse[r.stunde] += Math.max(r.umsatz - stLdo, 0);
     });
     var stdKeys = Object.keys(stdInhouse).sort(function(a,b){return parseInt(a)-parseInt(b);});
+    var hatLdo = stdKeys.some(function(h){ return stdLdo[h]>0; });
+    var datasets = [{
+      label: "Inhouse",
+      data: stdKeys.map(function(h){ return Math.round(stdInhouse[h]); }),
+      borderColor: "#3b82f6", backgroundColor: "#3b82f620",
+      fill: true, tension: 0.4, pointRadius: 3
+    }];
+    if(hatLdo) datasets.push({
+      label: "Lieferando",
+      data: stdKeys.map(function(h){ return Math.round(stdLdo[h]); }),
+      borderColor: "#f97316", backgroundColor: "#f9731620",
+      fill: false, tension: 0.4, pointRadius: 3, borderWidth: 2
+    });
     charts["c-um-kanal"] = new Chart(document.getElementById("c-um-kanal"), {
       type: "line",
       data: {
         labels: stdKeys.map(function(h){ return h+":00"; }),
-        datasets: [{
-          label: "Inhouse",
-          data: stdKeys.map(function(h){ return Math.round(stdInhouse[h]); }),
-          borderColor: "#3b82f6", backgroundColor: "#3b82f620",
-          fill: true, tension: 0.4, pointRadius: 3
-        }]
+        datasets: datasets
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: "#94a3b8", font: { size: 11 } } } },
+        plugins: { legend: { labels: { color: "#94a3b8", font: { size: 11 } },
+          onClick: function(e,item,legend){ var ci=legend.chart; ci.data.datasets.forEach(function(_,i){ var m=ci.getDatasetMeta(i); m.hidden=(i===item.datasetIndex)?!m.hidden:m.hidden; }); ci.update(); }
+        }},
         scales: {
           x: { ticks: { color: "#475569", font: { size: 10 } }, grid: { color: "#1e2d40" } },
           y: { ticks: { color: "#475569", font: { size: 10 }, callback: function(v){ return "€ "+Math.round(v).toLocaleString("de-DE"); } }, grid: { color: "#1e2d40" } }
