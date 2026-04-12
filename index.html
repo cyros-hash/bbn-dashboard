@@ -1212,6 +1212,26 @@ function renderUmsatz(){
   var rsOnprem=txRs.reduce(function(s,r){return s+r.onprem;},0);
   var rsTakeaway=txRs.reduce(function(s,r){return s+r.takeaway;},0);
   var rsInhouse=Math.max(kr.u-rsLdo-rsTakeaway,0);
+
+  // VW Kanal-Daten für Vergleich
+  var txVwMd=lsTx.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.standort==="Mehringdamm";});
+  var txVwRs=lsTx.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.standort==="Rosenthaler Straße";});
+  var vwMdU=txVwMd.reduce(function(s,r){return s+r.umsatz;},0);
+  var vwRsU=txVwRs.reduce(function(s,r){return s+r.umsatz;},0);
+  var vwMdLdo=txVwMd.reduce(function(s,r){return s+r.ldo;},0);
+  var vwRsLdo=txVwRs.reduce(function(s,r){return s+r.ldo;},0);
+  var vwMdTakeaway=txVwMd.reduce(function(s,r){return s+r.takeaway;},0);
+  var vwRsTakeaway=txVwRs.reduce(function(s,r){return s+r.takeaway;},0);
+  var vwMdInhouse=Math.max(vwMdU-vwMdLdo-vwMdTakeaway,0);
+  var vwRsInhouse=Math.max(vwRsU-vwRsLdo-vwRsTakeaway,0);
+
+  // VW Diff Hilfsfunktion
+  function vwDiff(now, vw) {
+    if(!vw||vw===0) return '';
+    var pct=(now-vw)/vw*100;
+    var col=pct>=0?'#22c55e':'#ef4444';
+    return ' <span style="font-size:10px;color:'+col+'">'+(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%</span>';
+  }
   var totalTrinkgeld=qG.reduce(function(s,r){return s+r.trinkgeld;},0);
   var totalBar=payG.reduce(function(s,r){return s+r.bar;},0);
   var totalKarte=payG.reduce(function(s,r){return s+r.karte;},0);
@@ -1247,26 +1267,26 @@ function renderUmsatz(){
 
     <div id="d-md" class="drill-panel">
       <div class="drill-title">Mehringdamm — Details</div>
-      <div class="drill-row"><span>Gesamtumsatz (Netto)</span><span>${fmt(km.u)}</span></div>
+      <div class="drill-row"><span>Gesamtumsatz (Netto)</span><span>${fmt(km.u)}${vwDiff(km.u,kVorMd.u)}</span></div>
       <div style="font-size:10px;color:#475569;padding:4px 0 2px;text-transform:uppercase;letter-spacing:0.4px">Umsatz nach Kanal</div>
-      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block"></span>Inhouse</span><span>${fmt(mdInhouse)} (${km.u>0?fmtP(mdInhouse/km.u):"—"})</span></div>
-      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f97316;display:inline-block"></span>Lieferando</span><span style="color:${mdLdo>0?'#f97316':'#64748b'}">${fmt(mdLdo)} (${km.u>0?fmtP(mdLdo/km.u):"—"})</span></div>
-      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>Take Away</span><span>${fmt(mdTakeaway)} (${km.u>0?fmtP(mdTakeaway/km.u):"—"})</span></div>
+      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block"></span>Inhouse</span><span>${fmt(mdInhouse)} (${km.u>0?fmtP(mdInhouse/km.u):"—"})${vwDiff(mdInhouse,vwMdInhouse)}</span></div>
+      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f97316;display:inline-block"></span>Lieferando</span><span style="color:${mdLdo>0?'#f97316':'#64748b'}">${fmt(mdLdo)} (${km.u>0?fmtP(mdLdo/km.u):"—"})${vwDiff(mdLdo,vwMdLdo)}</span></div>
+      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>Take Away</span><span>${fmt(mdTakeaway)} (${km.u>0?fmtP(mdTakeaway/km.u):"—"})${vwDiff(mdTakeaway,vwMdTakeaway)}</span></div>
       <div style="border-top:1px solid #1e2d40;margin:6px 0"></div>
-      <div class="drill-row"><span>Verkäufe (Bons)</span><span>${km.s.toLocaleString("de-DE")}</span></div>
+      <div class="drill-row"><span>Verkäufe (Bons)</span><span>${km.s.toLocaleString("de-DE")}${vwDiff(km.s,kVorMd.s)}</span></div>
       <div class="drill-row"><span>Ø Bon-Wert</span><span>${fmtD(bonWertMd.avg)} (${bonWertMd.count} Bons)</span></div>
       <div class="drill-row"><span>Food Cost</span><span style="color:${km.fp>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(km.fp)}</span></div>
       <div class="ai-box">Mehringdamm macht ${km.u+kr.u>0?((km.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${mdLdo>0?"Lieferando-Anteil "+fmtP(km.u>0?mdLdo/km.u:0)+".":""} ${bonWertMd.avg>bonWertRs.avg?"Höherer Bon-Wert als Rosenthaler (+"+fmtD(bonWertMd.avg-bonWertRs.avg)+"/Bon).":"Niedrigerer Bon-Wert als Rosenthaler ("+fmtD(bonWertMd.avg-bonWertRs.avg)+"/Bon)."}</div>
     </div>
     <div id="d-rs" class="drill-panel">
       <div class="drill-title">Rosenthaler Straße — Details</div>
-      <div class="drill-row"><span>Gesamtumsatz (Netto)</span><span>${fmt(kr.u)}</span></div>
+      <div class="drill-row"><span>Gesamtumsatz (Netto)</span><span>${fmt(kr.u)}${vwDiff(kr.u,kVorRs.u)}</span></div>
       <div style="font-size:10px;color:#475569;padding:4px 0 2px;text-transform:uppercase;letter-spacing:0.4px">Umsatz nach Kanal</div>
-      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block"></span>Inhouse</span><span>${fmt(rsInhouse)} (${kr.u>0?fmtP(rsInhouse/kr.u):"—"})</span></div>
-      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f97316;display:inline-block"></span>Lieferando</span><span style="color:${rsLdo>0?'#f97316':'#64748b'}">${fmt(rsLdo)} (${kr.u>0?fmtP(rsLdo/kr.u):"—"})</span></div>
-      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>Take Away</span><span>${fmt(rsTakeaway)} (${kr.u>0?fmtP(rsTakeaway/kr.u):"—"})</span></div>
+      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block"></span>Inhouse</span><span>${fmt(rsInhouse)} (${kr.u>0?fmtP(rsInhouse/kr.u):"—"})${vwDiff(rsInhouse,vwRsInhouse)}</span></div>
+      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f97316;display:inline-block"></span>Lieferando</span><span style="color:${rsLdo>0?'#f97316':'#64748b'}">${fmt(rsLdo)} (${kr.u>0?fmtP(rsLdo/kr.u):"—"})${vwDiff(rsLdo,vwRsLdo)}</span></div>
+      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>Take Away</span><span>${fmt(rsTakeaway)} (${kr.u>0?fmtP(rsTakeaway/kr.u):"—"})${vwDiff(rsTakeaway,vwRsTakeaway)}</span></div>
       <div style="border-top:1px solid #1e2d40;margin:6px 0"></div>
-      <div class="drill-row"><span>Verkäufe (Bons)</span><span>${kr.s.toLocaleString("de-DE")}</span></div>
+      <div class="drill-row"><span>Verkäufe (Bons)</span><span>${kr.s.toLocaleString("de-DE")}${vwDiff(kr.s,kVorRs.s)}</span></div>
       <div class="drill-row"><span>Ø Bon-Wert</span><span>${fmtD(bonWertRs.avg)} (${bonWertRs.count} Bons)</span></div>
       <div class="drill-row"><span>Food Cost</span><span style="color:${kr.fp>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(kr.fp)}</span></div>
       <div class="ai-box">Rosenthaler macht ${km.u+kr.u>0?((kr.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${rsLdo>0?"Lieferando-Anteil "+fmtP(kr.u>0?rsLdo/kr.u:0)+".":""} ${bonWertRs.avg>bonWertMd.avg?"Höherer Bon-Wert als Mehringdamm (+"+fmtD(bonWertRs.avg-bonWertMd.avg)+"/Bon).":"Niedrigerer Bon-Wert als Mehringdamm ("+fmtD(bonWertRs.avg-bonWertMd.avg)+"/Bon)."}</div>
