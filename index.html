@@ -432,19 +432,52 @@ function getBonWert(von,bis,st){
   return{count:b.length,total:total,avg:b.length>0?total/b.length:0};
 }
 
+// Hilfsfunktion: Bestandsbericht-Datum parsen (DD.MM.YYYY oder YYYY-MM-DD)
+function parseBestandDat(s){
+  if(!s)return null;
+  s=String(s).trim();
+  if(s.includes('.')&&!s.includes('-')){var p=s.split('.');return new Date(+p[2],p[1]-1,+p[0],12,0,0);}
+  return new Date(s+'T12:00:00');
+}
+// Bestandsbericht-Datum → YYYY-MM-DD (für Vergleich mit alle[].datum)
+function bestandDatISO(s){
+  var d=parseBestandDat(s);
+  if(!d||isNaN(d))return'';
+  return d.toISOString().slice(0,10);
+}
+// Tage zwischen zwei Datumsstrings (inklusiv)
+function tageDiff(von,bis){
+  var a=parseBestandDat(von),b=parseBestandDat(bis);
+  if(!a||!b||isNaN(a)||isNaN(b))return 1;
+  return Math.max(Math.round((b-a)/86400000)+1,1);
+}
+
 // Echte Food Cost aus Bestandsbericht (Ist-FC in Euro)
 // FC = Öffne + Zugänge - Schliesse (= Gesamtverbrauch)
 // Aufschlüsselung: Verkauft + Verschwendet + Unkontrolliert + Hergestellt + Umverlagert + Versandt
+//
+// Logik: FC-Quote = Gesamt-FC / Umsatz im Bestandszeitraum
+// Diese Quote gilt konstant für jeden Tag innerhalb des Zeitraums.
+// Rückgabe: quote (FC%), gesamt (absoluter FC im Bestandszeitraum),
+//           revBestand (Umsatz im Bestandszeitraum), plus Traceability-Aufschlüsselung
 function getRealFC(stFilter){
-  if(bestandDaten.length===0)return{hat:false,gesamt:0,verkauft:0,verschwendet:0,unkontrolliert:0,von:'',bis:''};
+  if(bestandDaten.length===0)return{hat:false,quote:0,gesamt:0,revBestand:0,verkauft:0,verschwendet:0,unkontrolliert:0,von:'',bis:'',tage:0};
   function _neustesBis(stN){
     var rows=bestandDaten.filter(function(r){return r.standort===stN;});
     if(!rows.length)return'';
     return rows.reduce(function(m,r){return r.bis>m?r.bis:m;},'');
   }
+  // Umsatz aus "alle" für einen Standort im Bestandszeitraum
+  function _rev(vonRaw,bisRaw,stN){
+    var v=bestandDatISO(vonRaw),b=bestandDatISO(bisRaw);
+    if(!v||!b)return 0;
+    return alle.filter(function(r){
+      return r.datum>=v&&r.datum<=b&&(stN==='Alle'||r.st===stN);
+    }).reduce(function(s,r){return s+r.u;},0);
+  }
   function _calc(stN){
     var bisD=_neustesBis(stN);
-    if(!bisD)return{fc:0,verkauft:0,verschwendet:0,unkontrolliert:0,hergestellt:0,umverl:0,versandt:0,offen:0,waren:0,erstelltIn:0,umverlEin:0,schluss:0,von:'',bis:'',n:0};
+    if(!bisD)return{fc:0,verkauft:0,verschwendet:0,unkontrolliert:0,hergestellt:0,umverl:0,versandt:0,offen:0,waren:0,erstelltIn:0,umverlEin:0,schluss:0,von:'',bis:'',n:0,tage:0,rev:0,quote:0};
     var rows=bestandDaten.filter(function(r){return r.standort===stN&&r.bis===bisD;});
     var s=function(field){return rows.reduce(function(sum,r){return sum+r[field];},0);};
     var offen=s('offen'),waren=s('waren'),erstelltIn=s('erstelltIn'),umverlEin=s('umverlEin');
@@ -453,10 +486,13 @@ function getRealFC(stFilter){
     var verschwendet=Math.abs(s('verschwendet')),unkontrolliert=Math.abs(s('unkontrolliert'));
     var schluss=s('schluss');
     var fc=offen+waren+erstelltIn+umverlEin-schluss;
+    var vonD=rows.length?rows[0].von:'';
+    var tage=tageDiff(vonD,bisD);
+    var rev=_rev(vonD,bisD,stN);
     return{fc:fc,verkauft:verkauft,verschwendet:verschwendet,unkontrolliert:unkontrolliert,
            hergestellt:hergestellt,umverl:umverlAus,versandt:versandt,
            offen:offen,waren:waren,erstelltIn:erstelltIn,umverlEin:umverlEin,schluss:schluss,
-           von:rows.length?rows[0].von:'',bis:bisD,n:rows.length};
+           von:vonD,bis:bisD,n:rows.length,tage:tage,rev:rev,quote:rev>0?fc/rev:0};
   }
   var md=_calc('Mehringdamm'),rs=_calc('Rosenthaler Straße');
   var ges,von,bis;
@@ -467,13 +503,16 @@ function getRealFC(stFilter){
          unkontrolliert:md.unkontrolliert+rs.unkontrolliert,hergestellt:md.hergestellt+rs.hergestellt,
          umverl:md.umverl+rs.umverl,versandt:md.versandt+rs.versandt,
          offen:md.offen+rs.offen,waren:md.waren+rs.waren,erstelltIn:md.erstelltIn+rs.erstelltIn,
-         umverlEin:md.umverlEin+rs.umverlEin,schluss:md.schluss+rs.schluss,n:md.n+rs.n};
+         umverlEin:md.umverlEin+rs.umverlEin,schluss:md.schluss+rs.schluss,n:md.n+rs.n,
+         tage:Math.max(md.tage,rs.tage),rev:md.rev+rs.rev};
+    ges.quote=ges.rev>0?ges.fc/ges.rev:0;
     von=md.von||rs.von;bis=md.bis>rs.bis?md.bis:rs.bis;
   }
-  return{hat:ges.n>0,gesamt:ges.fc,verkauft:ges.verkauft,verschwendet:ges.verschwendet,
+  return{hat:ges.n>0,quote:ges.quote,gesamt:ges.fc,revBestand:ges.rev,
+         verkauft:ges.verkauft,verschwendet:ges.verschwendet,
          unkontrolliert:ges.unkontrolliert,hergestellt:ges.hergestellt,umverl:ges.umverl,versandt:ges.versandt,
          offen:ges.offen,waren:ges.waren,schluss:ges.schluss,
-         md:md,rs:rs,von:von,bis:bis};
+         md:md,rs:rs,von:von,bis:bis,tage:ges.tage||1};
 }
 
 function getOrdio(von,bis,st){
@@ -1049,13 +1088,13 @@ function renderOverview(){
   var data=Object.keys(tm).sort().map(function(d){return Math.round(tm[d]);});
 
   // Kosten Donut — VOR Template definieren (wird in Legende benutzt)
-  // Echte FC aus Bestandsbericht (Ist) oder Fallback auf Soll
+  // Echte FC aus Bestandsbericht: quote = FC / Umsatz im Bestandszeitraum
   var rfc=getRealFC(st);
   var hatIstFC=rfc.hat;
-  var anzFcPct=hatIstFC&&k.u>0?rfc.gesamt/k.u:k.fp;
-  var anzFcMdPct=rfc.md&&rfc.md.n>0&&km.u>0?rfc.md.fc/km.u:km.fp;
-  var anzFcRsPct=rfc.rs&&rfc.rs.n>0&&kr.u>0?rfc.rs.fc/kr.u:kr.fp;
-  var fcAmt=hatIstFC?rfc.gesamt:k.f,paAmt=pa,profitAmt=Math.max(ebitda,0);
+  var anzFcPct=hatIstFC?rfc.quote:k.fp;
+  var anzFcMdPct=rfc.md&&rfc.md.n>0?rfc.md.quote:km.fp;
+  var anzFcRsPct=rfc.rs&&rfc.rs.n>0?rfc.rs.quote:kr.fp;
+  var fcAmt=hatIstFC?rfc.quote*k.u:k.f,paAmt=pa,profitAmt=Math.max(ebitda,0);
   // CM und EBITDA mit Ist-FC neu berechnen falls vorhanden
   if(hatIstFC){cm=k.u-fcAmt-ldoProvOv-pa;cmPct=k.u>0?cm/k.u:0;ebitda=cm-fkOv.gesamt-smKosten;ebitdaPct=k.u>0?ebitda/k.u:0;}
   // VW FC-Diff jetzt berechnen (anzFcPct ist definiert)
@@ -1099,7 +1138,7 @@ function renderOverview(){
         <div class="kpi-label">🥩 Food Cost ${hatIstFC?'<span style="font-size:9px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px;margin-left:4px">Ist</span>':''}</div>
         <div class="kpi-val" style="color:${anzFcPct>ZIELE.fc?'#ef4444':'#22c55e'}">${fmt(fcAmt)}</div>
         <div class="kpi-delta ${anzFcPct>ZIELE.fc?'delta-dn':'delta-up'}">${fmtP(anzFcPct)} vom Umsatz · Ziel ${fmtP(ZIELE.fc)}</div>
-        <div class="kpi-ai">${hatIstFC?rfc.von+' → '+rfc.bis+' · Soll (Rezeptur): '+fmt(k.f)+' ('+fmtP(k.fp)+')':'Soll (Rezeptur) · klick für Aufschlüsselung'}</div>
+        <div class="kpi-ai">${hatIstFC?'Quote aus '+rfc.von+' → '+rfc.bis+' ('+rfc.tage+'T, '+fmt(rfc.revBestand)+' Umsatz) · Soll: '+fmtP(k.fp):'Soll (Rezeptur) · klick für Aufschlüsselung'}</div>
       </div>
       <div class="kpi-card" onclick="drill('d-ov-cm')">
         <div class="kpi-label">📈 Contribution Margin</div>
@@ -1131,13 +1170,13 @@ function renderOverview(){
     <div id="d-ov-fc" class="drill-panel">
       <div class="drill-title">Food Cost — Aufschlüsselung ${hatIstFC?'<span style="font-size:10px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px">Ist-Werte</span>':''}</div>
       <div class="drill-row"><span>Gesamt ${hatIstFC?"(Ist)":"(Soll)"}</span><span style="color:${anzFcPct>ZIELE.fc?'#ef4444':'#22c55e'}">${fmt(fcAmt)} · ${fmtP(anzFcPct)}${vwBadge(vwFcDiff,true)}</span></div>
-      <div class="drill-row"><span>Mehringdamm</span><span style="color:${anzFcMdPct>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(anzFcMdPct)}${hatIstFC&&rfc.md?' · '+fmt(rfc.md.fc):''}</span></div>
-      <div class="drill-row"><span>Rosenthaler Straße</span><span style="color:${anzFcRsPct>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(anzFcRsPct)}${hatIstFC&&rfc.rs?' · '+fmt(rfc.rs.fc):''}</span></div>
-      ${hatIstFC?'<div class="drill-row" style="border-top:1px solid #1e293b;margin-top:4px;padding-top:4px"><span>↳ davon Verkauft</span><span>'+fmt(rfc.verkauft)+'</span></div><div class="drill-row"><span>↳ davon Verschwendet</span><span style="color:#f97316">'+fmt(rfc.verschwendet)+'</span></div><div class="drill-row"><span>↳ davon Schwund (unkontrolliert)</span><span style="color:#ef4444;font-weight:600">'+fmt(rfc.unkontrolliert)+'</span></div>':''}
+      <div class="drill-row"><span>Mehringdamm</span><span style="color:${anzFcMdPct>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(anzFcMdPct)}${hatIstFC&&rfc.md?' · '+fmt(rfc.md.quote*km.u):''}</span></div>
+      <div class="drill-row"><span>Rosenthaler Straße</span><span style="color:${anzFcRsPct>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(anzFcRsPct)}${hatIstFC&&rfc.rs?' · '+fmt(rfc.rs.quote*kr.u):''}</span></div>
+      ${hatIstFC&&rfc.gesamt>0?(function(){var sc=fcAmt/rfc.gesamt;return'<div class="drill-row" style="border-top:1px solid #1e293b;margin-top:4px;padding-top:4px"><span>↳ davon Verkauft</span><span>'+fmt(rfc.verkauft*sc)+' ('+fmtP(rfc.revBestand>0?rfc.verkauft/rfc.revBestand:0)+')</span></div><div class="drill-row"><span>↳ davon Verschwendet</span><span style="color:#f97316">'+fmt(rfc.verschwendet*sc)+' ('+fmtP(rfc.revBestand>0?rfc.verschwendet/rfc.revBestand:0)+')</span></div><div class="drill-row"><span>↳ davon Schwund (unkontrolliert)</span><span style="color:#ef4444;font-weight:600">'+fmt(rfc.unkontrolliert*sc)+' ('+fmtP(rfc.revBestand>0?rfc.unkontrolliert/rfc.revBestand:0)+')</span></div>';})():''}
       <div class="drill-row"><span>Soll (Rezeptur)</span><span>${fmt(k.f)} · ${fmtP(k.fp)}</span></div>
-      ${hatIstFC?'<div class="drill-row"><span>Abweichung Ist vs. Soll</span><span style="color:'+(rfc.gesamt>k.f?'#ef4444':'#22c55e')+'">'+fmt(rfc.gesamt-k.f)+'</span></div>':''}
+      ${hatIstFC?'<div class="drill-row"><span>Abweichung Ist vs. Soll</span><span style="color:'+(fcAmt>k.f?'#ef4444':'#22c55e')+'">'+fmt(fcAmt-k.f)+' ('+fmtP(anzFcPct-k.fp)+')</span></div>':''}
       <div class="drill-row"><span>Ziel</span><span>${fmtP(ZIELE.fc)}</span></div>
-      <div class="ai-box">${hatIstFC?"Zeitraum: "+rfc.von+" → "+rfc.bis+". "+(rfc.unkontrolliert>100?"⚠️ Schwund "+fmt(rfc.unkontrolliert)+" — hier steckt Optimierungspotenzial!":"Schwund im akzeptablen Bereich."):"Keine Ist-Daten verfügbar — zeigt Soll-Werte aus Apicbase-Rezepturen."}</div>
+      <div class="ai-box">${hatIstFC?"Basis: "+rfc.von+" → "+rfc.bis+" ("+rfc.tage+" Tage, "+fmt(rfc.revBestand)+" Umsatz). FC-Quote "+fmtP(rfc.quote)+" gilt für jeden Tag. "+(rfc.revBestand>0&&rfc.unkontrolliert/rfc.revBestand>0.02?"⚠️ Schwund "+fmtP(rfc.unkontrolliert/rfc.revBestand)+" vom Umsatz — Optimierungspotenzial!":"Schwund im akzeptablen Bereich."):"Keine Ist-Daten verfügbar — zeigt Soll-Werte aus Apicbase-Rezepturen."}</div>
     </div>
 
     <div id="d-ov-cm" class="drill-panel">
@@ -1254,9 +1293,9 @@ function renderUmsatz(){
     var avgFcGesQ=getAvgFcQuote(st);
     kGes={u:uGesStd.u,f:uGesStd.u*avgFcGesQ,s:kGes.s,t:kGes.t,fp:avgFcGesQ,at:kGes.at};
   }
-  // Food Cost für Umsatz-Tab (Ist aus Bestandsbericht oder Soll)
+  // Food Cost für Umsatz-Tab (Ist-Quote aus Bestandsbericht oder Soll)
   var uRfc=getRealFC(st);
-  var uFcPct=uRfc.hat&&kGes.u>0?uRfc.gesamt/kGes.u:kGes.fp;
+  var uFcPct=uRfc.hat?uRfc.quote:kGes.fp;
   var uFcLabel=uRfc.hat?"(Ist)":"(Soll)";
   // VW: gleiche Wochentage der Vorwoche
   // z.B. Gestern (Sa) → letzten Sa; Mo+Di → letzten Mo+Di
@@ -1784,7 +1823,8 @@ function renderGuV(){
   var ldoUmsatz=txGuvG.reduce(function(s,r){return s+r.ldo;},0);
   var ldoProv=ldoUmsatz*0.20;
   var ldoProvPct=k.u>0?ldoProv/k.u:0;
-  var rohertrag=k.u-k.f-ldoProv;
+  var uFcAmt=uRfc.hat?uRfc.quote*k.u:k.f;
+  var rohertrag=k.u-uFcAmt-ldoProv;
   var smKosten=getSocialMediaKosten(von,bis,st); // Social Media → Personalgemeinkosten
   var cm=rohertrag-pa;
   var cmPct=k.u>0?cm/k.u:0;
@@ -1807,11 +1847,12 @@ function renderGuV(){
 
         <div class="guv-row" style="cursor:default"><span style="color:#94a3b8">Nettoumsatz</span><span style="color:#22c55e;font-size:15px;font-weight:700">${fmt(k.u)}</span></div>
 
-        <div class="guv-row" onclick="drill('d-guv-fc')"><span style="color:#94a3b8">— Food Cost (${fmtP(k.fp)}) ↓</span><span style="color:#ef4444">- ${fmt(k.f)}</span></div>
+        <div class="guv-row" onclick="drill('d-guv-fc')"><span style="color:#94a3b8">— Food Cost ${uRfc.hat?'(Ist '+fmtP(uFcPct)+')':'(Soll '+fmtP(k.fp)+')'} ↓</span><span style="color:#ef4444">- ${fmt(uFcAmt)}</span></div>
         <div id="d-guv-fc" class="drill-panel">
-          <div class="drill-row"><span>Mehringdamm</span><span style="color:${km.fp>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(km.fp)}</span></div>
-          <div class="drill-row"><span>Rosenthaler</span><span style="color:${kr.fp>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(kr.fp)}</span></div>
-          <div class="ai-box">${Math.abs(km.fp-kr.fp)>0.01?"Differenz "+fmtP(Math.abs(km.fp-kr.fp))+" zwischen Standorten. "+(km.fp>kr.fp?"Mehringdamm hat höheren FC.":"Rosenthaler hat höheren FC — Lieferando-Anteil prüfen."):"Beide Standorte ähnlich."}</div>
+          <div class="drill-row"><span>Mehringdamm ${uRfc.hat?'(Ist)':'(Soll)'}</span><span style="color:${(uRfc.hat?uRfc.md.quote:km.fp)>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(uRfc.hat?uRfc.md.quote:km.fp)}</span></div>
+          <div class="drill-row"><span>Rosenthaler ${uRfc.hat?'(Ist)':'(Soll)'}</span><span style="color:${(uRfc.hat?uRfc.rs.quote:kr.fp)>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(uRfc.hat?uRfc.rs.quote:kr.fp)}</span></div>
+          ${uRfc.hat?'<div class="drill-row"><span>Soll (Rezeptur)</span><span>'+fmtP(k.fp)+' · '+fmt(k.f)+'</span></div>':''}
+          <div class="ai-box">${uRfc.hat?"Ist-Quote "+fmtP(uRfc.quote)+" aus Bestandsbericht "+uRfc.von+" → "+uRfc.bis+". "+(uRfc.quote>k.fp?"Ist liegt "+fmtP(uRfc.quote-k.fp)+" über Soll — Schwund/Verschwendung prüfen.":"Ist liegt unter Soll — gute Kontrolle."):Math.abs(km.fp-kr.fp)>0.01?"Differenz "+fmtP(Math.abs(km.fp-kr.fp))+" zwischen Standorten.":"Beide Standorte ähnlich."}</div>
         </div>
 
         <div class="guv-row" onclick="drill('d-guv-ldo')"><span style="color:#94a3b8">— Lieferando-Provision 20% (${fmtP(ldoProvPct)}) ↓</span><span style="color:#ef4444">- ${fmt(ldoProv)}</span></div>
@@ -3762,9 +3803,10 @@ function buildTagesberichtContext() {
   ctx += "  Rosenthaler Straße: "+fmt(kGRs.u)+"\n";
   ctx += "Vorwoche gleicher Tag ("+vorwocheISO+"): "+fmt(kV.u)+" → Differenz: "+(kV.u>0?(((kG.u-kV.u)/kV.u)*100).toFixed(1)+"%" : "keine Daten")+"\n";
   ctx += "Ø letzte 7 Tage: "+fmt(kW.u/tageW)+"/Tag\n";
-  ctx += "Food Cost: "+fmtP(kG.fp)+" (Ziel 22%)\n";
-  ctx += "  Mehringdamm FC: "+fmtP(kGMd.fp)+"\n";
-  ctx += "  Rosenthaler FC: "+fmtP(kGRs.fp)+"\n";
+  var brRfc=getRealFC("Alle Standorte");
+  ctx += "Food Cost: "+(brRfc.hat?"Ist "+fmtP(brRfc.quote)+" (aus Bestandsbericht "+brRfc.von+"→"+brRfc.bis+")":"Soll "+fmtP(kG.fp))+" (Ziel 25%)\n";
+  ctx += "  Mehringdamm FC: "+(brRfc.hat?"Ist "+fmtP(brRfc.md.quote):"Soll "+fmtP(kGMd.fp))+"\n";
+  ctx += "  Rosenthaler FC: "+(brRfc.hat?"Ist "+fmtP(brRfc.rs.quote):"Soll "+fmtP(kGRs.fp))+"\n";
   ctx += "Ø Bon-Wert: "+fmtD(bwG.avg)+" aus "+bwG.count+" Bons (Ziel €22)\n";
   ctx += "Lieferando Brutto: "+fmt(ldoBruttoG)+" ("+fmtP(ldoAnteilG)+" vom Umsatz)\n\n";
 
@@ -4107,10 +4149,12 @@ function generiereKIBericht() {
   var kiRfc=getRealFC("Alle Standorte");
   prompt += "\nFOOD COST & WASTE:\n";
   if(kiRfc.hat){
-    prompt += "- ECHTE Food Cost (Ist/Bestandsbericht): "+fmt(kiRfc.gesamt)+" ("+(k.u>0?fmtP(kiRfc.gesamt/k.u):"—")+") | Ziel: 25%\n";
-    prompt += "- Aufschluesselung: Verkauft "+fmt(kiRfc.verkauft)+" | Verschwendet "+fmt(kiRfc.verschwendet)+" | Schwund "+fmt(kiRfc.unkontrolliert)+"\n";
-    prompt += "- Mehringdamm Ist-FC: "+fmt(kiRfc.md.fc)+(km.u>0?" ("+fmtP(kiRfc.md.fc/km.u)+")":"")+" | Rosenthaler Ist-FC: "+fmt(kiRfc.rs.fc)+(kr.u>0?" ("+fmtP(kiRfc.rs.fc/kr.u)+")":"")+"\n";
-    prompt += "- Soll-FC (Rezeptur): "+fmt(k.f)+" ("+fmtP(k.fp)+") — Abweichung Ist vs Soll: "+fmt(kiRfc.gesamt-k.f)+"\n";
+    var kiFcAmt=kiRfc.quote*k.u;
+    prompt += "- ECHTE Food Cost (Ist-Quote aus Bestandsbericht): "+fmtP(kiRfc.quote)+" = "+fmt(kiFcAmt)+" | Ziel: 25%\n";
+    prompt += "- Basis: "+kiRfc.von+" → "+kiRfc.bis+" ("+kiRfc.tage+" Tage, "+fmt(kiRfc.revBestand)+" Umsatz im Zeitraum)\n";
+    prompt += "- Aufschluesselung (Anteile am Umsatz): Verkauft "+fmtP(kiRfc.revBestand>0?kiRfc.verkauft/kiRfc.revBestand:0)+" | Verschwendet "+fmtP(kiRfc.revBestand>0?kiRfc.verschwendet/kiRfc.revBestand:0)+" | Schwund "+fmtP(kiRfc.revBestand>0?kiRfc.unkontrolliert/kiRfc.revBestand:0)+"\n";
+    prompt += "- Mehringdamm Ist-FC: "+fmtP(kiRfc.md.quote)+" | Rosenthaler Ist-FC: "+fmtP(kiRfc.rs.quote)+"\n";
+    prompt += "- Soll-FC (Rezeptur): "+fmtP(k.fp)+" ("+fmt(k.f)+") — Abweichung Ist vs Soll: "+fmtP(kiRfc.quote-k.fp)+"\n";
   } else {
     prompt += "- Food Cost (Soll/Rezeptur): "+fmt(k.f)+" ("+fmtP(k.fp)+") | Ziel: 25%\n";
     prompt += "- Mehringdamm FC: "+fmtP(km.fp)+" | Rosenthaler FC: "+fmtP(kr.fp)+"\n";
@@ -4120,7 +4164,7 @@ function generiereKIBericht() {
   prompt += "TRINKGELD & STORNOS:\n";
   prompt += "- TK-Quote: "+fmtP(tkQ)+" | Gesamt: "+fmt(tkGes)+" | Ziel: 5%\n";
   prompt += "- Stornierungen: "+stornosN+"x\n\n";
-  var kiFC=kiRfc.hat?kiRfc.gesamt:k.f;
+  var kiFC=kiRfc.hat?kiRfc.quote*k.u:k.f;
   var kiCM=k.u-kiFC-ldoProv-pa;
   var kiEBITDA=kiCM-fkOv.gesamt-smKosten;
   prompt += "ERGEBNIS:\n";
