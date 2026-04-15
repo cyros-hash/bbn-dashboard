@@ -1221,9 +1221,16 @@ function renderUmsatz(){
   }
   var bonWertMd=getBonWert(von,bis,'Mehringdamm');
   var bonWertRs=getBonWert(von,bis,'Rosenthaler Straße');
+  // Gesamt-KPI für Umsatz-Tab
+  var kGes=kpi(gefiltert);
+  if(hatStundenfilter()){
+    var uGesStd=getUmsatzGefiltert(von,bis,st);
+    var avgFcGesQ=getAvgFcQuote(st);
+    kGes={u:uGesStd.u,f:uGesStd.u*avgFcGesQ,s:kGes.s,t:kGes.t,fp:avgFcGesQ,at:kGes.at};
+  }
   // Echte FC für Umsatz-Tab
   var rfc=getRealFC();
-  var uFcPct=rfc.hat&&k.u>0?rfc.gesamt/k.u:k.fp;
+  var uFcPct=rfc.hat&&kGes.u>0?rfc.gesamt/kGes.u:kGes.fp;
   var uFcLabel=rfc.hat?"(Ist)":"(Soll)";
   // VW: gleiche Wochentage der Vorwoche
   // z.B. Gestern (Sa) → letzten Sa; Mo+Di → letzten Mo+Di
