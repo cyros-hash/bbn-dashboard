@@ -432,14 +432,48 @@ function getBonWert(von,bis,st){
   return{count:b.length,total:total,avg:b.length>0?total/b.length:0};
 }
 
-// Echte Food Cost aus Bestandsbericht (global verfügbar)
-function getRealFC(){
-  if(bestandDaten.length===0)return{hat:false,gesamt:0,md:0,rs:0,von:'',bis:''};
-  function _gb(stN){var rows=bestandDaten.filter(function(r){return r.standort===stN;});if(!rows.length)return'';return rows.reduce(function(m,r){return r.bis>m?r.bis:m;},'');}
-  function _gr(stN){var bisD=_gb(stN);var rows=bestandDaten.filter(function(r){return r.standort===stN&&r.bis===bisD;});var o=rows.reduce(function(s,r){return s+r.offen;},0);var w=rows.reduce(function(s,r){return s+r.waren;},0);var sc=rows.reduce(function(s,r){return s+r.schluss;},0);return{real:o+w-sc,von:rows.length?rows[0].von:'',bis:bisD};}
-  var rfMd=_gr('Mehringdamm'),rfRs=_gr('Rosenthaler Straße');
-  var ges=rfMd.real+rfRs.real;
-  return{hat:ges>0,gesamt:ges,md:rfMd.real,rs:rfRs.real,von:rfMd.von||rfRs.von,bis:rfMd.bis||rfRs.bis};
+// Echte Food Cost aus Bestandsbericht (Ist-FC in Euro)
+// FC = Öffne + Zugänge - Schliesse (= Gesamtverbrauch)
+// Aufschlüsselung: Verkauft + Verschwendet + Unkontrolliert + Hergestellt + Umverlagert + Versandt
+function getRealFC(stFilter){
+  if(bestandDaten.length===0)return{hat:false,gesamt:0,verkauft:0,verschwendet:0,unkontrolliert:0,von:'',bis:''};
+  function _neustesBis(stN){
+    var rows=bestandDaten.filter(function(r){return r.standort===stN;});
+    if(!rows.length)return'';
+    return rows.reduce(function(m,r){return r.bis>m?r.bis:m;},'');
+  }
+  function _calc(stN){
+    var bisD=_neustesBis(stN);
+    if(!bisD)return{fc:0,verkauft:0,verschwendet:0,unkontrolliert:0,hergestellt:0,umverl:0,versandt:0,offen:0,waren:0,erstelltIn:0,umverlEin:0,schluss:0,von:'',bis:'',n:0};
+    var rows=bestandDaten.filter(function(r){return r.standort===stN&&r.bis===bisD;});
+    var s=function(field){return rows.reduce(function(sum,r){return sum+r[field];},0);};
+    var offen=s('offen'),waren=s('waren'),erstelltIn=s('erstelltIn'),umverlEin=s('umverlEin');
+    var verkauft=Math.abs(s('verkauft')),hergestellt=Math.abs(s('hergestellt'));
+    var umverlAus=Math.abs(s('umverlAus')),versandt=Math.abs(s('versandt'));
+    var verschwendet=Math.abs(s('verschwendet')),unkontrolliert=Math.abs(s('unkontrolliert'));
+    var schluss=s('schluss');
+    var fc=offen+waren+erstelltIn+umverlEin-schluss;
+    return{fc:fc,verkauft:verkauft,verschwendet:verschwendet,unkontrolliert:unkontrolliert,
+           hergestellt:hergestellt,umverl:umverlAus,versandt:versandt,
+           offen:offen,waren:waren,erstelltIn:erstelltIn,umverlEin:umverlEin,schluss:schluss,
+           von:rows.length?rows[0].von:'',bis:bisD,n:rows.length};
+  }
+  var md=_calc('Mehringdamm'),rs=_calc('Rosenthaler Straße');
+  var ges,von,bis;
+  if(stFilter==='Mehringdamm'){ges=md;von=md.von;bis=md.bis;}
+  else if(stFilter==='Rosenthaler Straße'){ges=rs;von=rs.von;bis=rs.bis;}
+  else{
+    ges={fc:md.fc+rs.fc,verkauft:md.verkauft+rs.verkauft,verschwendet:md.verschwendet+rs.verschwendet,
+         unkontrolliert:md.unkontrolliert+rs.unkontrolliert,hergestellt:md.hergestellt+rs.hergestellt,
+         umverl:md.umverl+rs.umverl,versandt:md.versandt+rs.versandt,
+         offen:md.offen+rs.offen,waren:md.waren+rs.waren,erstelltIn:md.erstelltIn+rs.erstelltIn,
+         umverlEin:md.umverlEin+rs.umverlEin,schluss:md.schluss+rs.schluss,n:md.n+rs.n};
+    von=md.von||rs.von;bis=md.bis>rs.bis?md.bis:rs.bis;
+  }
+  return{hat:ges.n>0,gesamt:ges.fc,verkauft:ges.verkauft,verschwendet:ges.verschwendet,
+         unkontrolliert:ges.unkontrolliert,hergestellt:ges.hergestellt,umverl:ges.umverl,versandt:ges.versandt,
+         offen:ges.offen,waren:ges.waren,schluss:ges.schluss,
+         md:md,rs:rs,von:von,bis:bis};
 }
 
 function getOrdio(von,bis,st){
@@ -698,17 +732,26 @@ async function ladeDaten(){
         bestandDaten=b11lines.slice(1).map(function(l){
           var v=pCSV(l),o={};b11h.forEach(function(hh,i){o[hh]=v[i]||"";});
           return{
-            standort:    o["Standort"]||"",
-            von:         o["Von"]||"",
-            bis:         o["Bis"]||"",
-            artikel:     o["Artikel"]||"",
-            kategorie:   o["Kategorie"]||"",
-            offen:       parseFloat(o["Öffne Bestandswert (€)"])||0,
-            waren:       parseFloat(o["Waren erhalten (€)"])||0,
-            verkauft:    parseFloat(o["Verkauft (€)"])||0,
-            verschwendet:parseFloat(o["Verschwendet (€)"])||0,
-            unkontrolliert:parseFloat(o["Unkontrolliert/Schwund (€)"])||0,
-            schluss:     parseFloat(o["Schliesse Bestandswert (€)"])||0
+            standort:       o["Standort"]||"",
+            von:            o["Von"]||"",
+            bis:            o["Bis"]||"",
+            artikel:        o["Artikel"]||"",
+            buchKategorie:  o["Buchhaltungskategorie"]||"",
+            kategorie:      o["Kategorie"]||"",
+            unterKategorie: o["Unterkategorie"]||"",
+            // Zugänge
+            offen:          pDE(o["Öffne Bestandswert (€)"]),
+            waren:          pDE(o["Waren erhalten (€)"]),
+            erstelltIn:     pDE(o["Erstellt in (€)"]),
+            umverlEin:      pDE(o["Umverlagert eingehend (€)"]),
+            // Abgänge
+            verkauft:       pDE(o["Verkauft (€)"]),
+            hergestellt:    pDE(o["Hergestellt aus (€)"]),
+            umverlAus:      pDE(o["Umverlagert ausgehend (€)"]),
+            versandt:       pDE(o["Versandt (€)"]),
+            verschwendet:   pDE(o["Verschwendet (€)"]),
+            unkontrolliert: pDE(o["Unkontrolliert/Schwund (€)"]),
+            schluss:        pDE(o["Schliesse Bestandswert (€)"])
           };
         }).filter(function(r){return r.standort&&r.artikel;});
         console.log("✓ Bestandsdaten: "+bestandDaten.length+" Einträge");
@@ -980,7 +1023,7 @@ function renderOverview(){
   var vwPaDiff=paVor>0?((pa-paVor)/paVor*100):null;
   var vwPaMdDiff=paVorMd>0?((pkMd.total-paVorMd)/paVorMd*100):null;
   var vwPaRsDiff=paVorRs>0?((pkRs.total-paVorRs)/paVorRs*100):null;
-  var vwFcDiff=kVor.fp>0?((anzFcPct-kVor.fp)/kVor.fp*100):null;
+  var vwFcDiff=null; // wird nach anzFcPct-Definition gesetzt
   var cmVor=kVor.u-kVor.f-(lsTx.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&(st==="Alle Standorte"||r.standort===st);}).reduce(function(s,r){return s+r.ldo;},0)*0.20)-paVor;
   var cmVorPct=kVor.u>0?cmVor/kVor.u:0;
   var vwCmDiff=cmVorPct>0?((cmPct-cmVorPct)/cmVorPct*100):null;
@@ -1005,30 +1048,26 @@ function renderOverview(){
   var labs=Object.keys(tm).sort().map(function(d){return d.slice(8)+"."+d.slice(5,7);});
   var data=Object.keys(tm).sort().map(function(d){return Math.round(tm[d]);});
 
-  // === Echte Food Cost aus Bestandsbericht ===
-  var _rfc=getRealFC();
-  var hatRealFC=_rfc.hat;
-  var realFcGesamt=_rfc.gesamt, realFcMd=_rfc.md, realFcRs=_rfc.rs;
-  var realFcVon=_rfc.von, realFcBis=_rfc.bis;
-  var realFcPct=k.u>0?realFcGesamt/k.u:0;
-  var sollFcPct=k.fp;
-
   // Kosten Donut — VOR Template definieren (wird in Legende benutzt)
-  // Echte FC verwenden wenn verfügbar, sonst Soll
-  var anzFC=hatRealFC?realFcGesamt:k.f;
-  var anzFcPct=hatRealFC?realFcPct:k.fp;
-  var anzFcMdPct=hatRealFC&&km.u>0?realFcMd/km.u:km.fp;
-  var anzFcRsPct=hatRealFC&&kr.u>0?realFcRs/kr.u:kr.fp;
-  var fcFuerDonut=anzFC;
-  var fcAmt=fcFuerDonut,paAmt=pa,profitAmt=Math.max(ebitda,0);
-  var donutFC=Math.max(fcFuerDonut,0);
+  // Echte FC aus Bestandsbericht (Ist) oder Fallback auf Soll
+  var rfc=getRealFC(st);
+  var hatIstFC=rfc.hat;
+  var anzFcPct=hatIstFC&&k.u>0?rfc.gesamt/k.u:k.fp;
+  var anzFcMdPct=rfc.md&&rfc.md.n>0&&km.u>0?rfc.md.fc/km.u:km.fp;
+  var anzFcRsPct=rfc.rs&&rfc.rs.n>0&&kr.u>0?rfc.rs.fc/kr.u:kr.fp;
+  var fcAmt=hatIstFC?rfc.gesamt:k.f,paAmt=pa,profitAmt=Math.max(ebitda,0);
+  // CM und EBITDA mit Ist-FC neu berechnen falls vorhanden
+  if(hatIstFC){cm=k.u-fcAmt-ldoProvOv-pa;cmPct=k.u>0?cm/k.u:0;ebitda=cm-fkOv.gesamt-smKosten;ebitdaPct=k.u>0?ebitda/k.u:0;}
+  // VW FC-Diff jetzt berechnen (anzFcPct ist definiert)
+  vwFcDiff=kVor.fp>0?((anzFcPct-kVor.fp)/kVor.fp*100):null;
+  var donutFC=Math.max(fcAmt,0);
   var donutOpa=Math.max(pa,0);
   var donutPG=Math.max(fkOv.personalGemein+fkOv.managementFee+smKosten,0);
   var donutRest=Math.max(fkOv.miete+fkOv.versicherung+fkOv.werbeReise+fkOv.sonstBetrieb+fkOv.verwaltung+fkOv.instandhaltung+fkOv.abschreibung,0);
   var donutEBITDA=Math.max(k.u-donutFC-donutOpa-donutPG-donutRest,0);
   if(hatStundenfilter()&&k.u>0){
     var donutSumPre=donutFC+donutOpa;
-    if(donutSumPre>k.u){donutFC=fcFuerDonut/donutSumPre*k.u;donutOpa=pa/donutSumPre*k.u;}
+    if(donutSumPre>k.u){donutFC=k.f/donutSumPre*k.u;donutOpa=pa/donutSumPre*k.u;}
     donutPG=0; donutRest=0;
     donutEBITDA=Math.max(k.u-donutFC-donutOpa,0);
   }
@@ -1037,7 +1076,7 @@ function renderOverview(){
     <div class="alert">
       <b>Tages-Briefing${hatStundenfilter()?" ⏰ "+stundenLabel():""}:</b>
       Umsatz ${deltaU>=0?"+"+deltaU.toFixed(1):deltaU.toFixed(1)}% vs. VW ·
-      Food Cost ${hatRealFC?fmtP(realFcPct)+' Ist':fmtP(k.fp)+' Soll'} (Ziel ${fmtP(ZIELE.fc)}) ·
+      Food Cost ${fmtP(anzFcPct)} ${hatIstFC?"Ist":"(Ziel "+fmtP(ZIELE.fc)+")"} ·
       Personal ${fmtP(paPct)} ${paReal?"(Ordio Live)":"(Schätzung)"} ·
       Contribution Margin <b>${fmtP(cmPct)}</b>
       ${cmpMd>0&&cmpRs>0?" · Rosenthaler effizienter als Mehringdamm ("+fmtP(cmpRs)+" vs "+fmtP(cmpMd)+")":""}
@@ -1057,16 +1096,10 @@ function renderOverview(){
         <div class="kpi-ai">${pk.stunden>0?Math.round(pk.stunden)+" h · Ø "+fmtD(pa/pk.stunden)+"/h":""} · Closing-Check Mehringdamm</div>
       </div>
       <div class="kpi-card" onclick="drill('d-ov-fc')">
-        <div class="kpi-label">🥩 Food Cost ${hatRealFC?'<span class="badge bb">Ist</span>':'<span class="badge by">Soll</span>'}</div>
-        ${hatRealFC?
-          '<div class="kpi-val" style="color:'+(realFcPct>ZIELE.fc?'#ef4444':'#22c55e')+'">'+fmt(realFcGesamt)+'</div>'+
-          '<div class="kpi-delta '+(realFcPct>ZIELE.fc?'delta-dn':'delta-up')+'">'+fmtP(realFcPct)+' vom Umsatz · Ziel '+fmtP(ZIELE.fc)+'</div>'+
-          '<div class="kpi-ai" style="display:flex;justify-content:space-between;align-items:center"><span>Soll (Rezeptur): '+fmt(k.f)+' · '+fmtP(sollFcPct)+'</span><span style="color:#94a3b8;font-size:10px">'+realFcVon+' → '+realFcBis+'</span></div>'
-        :
-          '<div class="kpi-val" style="color:'+(k.fp>ZIELE.fc?'#ef4444':'#22c55e')+'">'+fmt(k.f)+'</div>'+
-          '<div class="kpi-delta '+(k.fp>ZIELE.fc?'delta-dn':'delta-up')+'">'+fmtP(k.fp)+' vom Umsatz · Ziel '+fmtP(ZIELE.fc)+'</div>'+
-          '<div class="kpi-ai">Keine Bestandsdaten — zeigt Soll (Rezeptur)</div>'
-        }
+        <div class="kpi-label">🥩 Food Cost ${hatIstFC?'<span style="font-size:9px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px;margin-left:4px">Ist</span>':''}</div>
+        <div class="kpi-val" style="color:${anzFcPct>ZIELE.fc?'#ef4444':'#22c55e'}">${fmt(fcAmt)}</div>
+        <div class="kpi-delta ${anzFcPct>ZIELE.fc?'delta-dn':'delta-up'}">${fmtP(anzFcPct)} vom Umsatz · Ziel ${fmtP(ZIELE.fc)}</div>
+        <div class="kpi-ai">${hatIstFC?rfc.von+' → '+rfc.bis+' · Soll (Rezeptur): '+fmt(k.f)+' ('+fmtP(k.fp)+')':'Soll (Rezeptur) · klick für Aufschlüsselung'}</div>
       </div>
       <div class="kpi-card" onclick="drill('d-ov-cm')">
         <div class="kpi-label">📈 Contribution Margin</div>
@@ -1096,22 +1129,15 @@ function renderOverview(){
     </div>
 
     <div id="d-ov-fc" class="drill-panel">
-      <div class="drill-title">Food Cost — Aufschlüsselung</div>
-      ${hatRealFC?
-        '<div class="drill-row" style="font-weight:700"><span>📊 Ist (Bestandsbericht)</span><span style="color:'+(realFcPct>ZIELE.fc?'#ef4444':'#22c55e')+'">'+fmt(realFcGesamt)+' · '+fmtP(realFcPct)+vwBadge(vwFcDiff,true)+'</span></div>'+
-        '<div class="drill-row"><span>&nbsp;&nbsp;↳ Mehringdamm</span><span style="color:'+(km.u>0&&realFcMd/km.u>ZIELE.fc?'#ef4444':'#22c55e')+'">'+fmt(realFcMd)+(km.u>0?' · '+fmtP(realFcMd/km.u):'')+'</span></div>'+
-        '<div class="drill-row"><span>&nbsp;&nbsp;↳ Rosenthaler Straße</span><span style="color:'+(kr.u>0&&realFcRs/kr.u>ZIELE.fc?'#ef4444':'#22c55e')+'">'+fmt(realFcRs)+(kr.u>0?' · '+fmtP(realFcRs/kr.u):'')+'</span></div>'+
-        '<div style="border-top:1px solid #1e2d40;margin:8px 0"></div>'+
-        '<div class="drill-row" style="color:#94a3b8"><span>📋 Soll (Rezeptur)</span><span>'+fmt(k.f)+' · '+fmtP(k.fp)+'</span></div>'+
-        '<div class="drill-row"><span>Ziel</span><span>'+fmtP(ZIELE.fc)+'</span></div>'+
-        '<div class="ai-box">Ist-FC '+fmtP(realFcPct)+' vs. Soll '+fmtP(k.fp)+' — '+(realFcPct>k.fp?'Ist liegt über Soll um '+fmtP(realFcPct-k.fp)+'. Prüfe Schwund, Portionen und Bestellverhalten.':'Ist liegt unter Soll — gutes Zeichen für Bestandskontrolle.')+'</div>'
-      :
-        '<div class="drill-row"><span>Gesamt (Soll)</span><span style="color:'+(k.fp>ZIELE.fc?'#ef4444':'#22c55e')+'">'+fmt(k.f)+' · '+fmtP(k.fp)+vwBadge(vwFcDiff,true)+'</span></div>'+
-        '<div class="drill-row"><span>Mehringdamm</span><span style="color:'+(km.fp>ZIELE.fc?'#ef4444':'#22c55e')+'">'+fmtP(km.fp)+'</span></div>'+
-        '<div class="drill-row"><span>Rosenthaler Straße</span><span style="color:'+(kr.fp>ZIELE.fc?'#ef4444':'#22c55e')+'">'+fmtP(kr.fp)+'</span></div>'+
-        '<div class="drill-row"><span>Ziel</span><span>'+fmtP(ZIELE.fc)+'</span></div>'+
-        '<div class="ai-box">'+( Math.abs(km.fp-kr.fp)>0.01?"Differenz zwischen Standorten: "+fmtP(Math.abs(km.fp-kr.fp))+". "+( km.fp>kr.fp?"Mehringdamm hat höheren FC — prüfe Portionsgrößen und Wareneinsatz.":"Rosenthaler hat höheren FC — prüfe Lieferando-Anteil und Portionen."):"Beide Standorte haben ähnliche Food Cost.")+'</div>'
-      }
+      <div class="drill-title">Food Cost — Aufschlüsselung ${hatIstFC?'<span style="font-size:10px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px">Ist-Werte</span>':''}</div>
+      <div class="drill-row"><span>Gesamt ${hatIstFC?"(Ist)":"(Soll)"}</span><span style="color:${anzFcPct>ZIELE.fc?'#ef4444':'#22c55e'}">${fmt(fcAmt)} · ${fmtP(anzFcPct)}${vwBadge(vwFcDiff,true)}</span></div>
+      <div class="drill-row"><span>Mehringdamm</span><span style="color:${anzFcMdPct>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(anzFcMdPct)}${hatIstFC&&rfc.md?' · '+fmt(rfc.md.fc):''}</span></div>
+      <div class="drill-row"><span>Rosenthaler Straße</span><span style="color:${anzFcRsPct>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(anzFcRsPct)}${hatIstFC&&rfc.rs?' · '+fmt(rfc.rs.fc):''}</span></div>
+      ${hatIstFC?'<div class="drill-row" style="border-top:1px solid #1e293b;margin-top:4px;padding-top:4px"><span>↳ davon Verkauft</span><span>'+fmt(rfc.verkauft)+'</span></div><div class="drill-row"><span>↳ davon Verschwendet</span><span style="color:#f97316">'+fmt(rfc.verschwendet)+'</span></div><div class="drill-row"><span>↳ davon Schwund (unkontrolliert)</span><span style="color:#ef4444;font-weight:600">'+fmt(rfc.unkontrolliert)+'</span></div>':''}
+      <div class="drill-row"><span>Soll (Rezeptur)</span><span>${fmt(k.f)} · ${fmtP(k.fp)}</span></div>
+      ${hatIstFC?'<div class="drill-row"><span>Abweichung Ist vs. Soll</span><span style="color:'+(rfc.gesamt>k.f?'#ef4444':'#22c55e')+'">'+fmt(rfc.gesamt-k.f)+'</span></div>':''}
+      <div class="drill-row"><span>Ziel</span><span>${fmtP(ZIELE.fc)}</span></div>
+      <div class="ai-box">${hatIstFC?"Zeitraum: "+rfc.von+" → "+rfc.bis+". "+(rfc.unkontrolliert>100?"⚠️ Schwund "+fmt(rfc.unkontrolliert)+" — hier steckt Optimierungspotenzial!":"Schwund im akzeptablen Bereich."):"Keine Ist-Daten verfügbar — zeigt Soll-Werte aus Apicbase-Rezepturen."}</div>
     </div>
 
     <div id="d-ov-cm" class="drill-panel">
@@ -1147,7 +1173,7 @@ function renderOverview(){
         <div class="box-sub">Alle KPIs im direkten Vergleich</div>
         ${[
           {l:"Ø Tagesumsatz",md:fmt(km.u/Math.max(km.t,1)),rs:fmt(kr.u/Math.max(kr.t,1)),mdOk:km.u/Math.max(km.t,1)>=3000,rsOk:kr.u/Math.max(kr.t,1)>=3000},
-          {l:"Food Cost % "+(hatRealFC?"(Ist)":"(Soll)"),md:fmtP(anzFcMdPct),rs:fmtP(anzFcRsPct),mdOk:anzFcMdPct<=ZIELE.fc,rsOk:anzFcRsPct<=ZIELE.fc},
+          {l:"Food Cost %",md:fmtP(anzFcMdPct),rs:fmtP(anzFcRsPct),mdOk:anzFcMdPct<=ZIELE.fc,rsOk:anzFcRsPct<=ZIELE.fc},
           {l:"Personal-Quote",md:fmtP(km.u>0?pkMd.total/km.u:0),rs:fmtP(kr.u>0?pkRs.total/kr.u:0),mdOk:pkMd.total/Math.max(km.u,1)<=ZIELE.pa,rsOk:pkRs.total/Math.max(kr.u,1)<=ZIELE.pa},
           {l:"Contribution Margin",md:fmtP(cmpMd),rs:fmtP(cmpRs),mdOk:cmpMd>=ZIELE.cm,rsOk:cmpRs>=ZIELE.cm},
           {l:"Ø Bon-Wert (brutto)",md:fmtD(bonWertMd.avg),rs:fmtD(bonWertRs.avg),mdOk:bonWertMd.avg>=ZIELE.bonWert,rsOk:bonWertRs.avg>=ZIELE.bonWert}
@@ -1163,7 +1189,7 @@ function renderOverview(){
         <div class="box-title">KPI-Ampel</div>
         <div class="box-sub">Aktueller Status vs. Zielwerte</div>
         ${[
-          {n:"Food Cost % "+(hatRealFC?"(Ist)":"(Soll)"),w:fmtP(anzFcPct),z:fmtP(ZIELE.fc),ok:anzFcPct<=ZIELE.fc,warn:anzFcPct<=ZIELE.fc+0.03},
+          {n:"Food Cost %",w:fmtP(anzFcPct),z:fmtP(ZIELE.fc),ok:anzFcPct<=ZIELE.fc,warn:anzFcPct<=ZIELE.fc+0.03},
           {n:"Personal-Quote",w:fmtP(paPct),z:fmtP(ZIELE.pa),ok:paPct<=ZIELE.pa,warn:paPct<=ZIELE.pa+0.03},
           {n:"Contribution Margin",w:fmtP(cmPct),z:fmtP(ZIELE.cm),ok:cmPct>=ZIELE.cm,warn:cmPct>=ZIELE.cm-0.03},
           {n:"EBITDA-Marge",w:fmtP(ebitdaPct),z:fmtP(ZIELE.ebitda),ok:ebitdaPct>=ZIELE.ebitda,warn:ebitdaPct>=ZIELE.ebitda-0.03},
@@ -1228,10 +1254,10 @@ function renderUmsatz(){
     var avgFcGesQ=getAvgFcQuote(st);
     kGes={u:uGesStd.u,f:uGesStd.u*avgFcGesQ,s:kGes.s,t:kGes.t,fp:avgFcGesQ,at:kGes.at};
   }
-  // Echte FC für Umsatz-Tab
-  var rfc=getRealFC();
-  var uFcPct=rfc.hat&&kGes.u>0?rfc.gesamt/kGes.u:kGes.fp;
-  var uFcLabel=rfc.hat?"(Ist)":"(Soll)";
+  // Food Cost für Umsatz-Tab (Ist aus Bestandsbericht oder Soll)
+  var uRfc=getRealFC(st);
+  var uFcPct=uRfc.hat&&kGes.u>0?uRfc.gesamt/kGes.u:kGes.fp;
+  var uFcLabel=uRfc.hat?"(Ist)":"(Soll)";
   // VW: gleiche Wochentage der Vorwoche
   // z.B. Gestern (Sa) → letzten Sa; Mo+Di → letzten Mo+Di
   var vonD2=new Date(von), bisD2=new Date(bis);
@@ -4078,14 +4104,13 @@ function generiereKIBericht() {
   prompt += "- Mehringdamm: "+fmt(pkMd.total)+" ("+(km.u>0?(pkMd.total/km.u*100).toFixed(1):0)+"%) | Rosenthaler: "+fmt(pkRs.total)+" ("+(kr.u>0?(pkRs.total/kr.u*100).toFixed(1):0)+"%)\n";
   prompt += "- Umsatz/Personalstunde: "+fmt(umsatzStd)+"/h | Ziel: 75 Euro\n";
   if(smAll.length>0) prompt += "- Social Media: "+smAll.map(function(r){return r.mitarbeiter+" ("+r.standort.replace("Rosenthaler Strasse","Rosi")+")";}).join(", ")+"\n";
-  // Echte FC aus Bestandsbericht fuer KI-Bericht
-  var kiRfc=getRealFC();
-  var kiHatRealFC=kiRfc.hat, kiRealFC=kiRfc.gesamt, kiRealFcMd=kiRfc.md, kiRealFcRs=kiRfc.rs;
+  var kiRfc=getRealFC("Alle Standorte");
   prompt += "\nFOOD COST & WASTE:\n";
-  if(kiHatRealFC){
-    prompt += "- ECHTE Food Cost (Bestandsbericht): "+fmt(kiRealFC)+" ("+(k.u>0?fmtP(kiRealFC/k.u):"—")+") | Ziel: 25%\n";
-    prompt += "- Mehringdamm Ist-FC: "+fmt(kiRealFcMd)+(km.u>0?" ("+fmtP(kiRealFcMd/km.u)+")":"")+" | Rosenthaler Ist-FC: "+fmt(kiRealFcRs)+(kr.u>0?" ("+fmtP(kiRealFcRs/kr.u)+")":"")+"\n";
-    prompt += "- Soll-FC (Rezeptur): "+fmt(k.f)+" ("+fmtP(k.fp)+") — Abweichung Ist vs Soll: "+fmt(kiRealFC-k.f)+"\n";
+  if(kiRfc.hat){
+    prompt += "- ECHTE Food Cost (Ist/Bestandsbericht): "+fmt(kiRfc.gesamt)+" ("+(k.u>0?fmtP(kiRfc.gesamt/k.u):"—")+") | Ziel: 25%\n";
+    prompt += "- Aufschluesselung: Verkauft "+fmt(kiRfc.verkauft)+" | Verschwendet "+fmt(kiRfc.verschwendet)+" | Schwund "+fmt(kiRfc.unkontrolliert)+"\n";
+    prompt += "- Mehringdamm Ist-FC: "+fmt(kiRfc.md.fc)+(km.u>0?" ("+fmtP(kiRfc.md.fc/km.u)+")":"")+" | Rosenthaler Ist-FC: "+fmt(kiRfc.rs.fc)+(kr.u>0?" ("+fmtP(kiRfc.rs.fc/kr.u)+")":"")+"\n";
+    prompt += "- Soll-FC (Rezeptur): "+fmt(k.f)+" ("+fmtP(k.fp)+") — Abweichung Ist vs Soll: "+fmt(kiRfc.gesamt-k.f)+"\n";
   } else {
     prompt += "- Food Cost (Soll/Rezeptur): "+fmt(k.f)+" ("+fmtP(k.fp)+") | Ziel: 25%\n";
     prompt += "- Mehringdamm FC: "+fmtP(km.fp)+" | Rosenthaler FC: "+fmtP(kr.fp)+"\n";
@@ -4095,11 +4120,11 @@ function generiereKIBericht() {
   prompt += "TRINKGELD & STORNOS:\n";
   prompt += "- TK-Quote: "+fmtP(tkQ)+" | Gesamt: "+fmt(tkGes)+" | Ziel: 5%\n";
   prompt += "- Stornierungen: "+stornosN+"x\n\n";
-  var kiFC=kiHatRealFC?kiRealFC:k.f;
+  var kiFC=kiRfc.hat?kiRfc.gesamt:k.f;
   var kiCM=k.u-kiFC-ldoProv-pa;
   var kiEBITDA=kiCM-fkOv.gesamt-smKosten;
   prompt += "ERGEBNIS:\n";
-  prompt += "- Contribution Margin: "+fmt(kiCM)+" ("+fmtP(k.u>0?kiCM/k.u:0)+") | Ziel: 40%"+(kiHatRealFC?" (basierend auf Ist-FC)":"")+"\n";
+  prompt += "- Contribution Margin: "+fmt(kiCM)+" ("+fmtP(k.u>0?kiCM/k.u:0)+") | Ziel: 40%\n";
   prompt += "- EBITDA (geschaetzt): "+fmt(kiEBITDA)+" ("+fmtP(k.u>0?kiEBITDA/k.u:0)+") | Ziel: 10%\n\n";
   prompt += "Schreibe jetzt den Tagesbericht. Formatiere jeden Abschnitt GENAU so in HTML:\n\n<div style=\"margin-bottom:16px\"><div style=\"font-weight:700;color:#f1f5f9;font-size:13px;margin-bottom:6px\">💰 Umsatz</div><ul style=\"margin:0;padding-left:16px;color:#94a3b8;font-size:12px;line-height:1.8\"><li>Kernaussage als Satz</li><li>Vergleich/Einordnung</li><li>Handlungsempfehlung falls noetig</li></ul></div>\n\nVerwende diese 4 Abschnitte: 💰 Umsatz, 👥 Personal, 🥩 Food Cost und Waste, 💝 Trinkgeld. Falls es wichtige Besonderheiten gibt, fuege ⚠️ Besonderheiten hinzu. Maximal 3 Bulletpoints pro Abschnitt. Direkt und konkret, nenne Zahlen. Fange sofort mit dem ersten div an, kein Text davor.";
 
