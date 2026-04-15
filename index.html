@@ -1172,17 +1172,19 @@ function renderOverview(){
       <div class="drill-row"><span>Gesamt ${hatIstFC?"(Ist)":"(Soll)"}</span><span style="color:${anzFcPct>ZIELE.fc?'#ef4444':'#22c55e'}">${fmt(fcAmt)} · ${fmtP(anzFcPct)}${vwBadge(vwFcDiff,true)}</span></div>
       ${hatIstFC&&rfc.md&&rfc.md.n>0?(function(){
         var m=rfc.md, mRev=m.rev||1, mFcAmt=m.quote*km.u;
+        var mSc=km.u/mRev;
         return'<div class="drill-row" style="border-top:1px solid #1e293b;margin-top:4px;padding-top:4px"><span style="font-weight:600">Mehringdamm</span><span style="color:'+(anzFcMdPct>ZIELE.fc?'#ef4444':'#22c55e')+';font-weight:600">'+fmtP(anzFcMdPct)+' · '+fmt(mFcAmt)+'</span></div>'
-        +'<div class="drill-row"><span>↳ Verkauft</span><span>'+fmtP(m.verkauft/mRev)+'</span></div>'
-        +'<div class="drill-row"><span>↳ Verschwendet</span><span style="color:#f97316">'+fmtP(m.verschwendet/mRev)+'</span></div>'
-        +'<div class="drill-row"><span>↳ Schwund</span><span style="color:#ef4444;font-weight:600">'+fmtP(m.unkontrolliert/mRev)+'</span></div>';
+        +'<div class="drill-row"><span>↳ Verkauft</span><span>'+fmt(m.verkauft*mSc)+' ('+fmtP(m.verkauft/mRev)+')</span></div>'
+        +'<div class="drill-row"><span>↳ Verschwendet</span><span style="color:#f97316">'+fmt(m.verschwendet*mSc)+' ('+fmtP(m.verschwendet/mRev)+')</span></div>'
+        +'<div class="drill-row"><span>↳ Schwund</span><span style="color:#ef4444;font-weight:600">'+fmt(m.unkontrolliert*mSc)+' ('+fmtP(m.unkontrolliert/mRev)+')</span></div>';
       })():'<div class="drill-row"><span>Mehringdamm</span><span style="color:${anzFcMdPct>ZIELE.fc?"#ef4444":"#22c55e"}">${fmtP(anzFcMdPct)}</span></div>'}
       ${hatIstFC&&rfc.rs&&rfc.rs.n>0?(function(){
         var r=rfc.rs, rRev=r.rev||1, rFcAmt=r.quote*kr.u;
+        var rSc=kr.u/rRev;
         return'<div class="drill-row" style="border-top:1px solid #1e293b;margin-top:4px;padding-top:4px"><span style="font-weight:600">Rosenthaler Straße</span><span style="color:'+(anzFcRsPct>ZIELE.fc?'#ef4444':'#22c55e')+';font-weight:600">'+fmtP(anzFcRsPct)+' · '+fmt(rFcAmt)+'</span></div>'
-        +'<div class="drill-row"><span>↳ Verkauft</span><span>'+fmtP(r.verkauft/rRev)+'</span></div>'
-        +'<div class="drill-row"><span>↳ Verschwendet</span><span style="color:#f97316">'+fmtP(r.verschwendet/rRev)+'</span></div>'
-        +'<div class="drill-row"><span>↳ Schwund</span><span style="color:#ef4444;font-weight:600">'+fmtP(r.unkontrolliert/rRev)+'</span></div>';
+        +'<div class="drill-row"><span>↳ Verkauft</span><span>'+fmt(r.verkauft*rSc)+' ('+fmtP(r.verkauft/rRev)+')</span></div>'
+        +'<div class="drill-row"><span>↳ Verschwendet</span><span style="color:#f97316">'+fmt(r.verschwendet*rSc)+' ('+fmtP(r.verschwendet/rRev)+')</span></div>'
+        +'<div class="drill-row"><span>↳ Schwund</span><span style="color:#ef4444;font-weight:600">'+fmt(r.unkontrolliert*rSc)+' ('+fmtP(r.unkontrolliert/rRev)+')</span></div>';
       })():'<div class="drill-row"><span>Rosenthaler Straße</span><span style="color:${anzFcRsPct>ZIELE.fc?"#ef4444":"#22c55e"}">${fmtP(anzFcRsPct)}</span></div>'}
       <div class="drill-row" style="border-top:1px solid #1e293b;margin-top:4px;padding-top:4px"><span>Soll (Rezeptur)</span><span>${fmt(k.f)} · ${fmtP(k.fp)}</span></div>
       ${hatIstFC?'<div class="drill-row"><span>Abweichung Ist vs. Soll</span><span style="color:'+(fcAmt>k.f?'#ef4444':'#22c55e')+'">'+fmt(fcAmt-k.f)+' ('+fmtP(anzFcPct-k.fp)+')</span></div>':''}
@@ -1328,6 +1330,9 @@ function renderUmsatz(){
   var vorMd=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.st==="Mehringdamm"&&gleicheWT(r.datum);});
   var vorRs=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&r.st==="Rosenthaler Straße"&&gleicheWT(r.datum);});
   var kVorMd=kpi(vorMd), kVorRs=kpi(vorRs);
+  var vorGesU=alle.filter(function(r){return r.datum>=fDE2(vorVon2)&&r.datum<=fDE2(vorBis2)&&(st==="Alle Standorte"||r.st===st)&&gleicheWT(r.datum);});
+  var kVorGes=kpi(vorGesU);
+  var diffGes=kVorGes.u>0?((kGes.u-kVorGes.u)/kVorGes.u*100):null;
   var diffMd=kVorMd.u>0?((km.u-kVorMd.u)/kVorMd.u*100):null;
   var diffRs=kVorRs.u>0?((kr.u-kVorRs.u)/kVorRs.u*100):null;
   function trendBadge(diff){
@@ -1415,17 +1420,22 @@ function renderUmsatz(){
   var sKeys=Object.keys(stundenMap).sort(function(a,b){return parseInt(a)-parseInt(b);});
 
   document.getElementById("t-umsatz").innerHTML=`
-    <div class="st-cards">
+    <div class="st-cards" style="grid-template-columns:repeat(3,1fr)">
+      <div class="st-card">
+        <div class="st-name">Gesamtumsatz</div>
+        <div class="st-val" style="color:#22c55e;display:flex;align-items:center">${fmt(kGes.u)}${trendBadge(diffGes)}</div>
+        <div class="st-meta"><span>Ø ${fmt(kGes.u/Math.max(kGes.t,1))}/Tag</span><span>Ø Bon: ${fmtD(bonWertData.avg)}</span></div>
+      </div>
       <div class="st-card" onclick="drill('d-md')">
         <div class="st-name">Mehringdamm</div>
         <div class="st-val" style="color:#f97316;display:flex;align-items:center">${fmt(km.u)}${trendBadge(diffMd)}</div>
-        <div class="st-meta"><span>Ø ${fmt(km.u/Math.max(km.t,1))}/Tag</span><span>FC: ${fmtP(km.fp)}</span><span>Ø Bon: ${fmtD(bonWertMd.avg)}</span></div>
+        <div class="st-meta"><span>Ø ${fmt(km.u/Math.max(km.t,1))}/Tag</span><span>Ø Bon: ${fmtD(bonWertMd.avg)}</span></div>
         <div class="progress"><div class="progress-fill" style="width:${km.u+kr.u>0?Math.round(km.u/(km.u+kr.u)*100):50}%;background:#f97316"></div></div>
       </div>
       <div class="st-card" onclick="drill('d-rs')">
         <div class="st-name">Rosenthaler Straße</div>
         <div class="st-val" style="color:#3b82f6;display:flex;align-items:center">${fmt(kr.u)}${trendBadge(diffRs)}</div>
-        <div class="st-meta"><span>Ø ${fmt(kr.u/Math.max(kr.t,1))}/Tag</span><span>FC: ${fmtP(kr.fp)}</span><span>Ø Bon: ${fmtD(bonWertRs.avg)}</span></div>
+        <div class="st-meta"><span>Ø ${fmt(kr.u/Math.max(kr.t,1))}/Tag</span><span>Ø Bon: ${fmtD(bonWertRs.avg)}</span></div>
         <div class="progress"><div class="progress-fill" style="width:${km.u+kr.u>0?Math.round(kr.u/(km.u+kr.u)*100):50}%;background:#3b82f6"></div></div>
       </div>
     </div>
@@ -1440,7 +1450,6 @@ function renderUmsatz(){
       <div style="border-top:1px solid #1e2d40;margin:6px 0"></div>
       <div class="drill-row"><span>Verkäufe (Bons)</span><span>${km.s.toLocaleString("de-DE")}${vwDiff(km.s,kVorMd.s)}</span></div>
       <div class="drill-row"><span>Ø Bon-Wert (brutto)</span><span>${fmtD(bonWertMd.avg)} (${bonWertMd.count} Bons)${vwDiff(bonWertMd.avg, vwMdBonWert)}</span></div>
-      <div class="drill-row"><span>Food Cost</span><span style="color:${km.fp>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(km.fp)}</span></div>
       <div class="ai-box">Mehringdamm macht ${km.u+kr.u>0?((km.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${mdLdo>0?"Lieferando-Anteil "+fmtP(km.u>0?mdLdo/km.u:0)+".":""} ${bonWertMd.avg>bonWertRs.avg?"Höherer Bon-Wert als Rosenthaler (+"+fmtD(bonWertMd.avg-bonWertRs.avg)+"/Bon).":"Niedrigerer Bon-Wert als Rosenthaler ("+fmtD(bonWertMd.avg-bonWertRs.avg)+"/Bon)."}</div>
     </div>
     <div id="d-rs" class="drill-panel">
@@ -1453,7 +1462,6 @@ function renderUmsatz(){
       <div style="border-top:1px solid #1e2d40;margin:6px 0"></div>
       <div class="drill-row"><span>Verkäufe (Bons)</span><span>${kr.s.toLocaleString("de-DE")}${vwDiff(kr.s,kVorRs.s)}</span></div>
       <div class="drill-row"><span>Ø Bon-Wert (brutto)</span><span>${fmtD(bonWertRs.avg)} (${bonWertRs.count} Bons)${vwDiff(bonWertRs.avg, vwRsBonWert)}</span></div>
-      <div class="drill-row"><span>Food Cost</span><span style="color:${kr.fp>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(kr.fp)}</span></div>
       <div class="ai-box">Rosenthaler macht ${km.u+kr.u>0?((kr.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${rsLdo>0?"Lieferando-Anteil "+fmtP(kr.u>0?rsLdo/kr.u:0)+".":""} ${bonWertRs.avg>bonWertMd.avg?"Höherer Bon-Wert als Mehringdamm (+"+fmtD(bonWertRs.avg-bonWertMd.avg)+"/Bon).":"Niedrigerer Bon-Wert als Mehringdamm ("+fmtD(bonWertRs.avg-bonWertMd.avg)+"/Bon)."}</div>
     </div>
 
