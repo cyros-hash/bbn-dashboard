@@ -1795,6 +1795,11 @@ function renderUmsatz(){
   var vwMdBonWert=vwMdBonWertData.avg;
   var vwRsBonWert=vwRsBonWertData.avg;
 
+  // Gesamt Kanal-Daten
+  var gesLdo=mdLdo+rsLdo, gesTakeaway=mdTakeaway+rsTakeaway, gesInhouse=mdInhouse+rsInhouse;
+  var vwGesLdo=vwMdLdo+vwRsLdo, vwGesTakeaway=vwMdTakeaway+vwRsTakeaway, vwGesInhouse=vwMdInhouse+vwRsInhouse;
+  var vwGesBonWertData=getBonWert(vpUm.von,vpUm.bis,'Alle Standorte');
+
   // Vorperiode Diff Hilfsfunktion
   function vwDiff(now, vw) {
     if(!vw||vw===0) return '';
@@ -1821,10 +1826,11 @@ function renderUmsatz(){
 
   document.getElementById("t-umsatz").innerHTML=`
     <div class="st-cards" style="grid-template-columns:repeat(3,1fr)">
-      <div class="st-card">
+      <div class="st-card" onclick="drill('d-ges')">
         <div class="st-name">Gesamtumsatz</div>
         <div class="st-val" style="color:#22c55e;display:flex;align-items:center">${fmt(kGes.u)}${trendBadge(diffGes)}</div>
         <div class="st-meta"><span>Ø ${fmt(kGes.u/Math.max(kGes.t,1))}/Tag</span><span>Ø Bon: ${fmtD(bonWertData.avg)}</span></div>
+        <div class="progress"><div class="progress-fill" style="width:100%;background:#22c55e"></div></div>
       </div>
       <div class="st-card" onclick="drill('d-md')">
         <div class="st-name">Mehringdamm</div>
@@ -1841,29 +1847,177 @@ function renderUmsatz(){
     </div>
     <div style="font-size:10px;color:#64748b;text-align:right;margin:-8px 0 10px;padding:0 2px">📊 Vergleich: ${vpUm.von.slice(8,10)}.${vpUm.von.slice(5,7)}. – ${vpUm.bis.slice(8,10)}.${vpUm.bis.slice(5,7)}. (${vpLabelUm})</div>
 
+    <div id="d-ges" class="drill-panel">
+      <div class="drill-title">Gesamtumsatz — Details</div>
+      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:0 0 auto">
+          <table style="border-collapse:collapse;font-size:12px">
+            <thead><tr style="border-bottom:2px solid #1e3a5f">
+              <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500">Kanal</th>
+              <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Umsatz</th>
+              <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Anteil</th>
+              <th style="text-align:right;color:#64748b;padding:4px 0 6px 8px;font-weight:500">${vpLabelUm}</th>
+            </tr></thead>
+            <tbody>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">Gesamt</td>
+                <td style="text-align:right;color:#22c55e;font-weight:600;padding:6px 8px">${fmt(kGes.u)}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">100%</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(kGes.u,kVorGes.u)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block"></span><span style="color:#e2e8f0">Inhouse</span></span></td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(gesInhouse)}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${kGes.u>0?fmtP(gesInhouse/kGes.u):"—"}</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(gesInhouse,vwGesInhouse)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f97316;display:inline-block"></span><span style="color:#f97316">Lieferando</span></span></td>
+                <td style="text-align:right;color:#f97316;padding:6px 8px">${fmt(gesLdo)}</td>
+                <td style="text-align:right;color:#f97316;padding:6px 8px">${kGes.u>0?fmtP(gesLdo/kGes.u):"—"}</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(gesLdo,vwGesLdo)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span><span style="color:#8b5cf6">Take Away</span></span></td>
+                <td style="text-align:right;color:#8b5cf6;padding:6px 8px">${fmt(gesTakeaway)}</td>
+                <td style="text-align:right;color:#8b5cf6;padding:6px 8px">${kGes.u>0?fmtP(gesTakeaway/kGes.u):"—"}</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(gesTakeaway,vwGesTakeaway)}</td>
+              </tr>
+              <tr style="border-top:2px solid #1e3a5f">
+                <td style="color:#94a3b8;padding:6px 8px 6px 0">Verkäufe</td>
+                <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${(km.s+kr.s).toLocaleString("de-DE")}</td>
+                <td style="text-align:right;color:#64748b;padding:6px 8px;font-size:10px">Bons</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(km.s+kr.s,kVorMd.s+kVorRs.s)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="color:#94a3b8;padding:6px 8px 6px 0">Ø Bon-Wert</td>
+                <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${fmtD(bonWertData.avg)}</td>
+                <td style="text-align:right;color:#64748b;padding:6px 8px;font-size:10px">${bonWertData.count} Bons</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(bonWertData.avg,vwGesBonWertData.avg)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="flex:1;min-width:300px;height:180px;position:relative">
+          <canvas id="c-um-ges-trend"></canvas>
+        </div>
+      </div>
+      <div class="ai-box" style="margin-top:8px">Lieferando-Anteil gesamt: ${kGes.u>0?fmtP(gesLdo/kGes.u):"—"}. ${gesLdo/Math.max(kGes.u,1)>0.15?"Über 15% — Provisionskosten beachten.":"Im normalen Bereich."} Ø Bon-Wert ${bonWertData.avg>=ZIELE.bonWert?"über":"unter"} Ziel (${fmtD(ZIELE.bonWert)}).</div>
+    </div>
+
     <div id="d-md" class="drill-panel">
       <div class="drill-title">Mehringdamm — Details</div>
-      <div class="drill-row"><span>Gesamtumsatz (Netto)</span><span>${fmt(km.u)}${vwDiff(km.u,kVorMd.u)}</span></div>
-      <div style="font-size:10px;color:#475569;padding:4px 0 2px;text-transform:uppercase;letter-spacing:0.4px">Umsatz nach Kanal</div>
-      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block"></span>Inhouse</span><span>${fmt(mdInhouse)} (${km.u>0?fmtP(mdInhouse/km.u):"—"})${vwDiff(mdInhouse,vwMdInhouse)}</span></div>
-      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f97316;display:inline-block"></span>Lieferando</span><span style="color:${mdLdo>0?'#f97316':'#64748b'}">${fmt(mdLdo)} (${km.u>0?fmtP(mdLdo/km.u):"—"})${vwDiff(mdLdo,vwMdLdo)}</span></div>
-      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>Take Away</span><span>${fmt(mdTakeaway)} (${km.u>0?fmtP(mdTakeaway/km.u):"—"})${vwDiff(mdTakeaway,vwMdTakeaway)}</span></div>
-      <div style="border-top:1px solid #1e2d40;margin:6px 0"></div>
-      <div class="drill-row"><span>Verkäufe (Bons)</span><span>${km.s.toLocaleString("de-DE")}${vwDiff(km.s,kVorMd.s)}</span></div>
-      <div class="drill-row"><span>Ø Bon-Wert (brutto)</span><span>${fmtD(bonWertMd.avg)} (${bonWertMd.count} Bons)${vwDiff(bonWertMd.avg, vwMdBonWert)}</span></div>
-      <div class="ai-box">Mehringdamm macht ${km.u+kr.u>0?((km.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${mdLdo>0?"Lieferando-Anteil "+fmtP(km.u>0?mdLdo/km.u:0)+".":""} ${bonWertMd.avg>bonWertRs.avg?"Höherer Bon-Wert als Rosenthaler (+"+fmtD(bonWertMd.avg-bonWertRs.avg)+"/Bon).":"Niedrigerer Bon-Wert als Rosenthaler ("+fmtD(bonWertMd.avg-bonWertRs.avg)+"/Bon)."}</div>
+      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:0 0 auto">
+          <table style="border-collapse:collapse;font-size:12px">
+            <thead><tr style="border-bottom:2px solid #1e3a5f">
+              <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500">Kanal</th>
+              <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Umsatz</th>
+              <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Anteil</th>
+              <th style="text-align:right;color:#64748b;padding:4px 0 6px 8px;font-weight:500">${vpLabelUm}</th>
+            </tr></thead>
+            <tbody>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">Gesamt</td>
+                <td style="text-align:right;color:#f97316;font-weight:600;padding:6px 8px">${fmt(km.u)}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">100%</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(km.u,kVorMd.u)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block"></span><span style="color:#e2e8f0">Inhouse</span></span></td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(mdInhouse)}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${km.u>0?fmtP(mdInhouse/km.u):"—"}</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(mdInhouse,vwMdInhouse)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f97316;display:inline-block"></span><span style="color:#f97316">Lieferando</span></span></td>
+                <td style="text-align:right;color:#f97316;padding:6px 8px">${fmt(mdLdo)}</td>
+                <td style="text-align:right;color:#f97316;padding:6px 8px">${km.u>0?fmtP(mdLdo/km.u):"—"}</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(mdLdo,vwMdLdo)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span><span style="color:#8b5cf6">Take Away</span></span></td>
+                <td style="text-align:right;color:#8b5cf6;padding:6px 8px">${fmt(mdTakeaway)}</td>
+                <td style="text-align:right;color:#8b5cf6;padding:6px 8px">${km.u>0?fmtP(mdTakeaway/km.u):"—"}</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(mdTakeaway,vwMdTakeaway)}</td>
+              </tr>
+              <tr style="border-top:2px solid #1e3a5f">
+                <td style="color:#94a3b8;padding:6px 8px 6px 0">Verkäufe</td>
+                <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${km.s.toLocaleString("de-DE")}</td>
+                <td style="text-align:right;color:#64748b;padding:6px 8px;font-size:10px">Bons</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(km.s,kVorMd.s)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="color:#94a3b8;padding:6px 8px 6px 0">Ø Bon-Wert</td>
+                <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${fmtD(bonWertMd.avg)}</td>
+                <td style="text-align:right;color:#64748b;padding:6px 8px;font-size:10px">${bonWertMd.count} Bons</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(bonWertMd.avg, vwMdBonWert)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="flex:0 0 auto;width:150px;height:150px;position:relative">
+          <canvas id="c-um-md-kanal"></canvas>
+        </div>
+      </div>
+      <div class="ai-box" style="margin-top:8px">Mehringdamm macht ${km.u+kr.u>0?((km.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${mdLdo>0?"Lieferando-Anteil "+fmtP(km.u>0?mdLdo/km.u:0)+".":""} ${bonWertMd.avg>bonWertRs.avg?"Höherer Bon-Wert als Rosenthaler (+"+fmtD(bonWertMd.avg-bonWertRs.avg)+"/Bon).":"Niedrigerer Bon-Wert als Rosenthaler ("+fmtD(bonWertMd.avg-bonWertRs.avg)+"/Bon)."}</div>
     </div>
     <div id="d-rs" class="drill-panel">
       <div class="drill-title">Rosenthaler Straße — Details</div>
-      <div class="drill-row"><span>Gesamtumsatz (Netto)</span><span>${fmt(kr.u)}${vwDiff(kr.u,kVorRs.u)}</span></div>
-      <div style="font-size:10px;color:#475569;padding:4px 0 2px;text-transform:uppercase;letter-spacing:0.4px">Umsatz nach Kanal</div>
-      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block"></span>Inhouse</span><span>${fmt(rsInhouse)} (${kr.u>0?fmtP(rsInhouse/kr.u):"—"})${vwDiff(rsInhouse,vwRsInhouse)}</span></div>
-      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f97316;display:inline-block"></span>Lieferando</span><span style="color:${rsLdo>0?'#f97316':'#64748b'}">${fmt(rsLdo)} (${kr.u>0?fmtP(rsLdo/kr.u):"—"})${vwDiff(rsLdo,vwRsLdo)}</span></div>
-      <div class="drill-row"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>Take Away</span><span>${fmt(rsTakeaway)} (${kr.u>0?fmtP(rsTakeaway/kr.u):"—"})${vwDiff(rsTakeaway,vwRsTakeaway)}</span></div>
-      <div style="border-top:1px solid #1e2d40;margin:6px 0"></div>
-      <div class="drill-row"><span>Verkäufe (Bons)</span><span>${kr.s.toLocaleString("de-DE")}${vwDiff(kr.s,kVorRs.s)}</span></div>
-      <div class="drill-row"><span>Ø Bon-Wert (brutto)</span><span>${fmtD(bonWertRs.avg)} (${bonWertRs.count} Bons)${vwDiff(bonWertRs.avg, vwRsBonWert)}</span></div>
-      <div class="ai-box">Rosenthaler macht ${km.u+kr.u>0?((kr.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${rsLdo>0?"Lieferando-Anteil "+fmtP(kr.u>0?rsLdo/kr.u:0)+".":""} ${bonWertRs.avg>bonWertMd.avg?"Höherer Bon-Wert als Mehringdamm (+"+fmtD(bonWertRs.avg-bonWertMd.avg)+"/Bon).":"Niedrigerer Bon-Wert als Mehringdamm ("+fmtD(bonWertRs.avg-bonWertMd.avg)+"/Bon)."}</div>
+      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:0 0 auto">
+          <table style="border-collapse:collapse;font-size:12px">
+            <thead><tr style="border-bottom:2px solid #1e3a5f">
+              <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500">Kanal</th>
+              <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Umsatz</th>
+              <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Anteil</th>
+              <th style="text-align:right;color:#64748b;padding:4px 0 6px 8px;font-weight:500">${vpLabelUm}</th>
+            </tr></thead>
+            <tbody>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">Gesamt</td>
+                <td style="text-align:right;color:#3b82f6;font-weight:600;padding:6px 8px">${fmt(kr.u)}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">100%</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(kr.u,kVorRs.u)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block"></span><span style="color:#e2e8f0">Inhouse</span></span></td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(rsInhouse)}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${kr.u>0?fmtP(rsInhouse/kr.u):"—"}</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(rsInhouse,vwRsInhouse)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f97316;display:inline-block"></span><span style="color:#f97316">Lieferando</span></span></td>
+                <td style="text-align:right;color:#f97316;padding:6px 8px">${fmt(rsLdo)}</td>
+                <td style="text-align:right;color:#f97316;padding:6px 8px">${kr.u>0?fmtP(rsLdo/kr.u):"—"}</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(rsLdo,vwRsLdo)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span><span style="color:#8b5cf6">Take Away</span></span></td>
+                <td style="text-align:right;color:#8b5cf6;padding:6px 8px">${fmt(rsTakeaway)}</td>
+                <td style="text-align:right;color:#8b5cf6;padding:6px 8px">${kr.u>0?fmtP(rsTakeaway/kr.u):"—"}</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(rsTakeaway,vwRsTakeaway)}</td>
+              </tr>
+              <tr style="border-top:2px solid #1e3a5f">
+                <td style="color:#94a3b8;padding:6px 8px 6px 0">Verkäufe</td>
+                <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${kr.s.toLocaleString("de-DE")}</td>
+                <td style="text-align:right;color:#64748b;padding:6px 8px;font-size:10px">Bons</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(kr.s,kVorRs.s)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="color:#94a3b8;padding:6px 8px 6px 0">Ø Bon-Wert</td>
+                <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${fmtD(bonWertRs.avg)}</td>
+                <td style="text-align:right;color:#64748b;padding:6px 8px;font-size:10px">${bonWertRs.count} Bons</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(bonWertRs.avg, vwRsBonWert)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="flex:0 0 auto;width:150px;height:150px;position:relative">
+          <canvas id="c-um-rs-kanal"></canvas>
+        </div>
+      </div>
+      <div class="ai-box" style="margin-top:8px">Rosenthaler macht ${km.u+kr.u>0?((kr.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${rsLdo>0?"Lieferando-Anteil "+fmtP(kr.u>0?rsLdo/kr.u:0)+".":""} ${bonWertRs.avg>bonWertMd.avg?"Höherer Bon-Wert als Mehringdamm (+"+fmtD(bonWertRs.avg-bonWertMd.avg)+"/Bon).":"Niedrigerer Bon-Wert als Mehringdamm ("+fmtD(bonWertRs.avg-bonWertMd.avg)+"/Bon)."}</div>
     </div>
 
     <div class="box">
@@ -1913,6 +2067,62 @@ function renderUmsatz(){
 
   dc("c-um-st");
   charts["c-um-st"]=new Chart(document.getElementById("c-um-st"),{type:"bar",data:{labels:labs,datasets:[{label:"Mehringdamm",data:dm,backgroundColor:"#f97316",borderRadius:2},{label:"Rosenthaler",data:dr,backgroundColor:"#3b82f6",borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#475569",font:{size:9},maxTicksLimit:10},grid:{color:"#1e2d40"}},y:{ticks:{color:"#475569",font:{size:9},callback:function(v){return(v/1000).toFixed(0)+"k";}},grid:{color:"#1e2d40"}}}}});
+
+  // --- MD Kanal-Donut ---
+  (function(){
+    var el=document.getElementById("c-um-md-kanal");
+    if(!el)return;
+    dc("c-um-md-kanal");
+    charts["c-um-md-kanal"]=new Chart(el,{type:"doughnut",
+      data:{labels:["Inhouse","Lieferando","Take Away"],datasets:[{data:[mdInhouse,mdLdo,mdTakeaway],backgroundColor:["#3b82f6","#f97316","#8b5cf6"],borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:function(ctx){return ctx.label+": "+fmt(ctx.parsed)+" ("+(km.u>0?fmtP(ctx.parsed/km.u):"—")+")";}}}},cutout:"65%"}
+    });
+  })();
+  // --- RS Kanal-Donut ---
+  (function(){
+    var el=document.getElementById("c-um-rs-kanal");
+    if(!el)return;
+    dc("c-um-rs-kanal");
+    charts["c-um-rs-kanal"]=new Chart(el,{type:"doughnut",
+      data:{labels:["Inhouse","Lieferando","Take Away"],datasets:[{data:[rsInhouse,rsLdo,rsTakeaway],backgroundColor:["#3b82f6","#f97316","#8b5cf6"],borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:function(ctx){return ctx.label+": "+fmt(ctx.parsed)+" ("+(kr.u>0?fmtP(ctx.parsed/kr.u):"—")+")";}}}},cutout:"65%"}
+    });
+  })();
+
+  // --- Gesamt Tagestrend ---
+  (function(){
+    var el=document.getElementById("c-um-ges-trend");
+    if(!el)return;
+    var tageSet={};
+    gefiltert.forEach(function(r){tageSet[r.datum]=1;});
+    var tage=Object.keys(tageSet).sort();
+    var uTag={};
+    gefiltert.forEach(function(r){uTag[r.datum]=(uTag[r.datum]||0)+r.u;});
+    var dGes=tage.map(function(d){return uTag[d]||0;});
+    var avg=dGes.length>0?dGes.reduce(function(s,v){return s+v;},0)/dGes.length:0;
+    var dAvg=tage.map(function(){return avg;});
+    var tLabels=tage.map(function(d){return d.slice(8,10)+"."+d.slice(5,7);});
+    dc("c-um-ges-trend");
+    charts["c-um-ges-trend"]=new Chart(el,{
+      type:"line",
+      data:{labels:tLabels,datasets:[
+        {label:"Gesamtumsatz",data:dGes,borderColor:"#22c55e",backgroundColor:"rgba(34,197,94,0.1)",borderWidth:2,pointRadius:tage.length>14?0:3,tension:0.3,fill:true},
+        {label:"Ø/Tag",data:dAvg,borderColor:"#475569",borderDash:[4,3],borderWidth:1,pointRadius:0}
+      ]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:"bottom",labels:{color:"#94a3b8",font:{size:9},boxWidth:12,padding:6}},
+          tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+": € "+Math.round(ctx.parsed.y).toLocaleString("de-DE");}}},
+          title:{display:true,text:"Tagesumsatz gesamt",color:"#94a3b8",font:{size:10,weight:"normal"},padding:{bottom:4}}},
+        scales:{
+          x:{ticks:{color:"#475569",font:{size:8},maxTicksLimit:8},grid:{color:"#1e2d40"}},
+          y:{ticks:{color:"#475569",font:{size:8},callback:function(v){return(v/1000).toFixed(1)+"k";}},grid:{color:"#1e2d40"}}
+        }
+      }
+    });
+  })();
 
   dc("c-um-std");
   if(sKeys.length>0){
