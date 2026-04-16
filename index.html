@@ -985,9 +985,26 @@ function renderOverview(){
               fp:avgFcQ,at:k.at};
     k=kStd;
   }
+  // Datentage: nur Tage mit tatsächlichem Apicbase-Umsatz
+  var dataTage=k.t; // Anzahl Tage mit Daten in gefiltert
+  var kalTage=Math.round((new Date(bis+"T12:00:00")-new Date(von+"T12:00:00"))/86400000)+1;
+
+  // Lieferando-Provision: nur für Tage mit Umsatzdaten
+  var uDatumSet={}; gefiltert.forEach(function(r){uDatumSet[r.datum]=1;});
   var txOvG=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
-  var ldoProvOv=txOvG.reduce(function(s,r){return s+r.ldo;},0)*0.20;
+  var txOvAligned=txOvG.filter(function(r){return uDatumSet[r.datum];});
+  var ldoProvOv=txOvAligned.reduce(function(s,r){return s+r.ldo;},0)*0.20;
+
+  // Fixkosten: auf tatsächliche Datentage prorate
+  var fkOvKal=getFixkostenTage(von,bis); // für Kalender-Anzeigen behalten
   var fkOv=getFixkostenTage(von,bis);
+  if(dataTage<kalTage){
+    // Prorate: Fixkosten nur für Datentage
+    var fkFaktor=dataTage/kalTage;
+    Object.keys(fkOv).forEach(function(key){if(key!=="tage")fkOv[key]=fkOv[key]*fkFaktor;});
+    fkOv.tage=dataTage;
+  }
+
   var cm=k.u-k.f-ldoProvOv-pa;
   var bonWertData=getBonWert(von,bis,st);
   var bonWertMd=getBonWert(von,bis,'Mehringdamm');
@@ -1131,6 +1148,7 @@ function renderOverview(){
       ${cmpMd>0&&cmpRs>0?" · Rosenthaler effizienter als Mehringdamm ("+fmtP(cmpRs)+" vs "+fmtP(cmpMd)+")":""}
     </div>
     <div style="font-size:10px;color:#64748b;text-align:right;margin:4px 0 8px;padding:0 2px">📊 Vergleich: ${vpOv.von.slice(8,10)}.${vpOv.von.slice(5,7)}. – ${vpOv.bis.slice(8,10)}.${vpOv.bis.slice(5,7)}. (${vpLabel})</div>
+    ${dataTage<kalTage?'<div style="background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:8px 10px;font-size:11px;color:#f97316;margin-bottom:12px">⚠️ Nur '+dataTage+' von '+kalTage+' Tagen haben Apicbase-Daten. Kosten (Fixkosten, Lieferando-Provision) wurden auf Datentage heruntergerechnet.</div>':''}
 
     <div class="kpi-grid">
       <div class="kpi-card" onclick="drill('d-ov-umsatz')">
@@ -2492,11 +2510,24 @@ function renderGuV(){
   var pa=pk.total>0?pk.total:k.u*0.33;
   var paReal=pk.total>0;
   var paPct=k.u>0?pa/k.u:0;
-  // Lieferando-Umsatz für Provision berechnen
+  // Datentage-Alignment: nur LS-Tage mit Apicbase-Daten für Provision
+  var guvDatumSet={}; gefiltert.forEach(function(r){guvDatumSet[r.datum]=1;});
+  var guvDataTage=k.t;
+  var guvKalTage=fk.tage;
+
   var txGuvG=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
-  var ldoUmsatz=txGuvG.reduce(function(s,r){return s+r.ldo;},0);
+  var txGuvAligned=txGuvG.filter(function(r){return guvDatumSet[r.datum];});
+  var ldoUmsatz=txGuvAligned.reduce(function(s,r){return s+r.ldo;},0);
   var ldoProv=ldoUmsatz*0.20;
   var ldoProvPct=k.u>0?ldoProv/k.u:0;
+
+  // Fixkosten auf Datentage prorate
+  if(guvDataTage<guvKalTage){
+    var guvFkFaktor=guvDataTage/guvKalTage;
+    Object.keys(fk).forEach(function(key){if(key!=="tage")fk[key]=fk[key]*guvFkFaktor;});
+    fk.tage=guvDataTage;
+  }
+
   // Ist-FC aus Bestandsbericht (eigener Aufruf, da eigener Scope)
   var uRfc=getRealFC(st);
   var guvHatIst=istInBestandZeitraum(von,bis,uRfc);
@@ -2507,7 +2538,7 @@ function renderGuV(){
   var smKosten=getSocialMediaKosten(von,bis,st); // Social Media → Personalgemeinkosten
   var cm=rohertrag-pa;
   var cmPct=k.u>0?cm/k.u:0;
-  // EBITDA = CM minus alle Fixkosten
+  // EBITDA = CM minus alle Fixkosten (prorated)
   var ebitda=cm-fk.personalGemein-fk.managementFee-smKosten-fk.miete-fk.versicherung-fk.werbeReise-fk.sonstBetrieb-fk.verwaltung-fk.instandhaltung-fk.abschreibung;
   var ebitdaPct=k.u>0?ebitda/k.u:0;
 
@@ -4780,7 +4811,15 @@ function generiereKIBericht() {
   var paQuote = k.u>0?pa/k.u:0;
   var smKosten = getSocialMediaKosten(von,bis,st);
   var fkOv = getFixkostenTage(von,bis);
-  var ldoProv = lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);}).reduce(function(s,r){return s+r.ldo;},0)*0.20;
+  // Datentage-Alignment
+  var briefDatumSet={}; gefiltert.forEach(function(r){briefDatumSet[r.datum]=1;});
+  var briefDataTage=k.t, briefKalTage=fkOv.tage;
+  var ldoProv = lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&briefDatumSet[r.datum];}).reduce(function(s,r){return s+r.ldo;},0)*0.20;
+  if(briefDataTage<briefKalTage){
+    var bFk=briefDataTage/briefKalTage;
+    Object.keys(fkOv).forEach(function(key){if(key!=="tage")fkOv[key]=fkOv[key]*bFk;});
+    fkOv.tage=briefDataTage;
+  }
   var cm = k.u-k.f-ldoProv-pa;
   var ebitda = cm-fkOv.gesamt-smKosten;
   var umsatzStd = pk.stunden>0?k.u/pk.stunden:0;
