@@ -1198,39 +1198,46 @@ function renderOverview(){
 
     <div id="d-ov-pa" class="drill-panel">
       <div class="drill-title">Personal — Aufschlüsselung</div>
-      <table style="width:100%;max-width:640px;border-collapse:collapse;font-size:12px">
-        <thead><tr style="border-bottom:2px solid #1e3a5f">
-          <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500"></th>
-          <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Kosten</th>
-          <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Quote</th>
-          <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Stunden</th>
-          <th style="text-align:right;color:#64748b;padding:4px 0 6px 8px;font-weight:500">${vpLabel}</th>
-        </tr></thead>
-        <tbody>
-          <tr style="border-bottom:1px solid #1e2d40">
-            <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">Gesamt</td>
-            <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${fmt(pa)}</td>
-            <td style="text-align:right;color:${paPct>ZIELE.pa?'#ef4444':'#22c55e'};font-weight:600;padding:6px 8px">${fmtP(paPct)}</td>
-            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${Math.round(pk.stunden)} h</td>
-            <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwPaDiff,true)}</td>
-          </tr>
-          <tr style="border-bottom:1px solid #1e2d40">
-            <td style="color:#f97316;padding:6px 8px 6px 0">Mehringdamm</td>
-            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(pkMd.total)}</td>
-            <td style="text-align:right;color:${km.u>0&&pkMd.total/km.u>ZIELE.pa?'#ef4444':'#22c55e'};padding:6px 8px">${km.u>0?fmtP(pkMd.total/km.u):"—"}</td>
-            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${Math.round(pkMd.stunden)} h</td>
-            <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwPaMdDiff,true)}</td>
-          </tr>
-          <tr style="border-bottom:1px solid #1e2d40">
-            <td style="color:#3b82f6;padding:6px 8px 6px 0">Rosenthaler</td>
-            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(pkRs.total)}</td>
-            <td style="text-align:right;color:${kr.u>0&&pkRs.total/kr.u>ZIELE.pa?'#ef4444':'#22c55e'};padding:6px 8px">${kr.u>0?fmtP(pkRs.total/kr.u):"—"}</td>
-            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${Math.round(pkRs.stunden)} h</td>
-            <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwPaRsDiff,true)}</td>
-          </tr>
-        </tbody>
-      </table>
-      <div style="margin-top:8px;font-size:11px;color:${umsatzStd>=ZIELE.umsatzStd?'#22c55e':'#ef4444'}">💰 Umsatz/Stunde: ${fmt(umsatzStd)}/h (Ziel ${fmt(ZIELE.umsatzStd)})</div>
+      <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:1;min-width:320px">
+          <table style="width:100%;max-width:640px;border-collapse:collapse;font-size:12px">
+            <thead><tr style="border-bottom:2px solid #1e3a5f">
+              <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500"></th>
+              <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Kosten</th>
+              <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Quote</th>
+              <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Stunden</th>
+              <th style="text-align:right;color:#64748b;padding:4px 0 6px 8px;font-weight:500">${vpLabel}</th>
+            </tr></thead>
+            <tbody>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">Gesamt</td>
+                <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${fmt(pa)}</td>
+                <td style="text-align:right;color:${paPct>ZIELE.pa?'#ef4444':'#22c55e'};font-weight:600;padding:6px 8px">${fmtP(paPct)}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${Math.round(pk.stunden)} h</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwPaDiff,true)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="color:#f97316;padding:6px 8px 6px 0">Mehringdamm</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(pkMd.total)}</td>
+                <td style="text-align:right;color:${km.u>0&&pkMd.total/km.u>ZIELE.pa?'#ef4444':'#22c55e'};padding:6px 8px">${km.u>0?fmtP(pkMd.total/km.u):"—"}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${Math.round(pkMd.stunden)} h</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwPaMdDiff,true)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="color:#3b82f6;padding:6px 8px 6px 0">Rosenthaler</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(pkRs.total)}</td>
+                <td style="text-align:right;color:${kr.u>0&&pkRs.total/kr.u>ZIELE.pa?'#ef4444':'#22c55e'};padding:6px 8px">${kr.u>0?fmtP(pkRs.total/kr.u):"—"}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${Math.round(pkRs.stunden)} h</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwPaRsDiff,true)}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="margin-top:8px;font-size:11px;color:${umsatzStd>=ZIELE.umsatzStd?'#22c55e':'#ef4444'}">💰 Umsatz/Stunde: ${fmt(umsatzStd)}/h (Ziel ${fmt(ZIELE.umsatzStd)})</div>
+        </div>
+        <div style="flex:1;min-width:280px;max-width:420px;height:180px">
+          <canvas id="c-ov-pa-quote"></canvas>
+        </div>
+      </div>
       <div class="ai-box" style="margin-top:8px">${paPct>ZIELE.pa?"Personalkosten "+fmtP(paPct-ZIELE.pa)+" über Ziel. Potenzial: "+fmt((paPct-ZIELE.pa)*k.u)+" Einsparung möglich bei Ziel-Quote.":"Personalkosten im Zielbereich."} ${cmpMd>0&&cmpRs>0&&cmpMd<cmpRs?" Mehringdamm hat "+fmtP(cmpRs-cmpMd)+" schlechtere Effizienz als Rosenthaler.":""}</div>
     </div>
 
@@ -1398,6 +1405,61 @@ function renderOverview(){
   dc("c-ov-donut");
   // donutFC etc. bereits oben definiert
   charts["c-ov-donut"]=new Chart(document.getElementById("c-ov-donut"),{type:"doughnut",data:{labels:["Food Cost","Operative Personal","Personalgemeinkosten","Rest Gemeinkosten","EBITDA"],datasets:[{data:[donutFC,donutOpa,donutPG,donutRest,donutEBITDA],backgroundColor:["#ef4444","#8b5cf6","#3b82f6","#64748b","#22c55e"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:"72%"}});
+
+  // --- PA-Quote Liniendiagramm ---
+  (function(){
+    var paEl=document.getElementById("c-ov-pa-quote");
+    if(!paEl)return;
+    // Tägliche Daten sammeln
+    var tageSet={};
+    gefiltert.forEach(function(r){tageSet[r.datum]=1;});
+    var tage=Object.keys(tageSet).sort();
+    // Umsatz pro Tag pro Standort
+    var uTagMd={},uTagRs={};
+    gefiltert.forEach(function(r){
+      if(r.st==="Mehringdamm"){uTagMd[r.datum]=(uTagMd[r.datum]||0)+r.u;}
+      else if(r.st==="Rosenthaler Straße"){uTagRs[r.datum]=(uTagRs[r.datum]||0)+r.u;}
+    });
+    // Personalkosten pro Tag pro Standort
+    var pTagMd={},pTagRs={};
+    var ordioAll=ordio.filter(function(r){
+      return r.datum>=von&&r.datum<=bis&&
+        MGMT_MITARBEITER.indexOf(r.mitarbeiter)===-1&&
+        r.bereich!=="Social Media"&&datumPasstWT(r.datum);
+    });
+    ordioAll.forEach(function(r){
+      if(r.standort==="Mehringdamm"){pTagMd[r.datum]=(pTagMd[r.datum]||0)+r.kosten;}
+      else if(r.standort==="Rosenthaler Straße"){pTagRs[r.datum]=(pTagRs[r.datum]||0)+r.kosten;}
+    });
+    var dataMd=[],dataRs=[],dataZiel=[];
+    tage.forEach(function(d){
+      var uM=uTagMd[d]||0,uR=uTagRs[d]||0;
+      var pM=pTagMd[d]||0,pR=pTagRs[d]||0;
+      dataMd.push(uM>0?(pM/uM*100):null);
+      dataRs.push(uR>0?(pR/uR*100):null);
+      dataZiel.push(ZIELE.pa*100);
+    });
+    var paLabels=tage.map(function(d){return d.slice(8,10)+"."+d.slice(5,7);});
+    dc("c-ov-pa-quote");
+    charts["c-ov-pa-quote"]=new Chart(paEl,{
+      type:"line",
+      data:{labels:paLabels,datasets:[
+        {label:"Mehringdamm",data:dataMd,borderColor:"#f97316",backgroundColor:"rgba(249,115,22,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,spanGaps:true},
+        {label:"Rosenthaler",data:dataRs,borderColor:"#3b82f6",backgroundColor:"rgba(59,130,246,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,spanGaps:true},
+        {label:"Ziel",data:dataZiel,borderColor:"#475569",borderDash:[4,3],borderWidth:1,pointRadius:0}
+      ]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:"bottom",labels:{color:"#94a3b8",font:{size:9},boxWidth:12,padding:6}},
+          title:{display:true,text:"Personalquote / Tag",color:"#94a3b8",font:{size:10,weight:"normal"},padding:{bottom:4}}},
+        scales:{
+          x:{ticks:{color:"#475569",font:{size:8},maxTicksLimit:8},grid:{color:"#1e2d40"}},
+          y:{ticks:{color:"#475569",font:{size:8},callback:function(v){return v+"%";}},grid:{color:"#1e2d40"},
+            suggestedMin:Math.max(0,(ZIELE.pa*100)-10),suggestedMax:(ZIELE.pa*100)+15}
+        }
+      }
+    });
+  })();
 }
 
 // ============================================================
