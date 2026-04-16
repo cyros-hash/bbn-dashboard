@@ -1307,40 +1307,47 @@ function renderOverview(){
 
     <div id="d-ov-cm" class="drill-panel">
       <div class="drill-title">Contribution Margin — Aufschlüsselung</div>
-      <table style="width:100%;max-width:640px;border-collapse:collapse;font-size:12px">
-        <thead><tr style="border-bottom:2px solid #1e3a5f">
-          <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500"></th>
-          <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Betrag</th>
-          <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Quote</th>
-          <th style="text-align:right;color:#64748b;padding:4px 0 6px 8px;font-weight:500">Ziel</th>
-        </tr></thead>
-        <tbody>
-          <tr style="border-bottom:1px solid #1e2d40">
-            <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">CM gesamt</td>
-            <td style="text-align:right;color:${cmPct>=ZIELE.cm?'#22c55e':'#f97316'};font-weight:600;padding:6px 8px">${fmt(cm)}</td>
-            <td style="text-align:right;color:${cmPct>=ZIELE.cm?'#22c55e':'#f97316'};font-weight:600;padding:6px 8px">${fmtP(cmPct)}${vwBadge(vwCmDiff,false)}</td>
-            <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.cm)}</td>
-          </tr>
-          <tr style="border-bottom:1px solid #1e2d40">
-            <td style="color:#f97316;padding:6px 8px 6px 0">Mehringdamm</td>
-            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(km.u-km.f-pkMd.total)}</td>
-            <td style="text-align:right;color:${cmpMd>=ZIELE.cm?'#22c55e':'#f97316'};padding:6px 8px">${fmtP(cmpMd)}</td>
-            <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.cm)}</td>
-          </tr>
-          <tr style="border-bottom:1px solid #1e2d40">
-            <td style="color:#3b82f6;padding:6px 8px 6px 0">Rosenthaler</td>
-            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(kr.u-kr.f-pkRs.total)}</td>
-            <td style="text-align:right;color:${cmpRs>=ZIELE.cm?'#22c55e':'#f97316'};padding:6px 8px">${fmtP(cmpRs)}</td>
-            <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.cm)}</td>
-          </tr>
-          <tr style="border-top:2px solid #1e3a5f">
-            <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">EBITDA</td>
-            <td style="text-align:right;color:${ebitda>0?'#22c55e':'#ef4444'};font-weight:600;padding:6px 8px">${fmt(ebitda)}</td>
-            <td style="text-align:right;color:${ebitda>0?'#22c55e':'#ef4444'};font-weight:600;padding:6px 8px">${fmtP(ebitdaPct)}</td>
-            <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.ebitda)}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:0 0 auto">
+          <table style="border-collapse:collapse;font-size:12px">
+            <thead><tr style="border-bottom:2px solid #1e3a5f">
+              <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500"></th>
+              <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Betrag</th>
+              <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Quote</th>
+              <th style="text-align:right;color:#64748b;padding:4px 0 6px 8px;font-weight:500">Ziel</th>
+            </tr></thead>
+            <tbody>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">CM gesamt</td>
+                <td style="text-align:right;color:${cmPct>=ZIELE.cm?'#22c55e':'#f97316'};font-weight:600;padding:6px 8px">${fmt(cm)}</td>
+                <td style="text-align:right;color:${cmPct>=ZIELE.cm?'#22c55e':'#f97316'};font-weight:600;padding:6px 8px">${fmtP(cmPct)}${vwBadge(vwCmDiff,false)}</td>
+                <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.cm)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="color:#f97316;padding:6px 8px 6px 0">Mehringdamm</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(km.u-km.f-pkMd.total)}</td>
+                <td style="text-align:right;color:${cmpMd>=ZIELE.cm?'#22c55e':'#f97316'};padding:6px 8px">${fmtP(cmpMd)}</td>
+                <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.cm)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="color:#3b82f6;padding:6px 8px 6px 0">Rosenthaler</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(kr.u-kr.f-pkRs.total)}</td>
+                <td style="text-align:right;color:${cmpRs>=ZIELE.cm?'#22c55e':'#f97316'};padding:6px 8px">${fmtP(cmpRs)}</td>
+                <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.cm)}</td>
+              </tr>
+              <tr style="border-top:2px solid #1e3a5f">
+                <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">EBITDA</td>
+                <td style="text-align:right;color:${ebitda>0?'#22c55e':'#ef4444'};font-weight:600;padding:6px 8px">${fmt(ebitda)}</td>
+                <td style="text-align:right;color:${ebitda>0?'#22c55e':'#ef4444'};font-weight:600;padding:6px 8px">${fmtP(ebitdaPct)}</td>
+                <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.ebitda)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="flex:1;min-width:300px;height:200px;position:relative">
+          <canvas id="c-ov-cm-waterfall"></canvas>
+        </div>
+      </div>
       <div class="ai-box" style="margin-top:10px">${cmPct>=ZIELE.cm?"Aktuell im Zielbereich.":"Aktuell unter Ziel. Hebel: Personal-Effizienz und Food Cost."} ${cmpMd>0&&cmpRs>0&&cmpMd!==cmpRs?(cmpRs>cmpMd?"Rosenthaler effizienter (+"+fmtP(cmpRs-cmpMd)+").":"Mehringdamm effizienter (+"+fmtP(cmpMd-cmpRs)+")."):"Beide Standorte ähnlich."}</div>
     </div>
 
@@ -1536,6 +1543,51 @@ function renderOverview(){
         scales:{
           x:{stacked:true,ticks:{color:"#94a3b8",font:{size:9}},grid:{display:false}},
           y:{stacked:true,ticks:{color:"#475569",font:{size:8},callback:function(v){return"€ "+v;}},grid:{color:"#1e2d40"}}
+        }
+      }
+    });
+  })();
+
+  // --- CM Wasserfall-Diagramm ---
+  (function(){
+    var wfEl=document.getElementById("c-ov-cm-waterfall");
+    if(!wfEl)return;
+    // Werte: Umsatz → -FC → -Personal → =CM → -Gemeinkosten → =EBITDA
+    var wfUmsatz=k.u, wfFC=donutFC, wfPA=donutOpa, wfPG=donutPG, wfRest=donutRest, wfEBITDA=donutEBITDA;
+    var wfCM=wfUmsatz-wfFC-wfPA;
+    var wfGK=wfPG+wfRest;
+    // Wasserfall: transparente Basis + sichtbarer Balken
+    // Umsatz: Basis=0, Balken=Umsatz (grün)
+    // FC: Basis=Umsatz-FC, Balken=FC (rot)
+    // Personal: Basis=CM, Balken=PA (lila)
+    // CM: Basis=0, Balken=CM (grün)
+    // Gemeinkosten: Basis=EBITDA, Balken=GK (grau)
+    // EBITDA: Basis=0, Balken=EBITDA (grün/rot)
+    var labels=["Umsatz","Food Cost","Personal","= CM","Gemeinkosten","= EBITDA"];
+    var bases=[0, wfCM+wfPA, wfCM, 0, Math.max(wfEBITDA,0), 0];
+    var values=[wfUmsatz, wfFC, wfPA, wfCM, wfGK, Math.max(wfEBITDA,0)];
+    var colors=["#22c55e","#ef4444","#8b5cf6","#22c55e","#64748b",wfEBITDA>=0?"#22c55e":"#ef4444"];
+    dc("c-ov-cm-waterfall");
+    charts["c-ov-cm-waterfall"]=new Chart(wfEl,{
+      type:"bar",
+      data:{labels:labels,datasets:[
+        {label:"_base",data:bases,backgroundColor:"transparent",borderWidth:0,hoverBackgroundColor:"transparent"},
+        {label:"Betrag",data:values,backgroundColor:colors,borderRadius:2}
+      ]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{filter:function(item){return item.datasetIndex===1;},
+            callbacks:{label:function(ctx){
+              var pct=k.u>0?(ctx.parsed.y/k.u*100).toFixed(1)+"%":"";
+              return ctx.label.replace("= ","")+": € "+Math.round(ctx.parsed.y).toLocaleString("de-DE")+" ("+pct+")";
+            }}},
+          title:{display:true,text:"Umsatz → EBITDA (Wasserfall)",color:"#94a3b8",font:{size:10,weight:"normal"},padding:{bottom:4}}
+        },
+        scales:{
+          x:{stacked:true,ticks:{color:"#94a3b8",font:{size:8}},grid:{display:false}},
+          y:{stacked:true,ticks:{color:"#475569",font:{size:8},callback:function(v){return(v/1000).toFixed(0)+"k";}},grid:{color:"#1e2d40"}}
         }
       }
     });
