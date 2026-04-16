@@ -1451,6 +1451,7 @@ function renderOverview(){
       options:{
         responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,position:"bottom",labels:{color:"#94a3b8",font:{size:9},boxWidth:12,padding:6}},
+          tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+": "+ctx.parsed.y.toFixed(1)+"%";}}},
           title:{display:true,text:"Personalquote / Tag",color:"#94a3b8",font:{size:10,weight:"normal"},padding:{bottom:4}}},
         scales:{
           x:{ticks:{color:"#475569",font:{size:8},maxTicksLimit:8},grid:{color:"#1e2d40"}},
