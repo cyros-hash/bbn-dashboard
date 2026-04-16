@@ -722,7 +722,7 @@ async function ladeDaten(){
     var r5=await fetch(CSV.lsPay);var t5=await r5.text();
     lsPay=t5.trim().split("\n").map(function(l){
       var v=pCSV(l);
-      return{datum:pDat(v[0]),standort:v[1]||"",bar:pDE(v[3]),karte:pDE(v[5]),ldo:pDE(v[7]),onlineOrder:pDE(v[9]),trinkgeld:pDE(v[10])};
+      return{datum:pDat(v[0]),standort:v[1]||"",bar:pDE(v[3]),karte:pDE(v[5]),ldo:pDE(v[7]),onlineOrder:pDE(v[9]),trinkgeld:pDE(v[10]),manuell:pDE(v[12])};
     }).filter(function(r){return r.datum&&r.standort;});
 
     // ORDIO
@@ -1809,10 +1809,11 @@ function renderUmsatz(){
   }
   var totalTrinkgeld=qG.reduce(function(s,r){return s+r.trinkgeld;},0);
   var totalBar=payG.reduce(function(s,r){return s+r.bar;},0);
+  var totalManuell=payG.reduce(function(s,r){return s+(r.manuell||0);},0);
   var totalKarte=payG.reduce(function(s,r){return s+r.karte;},0);
   var totalLdoPay=payG.reduce(function(s,r){return s+r.ldo;},0);
   var totalOnlineOrder=payG.reduce(function(s,r){return s+(r.onlineOrder||0);},0);
-  var totalZahl=totalBar+totalKarte+totalLdoPay+totalOnlineOrder;
+  var totalZahl=totalBar+totalManuell+totalKarte+totalLdoPay+totalOnlineOrder;
 
   var stundenMap={};
   stdG.forEach(function(r){if(!stundenMap[r.stunde])stundenMap[r.stunde]=0;stundenMap[r.stunde]+=r.umsatz;});
@@ -2048,9 +2049,14 @@ function renderUmsatz(){
               <td style="text-align:right;color:#22c55e;padding:6px 0 6px 8px">${totalZahl>0?(totalOnlineOrder/totalZahl*100).toFixed(1):0}%</td>
             </tr>
             <tr style="border-bottom:1px solid #1e2d40">
-              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span><span style="color:#8b5cf6">Bar / Manuell</span></span></td>
+              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span><span style="color:#8b5cf6">Bar</span></span></td>
               <td style="text-align:right;color:#8b5cf6;padding:6px 8px">${fmt(totalBar)}</td>
               <td style="text-align:right;color:#8b5cf6;padding:6px 0 6px 8px">${totalZahl>0?(totalBar/totalZahl*100).toFixed(1):0}%</td>
+            </tr>
+            <tr style="border-bottom:1px solid #1e2d40">
+              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#a78bfa;display:inline-block"></span><span style="color:#a78bfa">Manuell</span></span></td>
+              <td style="text-align:right;color:#a78bfa;padding:6px 8px">${fmt(totalManuell)}</td>
+              <td style="text-align:right;color:#a78bfa;padding:6px 0 6px 8px">${totalZahl>0?(totalManuell/totalZahl*100).toFixed(1):0}%</td>
             </tr>
             <tr style="border-top:2px solid #1e3a5f">
               <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">Gesamt</td>
@@ -4902,106 +4908,110 @@ function generiereKIBericht() {
 
 
 function buildAiContext() {
-  // Aggregiere alle verfügbaren Daten zu einem kompakten Kontext
-  var ctx = "=== BANG BANG NOODLES — Live Dashboard Daten ===\n\n";
+  // Verwende die aktuell im Dashboard gefilterten Daten
+  var von = document.getElementById("von").value;
+  var bis = document.getElementById("bis").value;
+  var st = document.getElementById("standort").value;
 
-  // Datumsbereich der vorhandenen Daten
-  if(alle.length > 0) {
-    var daten = alle.map(function(r){return r.datum;}).sort();
-    ctx += "Zeitraum verfügbar: " + daten[0] + " bis " + daten[daten.length-1] + "\n";
-    ctx += "Datenpunkte: " + alle.length + " Tage (Apicbase), " + ordio.length + " Schichten (Ordio), " + artikel.length + " Artikel-Positionen\n\n";
-  }
+  var ctx = "=== BANG BANG NOODLES — Dashboard Daten ===\n\n";
+  ctx += "Aktueller Filter: " + von + " bis " + bis + " | Standort: " + st + "\n";
+  ctx += "Tage im Zeitraum: " + gefiltert.length + "\n\n";
 
-  // KPIs gesamt
-  var kAll = kpi(alle);
-  ctx += "=== GESAMTE KPIs (alle verfügbaren Daten) ===\n";
-  ctx += "Umsatz Netto gesamt: " + fmt(kAll.u) + "\n";
-  ctx += "Food Cost gesamt: " + fmt(kAll.f) + " (" + fmtP(kAll.fp) + " vom Umsatz, Ziel 22%)\n";
-  ctx += "Ø Bon-Wert: " + fmtD(kAll.at) + " (Ziel €22)\n";
-  ctx += "Verkäufe gesamt: " + kAll.s.toLocaleString("de-DE") + "\n\n";
+  // KPIs für gefilterten Zeitraum
+  var kFilt = kpi(gefiltert);
+  var tage = kFilt.t || 1;
+  ctx += "=== KPIs (gefilterter Zeitraum) ===\n";
+  ctx += "Umsatz Netto: " + fmt(kFilt.u) + " (" + fmt(kFilt.u/tage) + "/Tag)\n";
+  ctx += "Food Cost: " + fmt(kFilt.f) + " (" + fmtP(kFilt.fp) + " vom Umsatz, Ziel: " + fmtP(ZIELE.fc) + ")\n";
+  ctx += "Ø Bon-Wert: " + fmtD(kFilt.at) + " (Ziel: €" + ZIELE.bonWert + ")\n";
+  ctx += "Verkäufe: " + kFilt.s.toLocaleString("de-DE") + "\n\n";
 
-  // Nach Standort
-  var md = alle.filter(function(r){return r.st==="Mehringdamm";});
-  var rs = alle.filter(function(r){return r.st==="Rosenthaler Straße";});
-  var kMD = kpi(md), kRS = kpi(rs);
+  // Nach Standort aufschlüsseln
+  var mdFilt = gefiltert.filter(function(r){return r.st==="Mehringdamm";});
+  var rsFilt = gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";});
+  var kMD = kpi(mdFilt), kRS = kpi(rsFilt);
   ctx += "=== NACH STANDORT ===\n";
-  ctx += "Mehringdamm: " + fmt(kMD.u) + " Umsatz | FC: " + fmtP(kMD.fp) + " | Ø Bon: " + fmtD(kMD.at) + "\n";
-  ctx += "Rosenthaler Straße: " + fmt(kRS.u) + " Umsatz | FC: " + fmtP(kRS.fp) + " | Ø Bon: " + fmtD(kRS.at) + "\n\n";
+  ctx += "Mehringdamm: " + fmt(kMD.u) + " Umsatz | FC: " + fmtP(kMD.fp) + " | Ø Bon: " + fmtD(kMD.at) + " | " + kMD.t + " Tage\n";
+  ctx += "Rosenthaler Straße: " + fmt(kRS.u) + " Umsatz | FC: " + fmtP(kRS.fp) + " | Ø Bon: " + fmtD(kRS.at) + " | " + kRS.t + " Tage\n\n";
 
-  // Personal (Ordio)
-  if(ordio.length > 0) {
-    var totalKosten = ordio.reduce(function(s,r){return s+r.kosten;},0);
-    var totalStunden = ordio.reduce(function(s,r){return s+r.stunden;},0);
-    var paQuote = kAll.u > 0 ? totalKosten/kAll.u : 0;
-    ctx += "=== PERSONAL (Ordio) ===\n";
-    ctx += "Personalkosten gesamt: " + fmt(totalKosten) + " (" + fmtP(paQuote) + " vom Umsatz, Ziel 22%)\n";
-    ctx += "Gesamtstunden: " + Math.round(totalStunden) + "h\n";
-    ctx += "Ø Umsatz/Personalstunde: " + fmt(kAll.u / Math.max(totalStunden,1)) + " (Ziel €75)\n";
+  // Personal (Ordio) — nach Zeitraum filtern
+  var ordioFilt = ordio.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  if(ordioFilt.length > 0) {
+    var totalKosten = ordioFilt.reduce(function(s,r){return s+r.kosten;},0);
+    var totalStunden = ordioFilt.reduce(function(s,r){return s+r.stunden;},0);
+    var paQuote = kFilt.u > 0 ? totalKosten/kFilt.u : 0;
+    ctx += "=== PERSONAL ===\n";
+    ctx += "Personalkosten: " + fmt(totalKosten) + " (" + fmtP(paQuote) + " vom Umsatz, Ziel: " + fmtP(ZIELE.pa) + ")\n";
+    ctx += "Stunden: " + Math.round(totalStunden) + "h\n";
+    ctx += "Ø Umsatz/Personalstunde: " + fmt(kFilt.u / Math.max(totalStunden,1)) + " (Ziel: €" + ZIELE.umsatzStd + ")\n";
 
-    // Mitarbeiter-Liste
     var maMap = {};
-    ordio.forEach(function(r){
+    ordioFilt.forEach(function(r){
       if(!maMap[r.mitarbeiter])maMap[r.mitarbeiter]={stunden:0,kosten:0};
       maMap[r.mitarbeiter].stunden+=r.stunden;
       maMap[r.mitarbeiter].kosten+=r.kosten;
     });
     var maList = Object.entries(maMap).sort(function(a,b){return b[1].stunden-a[1].stunden;}).slice(0,10);
-    ctx += "Top Mitarbeiter nach Stunden: " + maList.map(function(e){return e[0]+" ("+Math.round(e[1].stunden)+"h, "+fmt(e[1].kosten)+")";}).join(", ") + "\n\n";
+    ctx += "Top Mitarbeiter: " + maList.map(function(e){return e[0]+" ("+Math.round(e[1].stunden)+"h, "+fmt(e[1].kosten)+")";}).join(", ") + "\n\n";
   }
 
-  // Waste
-  if(waste.length > 0) {
-    var totalWaste = waste.reduce(function(s,r){return s+r.kosten;},0);
-    var wasteQuote = kAll.u > 0 ? totalWaste/kAll.u : 0;
-    ctx += "=== WASTE (Apicbase) ===\n";
-    ctx += "Waste gesamt: " + fmt(totalWaste) + " (" + fmtP(wasteQuote) + " vom Umsatz, Ziel <2%)\n";
+  // Waste — nach Zeitraum filtern
+  var wasteFilt = waste.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  if(wasteFilt.length > 0) {
+    var totalWaste = wasteFilt.reduce(function(s,r){return s+r.kosten;},0);
+    var wasteQuote = kFilt.u > 0 ? totalWaste/kFilt.u : 0;
+    ctx += "=== WASTE / VERLUSTE ===\n";
+    ctx += "Waste gesamt: " + fmt(totalWaste) + " (" + fmtP(wasteQuote) + " vom Umsatz)\n";
 
-    // Top Waste-Artikel
     var artWasteMap = {};
-    waste.forEach(function(r){
+    wasteFilt.forEach(function(r){
       if(!artWasteMap[r.artikel])artWasteMap[r.artikel]={kosten:0,kategorie:r.kategorie};
       artWasteMap[r.artikel].kosten+=r.kosten;
     });
     var topWaste = Object.entries(artWasteMap).sort(function(a,b){return b[1].kosten-a[1].kosten;}).slice(0,5);
-    ctx += "Top Waste-Artikel: " + topWaste.map(function(e){return e[0]+" ("+fmt(e[1].kosten)+", "+e[1].kategorie+")";}).join(", ") + "\n";
-
-    // Kategorien
-    var katMap = {};
-    waste.forEach(function(r){
-      if(!katMap[r.kategorie])katMap[r.kategorie]=0;
-      katMap[r.kategorie]+=r.kosten;
-    });
-    ctx += "Waste nach Kategorie: " + Object.entries(katMap).sort(function(a,b){return b[1]-a[1];}).map(function(e){return e[0]+": "+fmt(e[1]);}).join(", ") + "\n\n";
+    ctx += "Top Waste-Artikel: " + topWaste.map(function(e){return e[0]+" ("+fmt(e[1].kosten)+", "+e[1].kategorie+")";}).join(", ") + "\n\n";
   }
 
-  // Artikel-Performance
-  if(artikel.length > 0) {
+  // Artikel — nach Zeitraum filtern
+  var artFilt = artikel.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===0&&r.preisN>0;});
+  if(artFilt.length > 0) {
     var artMap = {};
-    artikel.filter(function(r){return r.storniert===0&&r.preisN>0;}).forEach(function(r){
+    artFilt.forEach(function(r){
       if(!artMap[r.name])artMap[r.name]={umsatz:0,menge:0,gruppe:r.gruppe};
       artMap[r.name].umsatz+=r.preisN;
       artMap[r.name].menge+=r.menge;
     });
     var topArt = Object.entries(artMap).sort(function(a,b){return b[1].umsatz-a[1].umsatz;}).slice(0,10);
-    ctx += "=== TOP 10 ARTIKEL (nach Nettoumsatz) ===\n";
+    ctx += "=== TOP 10 ARTIKEL ===\n";
     topArt.forEach(function(e){
-      ctx += e[0] + ": " + fmt(e[1].umsatz) + " | " + Math.round(e[1].menge) + "x verkauft | Ø " + fmtD(e[1].umsatz/Math.max(e[1].menge,1)) + "\n";
+      ctx += e[0] + ": " + fmt(e[1].umsatz) + " | " + Math.round(e[1].menge) + "x | Ø " + fmtD(e[1].umsatz/Math.max(e[1].menge,1)) + "\n";
     });
     ctx += "\n";
   }
 
-  // Trinkgeld
-  if(bons.length > 0) {
-    var bonsOhneLdo = bons.filter(function(r){return r.kanal!=="Lieferando";});
+  // Trinkgeld — nach Zeitraum filtern
+  var bonsFilt = bons.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  if(bonsFilt.length > 0) {
+    var bonsOhneLdo = bonsFilt.filter(function(r){return r.kanal!=="Lieferando";});
     var tkGesamt = bonsOhneLdo.reduce(function(s,r){return s+r.trinkgeld;},0);
     var totalOhneLdo = bonsOhneLdo.reduce(function(s,r){return s+r.total;},0);
     ctx += "=== TRINKGELD ===\n";
-    ctx += "Trinkgeld gesamt (ohne Lieferando): " + fmt(tkGesamt) + " (" + fmtP(totalOhneLdo>0?tkGesamt/totalOhneLdo:0) + " Quote)\n\n";
+    ctx += "Trinkgeld (ohne Lieferando): " + fmt(tkGesamt) + " (" + fmtP(totalOhneLdo>0?tkGesamt/totalOhneLdo:0) + " Quote)\n\n";
   }
 
-  // Zielwerte
+  // FC aus Bestandsbericht (wenn verfügbar)
+  try {
+    var rfc = getRealFC(st);
+    if(rfc && rfc.md) {
+      ctx += "=== FOOD COST (Bestandsbericht) ===\n";
+      ctx += "Mehringdamm: FC " + fmt(rfc.md.fc) + " (" + fmtP(rfc.md.quote) + ") | Verkauft: " + fmt(rfc.md.verkauft) + " | Verschwendet: " + fmt(rfc.md.verschwendet) + " | Schwund: " + fmt(rfc.md.unkontrolliert) + "\n";
+      ctx += "Rosenthaler: FC " + fmt(rfc.rs.fc) + " (" + fmtP(rfc.rs.quote) + ") | Verkauft: " + fmt(rfc.rs.verkauft) + " | Verschwendet: " + fmt(rfc.rs.verschwendet) + " | Schwund: " + fmt(rfc.rs.unkontrolliert) + "\n\n";
+    }
+  } catch(e){}
+
+  // Zielwerte (aus ZIELE-Konstante)
   ctx += "=== ZIELWERTE ===\n";
-  ctx += "Food Cost: 25% | Personal: 22% | Contribution Margin: 40% | EBITDA: 12% | Ø Bon-Wert: €22 | Umsatz/Personalstunde: €75\n";
+  ctx += "Food Cost: " + fmtP(ZIELE.fc) + " | Personal: " + fmtP(ZIELE.pa) + " | Contribution Margin: " + fmtP(ZIELE.cm) + " | EBITDA: " + fmtP(ZIELE.ebitda) + " | Ø Bon-Wert: €" + ZIELE.bonWert + " | Umsatz/Personalstunde: €" + ZIELE.umsatzStd + "\n";
 
   return ctx;
 }
@@ -5020,11 +5030,45 @@ function askSuggestion(btn) {
   sendAiMessage();
 }
 
+function mdToHtml(md) {
+  // Simple markdown → HTML for AI responses
+  var html = md
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    // Bold
+    .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+    // Italic
+    .replace(/\*(.+?)\*/g,"<em>$1</em>")
+    // Headers
+    .replace(/^### (.+)$/gm,"<h4 style='margin:10px 0 4px;font-size:0.95em'>$1</h4>")
+    .replace(/^## (.+)$/gm,"<h3 style='margin:12px 0 4px;font-size:1em'>$1</h3>")
+    .replace(/^# (.+)$/gm,"<h3 style='margin:12px 0 6px;font-size:1.05em'>$1</h3>")
+    // Horizontal rules
+    .replace(/^---$/gm,"<hr style='border:none;border-top:1px solid #444;margin:8px 0'>")
+    // Unordered lists (•, -, *)
+    .replace(/^[\-\*•]\s+(.+)$/gm,"<li>$1</li>")
+    // Numbered lists
+    .replace(/^\d+\.\s+(.+)$/gm,"<li>$1</li>");
+  // Wrap consecutive <li> in <ul>
+  html = html.replace(/((?:<li>.*?<\/li>\n?)+)/g,"<ul style='margin:4px 0 4px 16px;padding:0;list-style:disc'>$1</ul>");
+  // Paragraphs: double newlines
+  html = html.replace(/\n\n+/g,"</p><p style='margin:6px 0'>");
+  // Single newlines → <br>
+  html = html.replace(/\n/g,"<br>");
+  html = "<p style='margin:6px 0'>" + html + "</p>";
+  // Clean up empty paragraphs
+  html = html.replace(/<p style='margin:6px 0'>\s*<\/p>/g,"");
+  return html;
+}
+
 function addAiMessage(role, text) {
   var msgs = document.getElementById("ai-messages");
   var div = document.createElement("div");
   div.className = "ai-msg " + role;
-  div.textContent = text;
+  if(role.indexOf("assistant") !== -1 && role.indexOf("thinking") === -1) {
+    div.innerHTML = mdToHtml(text);
+  } else {
+    div.textContent = text;
+  }
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
   return div;
