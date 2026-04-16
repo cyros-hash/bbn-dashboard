@@ -515,6 +515,13 @@ function getRealFC(stFilter){
          md:md,rs:rs,von:von,bis:bis,tage:ges.tage||1};
 }
 
+// Prüft ob Dashboard-Zeitraum vollständig innerhalb Bestandsbericht liegt
+function istInBestandZeitraum(dashVon,dashBis,rfc){
+  if(!rfc.hat)return false;
+  var bVon=bestandDatISO(rfc.von),bBis=bestandDatISO(rfc.bis);
+  return dashVon>=bVon&&dashBis<=bBis;
+}
+
 function getOrdio(von,bis,st){
   var d=ordio.filter(function(r){
     return r.datum>=von&&r.datum<=bis&&
@@ -1093,10 +1100,10 @@ function renderOverview(){
   // Kosten Donut — VOR Template definieren (wird in Legende benutzt)
   // Echte FC aus Bestandsbericht: quote = FC / Umsatz im Bestandszeitraum
   var rfc=getRealFC(st);
-  var hatIstFC=rfc.hat;
+  var hatIstFC=istInBestandZeitraum(von,bis,rfc);
   var anzFcPct=hatIstFC?rfc.quote:k.fp;
-  var anzFcMdPct=rfc.md&&rfc.md.n>0?rfc.md.quote:km.fp;
-  var anzFcRsPct=rfc.rs&&rfc.rs.n>0?rfc.rs.quote:kr.fp;
+  var anzFcMdPct=hatIstFC&&rfc.md&&rfc.md.n>0?rfc.md.quote:km.fp;
+  var anzFcRsPct=hatIstFC&&rfc.rs&&rfc.rs.n>0?rfc.rs.quote:kr.fp;
   var fcAmt=hatIstFC?rfc.quote*k.u:k.f,paAmt=pa,profitAmt=Math.max(ebitda,0);
   // CM und EBITDA mit Ist-FC neu berechnen falls vorhanden
   if(hatIstFC){cm=k.u-fcAmt-ldoProvOv-pa;cmPct=k.u>0?cm/k.u:0;ebitda=cm-fkOv.gesamt-smKosten;ebitdaPct=k.u>0?ebitda/k.u:0;}
@@ -1118,7 +1125,7 @@ function renderOverview(){
     <div class="alert">
       <b>Tages-Briefing${hatStundenfilter()?" ⏰ "+stundenLabel():""}:</b>
       Umsatz ${deltaU>=0?"+"+deltaU.toFixed(1):deltaU.toFixed(1)}% vs. ${vpLabel} ·
-      Food Cost ${fmtP(anzFcPct)} ${hatIstFC?"Ist":"(Ziel "+fmtP(ZIELE.fc)+")"} ·
+      Food Cost ${fmtP(anzFcPct)} ${hatIstFC?"Ist (direkt)":"Soll (Ziel "+fmtP(ZIELE.fc)+")"} ·
       Personal ${fmtP(paPct)} ${paReal?"(Ordio Live)":"(Schätzung)"} ·
       Contribution Margin <b>${fmtP(cmPct)}</b>
       ${cmpMd>0&&cmpRs>0?" · Rosenthaler effizienter als Mehringdamm ("+fmtP(cmpRs)+" vs "+fmtP(cmpMd)+")":""}
@@ -1139,10 +1146,10 @@ function renderOverview(){
         <div class="kpi-ai">${pk.stunden>0?Math.round(pk.stunden)+" h · Ø "+fmtD(pa/pk.stunden)+"/h":""} · Closing-Check Mehringdamm</div>
       </div>
       <div class="kpi-card" onclick="drill('d-ov-fc')">
-        <div class="kpi-label">🥩 Food Cost ${hatIstFC?'<span style="font-size:9px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px;margin-left:4px">Ist</span>':''}</div>
+        <div class="kpi-label">🥩 Food Cost ${hatIstFC?'<span style="font-size:9px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px;margin-left:4px">Ist (direkt)</span>':'<span style="font-size:9px;background:#eab308;color:#000;padding:1px 5px;border-radius:3px;margin-left:4px">Soll</span>'}</div>
         <div class="kpi-val" style="color:${anzFcPct>ZIELE.fc?'#ef4444':'#22c55e'}">${fmt(fcAmt)}</div>
         <div class="kpi-delta ${anzFcPct>ZIELE.fc?'delta-dn':'delta-up'}">${fmtP(anzFcPct)} vom Umsatz · Ziel ${fmtP(ZIELE.fc)}</div>
-        <div class="kpi-ai">${hatIstFC?'Quote aus '+rfc.von+' → '+rfc.bis+' ('+rfc.tage+'T, '+fmt(rfc.revBestand)+' Umsatz) · Soll: '+fmtP(k.fp):'Soll (Rezeptur) · klick für Aufschlüsselung'}</div>
+        <div class="kpi-ai">${hatIstFC?'Ist-Daten aus Bestandsbericht '+rfc.von+' → '+rfc.bis+' ('+rfc.tage+'T) · Soll: '+fmtP(k.fp):'Soll (Rezeptur) — Zeitraum außerhalb Bestandsbericht'+(rfc.hat?' ('+rfc.von+' → '+rfc.bis+')':'')}</div>
       </div>
       <div class="kpi-card" onclick="drill('d-ov-cm')">
         <div class="kpi-label">📈 Contribution Margin</div>
@@ -1172,7 +1179,7 @@ function renderOverview(){
     </div>
 
     <div id="d-ov-fc" class="drill-panel">
-      <div class="drill-title">Food Cost — Aufschlüsselung ${hatIstFC?'<span style="font-size:10px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px">Ist-Werte</span>':''}</div>
+      <div class="drill-title">Food Cost — Aufschlüsselung ${hatIstFC?'<span style="font-size:10px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px">Ist (direkt)</span>':'<span style="font-size:10px;background:#eab308;color:#000;padding:1px 5px;border-radius:3px">Soll</span>'}</div>
       <div class="drill-row"><span>Gesamt ${hatIstFC?"(Ist)":"(Soll)"}</span><span style="color:${anzFcPct>ZIELE.fc?'#ef4444':'#22c55e'}">${fmt(fcAmt)} · ${fmtP(anzFcPct)}${vwBadge(vwFcDiff,true)}</span></div>
       ${hatIstFC&&rfc.md&&rfc.md.n>0?(function(){
         var m=rfc.md, mRev=m.rev||1, mFcAmt=m.quote*km.u;
@@ -1312,8 +1319,9 @@ function renderUmsatz(){
   }
   // Food Cost für Umsatz-Tab (Ist-Quote aus Bestandsbericht oder Soll)
   var uRfc=getRealFC(st);
-  var uFcPct=uRfc.hat?uRfc.quote:kGes.fp;
-  var uFcLabel=uRfc.hat?"(Ist)":"(Soll)";
+  var uHatIst=istInBestandZeitraum(von,bis,uRfc);
+  var uFcPct=uHatIst?uRfc.quote:kGes.fp;
+  var uFcLabel=uHatIst?"(Ist direkt)":"(Soll)";
   // Vorperiode: ≤7T → gleiche Wochentage 7T zurück; >7T → gleich langer Zeitraum davor
   var vpUm=prevPeriod(von,bis);
   var vpLabelUm=vpUm.label;
@@ -1843,9 +1851,10 @@ function renderGuV(){
   var ldoProvPct=k.u>0?ldoProv/k.u:0;
   // Ist-FC aus Bestandsbericht (eigener Aufruf, da eigener Scope)
   var uRfc=getRealFC(st);
-  var uFcPct=uRfc.hat?uRfc.quote:k.fp;
-  var uFcLabel=uRfc.hat?"(Ist)":"(Soll)";
-  var uFcAmt=uRfc.hat?uRfc.quote*k.u:k.f;
+  var guvHatIst=istInBestandZeitraum(von,bis,uRfc);
+  var uFcPct=guvHatIst?uRfc.quote:k.fp;
+  var uFcLabel=guvHatIst?"(Ist direkt)":"(Soll)";
+  var uFcAmt=guvHatIst?uRfc.quote*k.u:k.f;
   var rohertrag=k.u-uFcAmt-ldoProv;
   var smKosten=getSocialMediaKosten(von,bis,st); // Social Media → Personalgemeinkosten
   var cm=rohertrag-pa;
@@ -1869,12 +1878,12 @@ function renderGuV(){
 
         <div class="guv-row" style="cursor:default"><span style="color:#94a3b8">Nettoumsatz</span><span style="color:#22c55e;font-size:15px;font-weight:700">${fmt(k.u)}</span></div>
 
-        <div class="guv-row" onclick="drill('d-guv-fc')"><span style="color:#94a3b8">— Food Cost ${uRfc.hat?'(Ist '+fmtP(uFcPct)+')':'(Soll '+fmtP(k.fp)+')'} ↓</span><span style="color:#ef4444">- ${fmt(uFcAmt)}</span></div>
+        <div class="guv-row" onclick="drill('d-guv-fc')"><span style="color:#94a3b8">— Food Cost ${guvHatIst?'(Ist direkt '+fmtP(uFcPct)+')':'(Soll '+fmtP(k.fp)+')'} ↓</span><span style="color:#ef4444">- ${fmt(uFcAmt)}</span></div>
         <div id="d-guv-fc" class="drill-panel">
-          <div class="drill-row"><span>Mehringdamm ${uRfc.hat?'(Ist)':'(Soll)'}</span><span style="color:${(uRfc.hat?uRfc.md.quote:km.fp)>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(uRfc.hat?uRfc.md.quote:km.fp)}</span></div>
-          <div class="drill-row"><span>Rosenthaler ${uRfc.hat?'(Ist)':'(Soll)'}</span><span style="color:${(uRfc.hat?uRfc.rs.quote:kr.fp)>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(uRfc.hat?uRfc.rs.quote:kr.fp)}</span></div>
-          ${uRfc.hat?'<div class="drill-row"><span>Soll (Rezeptur)</span><span>'+fmtP(k.fp)+' · '+fmt(k.f)+'</span></div>':''}
-          <div class="ai-box">${uRfc.hat?"Ist-Quote "+fmtP(uRfc.quote)+" aus Bestandsbericht "+uRfc.von+" → "+uRfc.bis+". "+(uRfc.quote>k.fp?"Ist liegt "+fmtP(uRfc.quote-k.fp)+" über Soll — Schwund/Verschwendung prüfen.":"Ist liegt unter Soll — gute Kontrolle."):Math.abs(km.fp-kr.fp)>0.01?"Differenz "+fmtP(Math.abs(km.fp-kr.fp))+" zwischen Standorten.":"Beide Standorte ähnlich."}</div>
+          <div class="drill-row"><span>Mehringdamm ${guvHatIst?'(Ist direkt)':'(Soll)'}</span><span style="color:${(guvHatIst?uRfc.md.quote:km.fp)>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(guvHatIst?uRfc.md.quote:km.fp)}</span></div>
+          <div class="drill-row"><span>Rosenthaler ${guvHatIst?'(Ist direkt)':'(Soll)'}</span><span style="color:${(guvHatIst?uRfc.rs.quote:kr.fp)>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(guvHatIst?uRfc.rs.quote:kr.fp)}</span></div>
+          ${guvHatIst?'<div class="drill-row"><span>Soll (Rezeptur)</span><span>'+fmtP(k.fp)+' · '+fmt(k.f)+'</span></div>':''}
+          <div class="ai-box">${guvHatIst?"Ist-Daten aus Bestandsbericht "+uRfc.von+" → "+uRfc.bis+". Quote "+fmtP(uRfc.quote)+". "+(uRfc.quote>k.fp?"Ist liegt "+fmtP(uRfc.quote-k.fp)+" über Soll — Schwund/Verschwendung prüfen.":"Ist liegt unter Soll — gute Kontrolle."):"Soll-Werte (Rezeptur) — Zeitraum außerhalb Bestandsbericht"+(uRfc.hat?" ("+uRfc.von+" → "+uRfc.bis+")":"")+"."}</div>
         </div>
 
         <div class="guv-row" onclick="drill('d-guv-ldo')"><span style="color:#94a3b8">— Lieferando-Provision 20% (${fmtP(ldoProvPct)}) ↓</span><span style="color:#ef4444">- ${fmt(ldoProv)}</span></div>
@@ -3826,9 +3835,11 @@ function buildTagesberichtContext() {
   ctx += "Vorwoche gleicher Tag ("+vorwocheISO+"): "+fmt(kV.u)+" → Differenz: "+(kV.u>0?(((kG.u-kV.u)/kV.u)*100).toFixed(1)+"%" : "keine Daten")+"\n";
   ctx += "Ø letzte 7 Tage: "+fmt(kW.u/tageW)+"/Tag\n";
   var brRfc=getRealFC("Alle Standorte");
-  ctx += "Food Cost: "+(brRfc.hat?"Ist "+fmtP(brRfc.quote)+" (aus Bestandsbericht "+brRfc.von+"→"+brRfc.bis+")":"Soll "+fmtP(kG.fp))+" (Ziel 25%)\n";
-  ctx += "  Mehringdamm FC: "+(brRfc.hat?"Ist "+fmtP(brRfc.md.quote):"Soll "+fmtP(kGMd.fp))+"\n";
-  ctx += "  Rosenthaler FC: "+(brRfc.hat?"Ist "+fmtP(brRfc.rs.quote):"Soll "+fmtP(kGRs.fp))+"\n";
+  var brGesternISO=gesternD.getFullYear()+'-'+String(gesternD.getMonth()+1).padStart(2,'0')+'-'+String(gesternD.getDate()).padStart(2,'0');
+  var brHatIst=istInBestandZeitraum(brGesternISO,brGesternISO,brRfc);
+  ctx += "Food Cost: "+(brHatIst?"Ist (direkt) "+fmtP(brRfc.quote)+" (aus Bestandsbericht "+brRfc.von+"→"+brRfc.bis+")":"Soll "+fmtP(kG.fp)+(brRfc.hat?" — Zeitraum außerhalb Bestandsbericht ("+brRfc.von+"→"+brRfc.bis+")":""))+" (Ziel 25%)\n";
+  ctx += "  Mehringdamm FC: "+(brHatIst?"Ist "+fmtP(brRfc.md.quote):"Soll "+fmtP(kGMd.fp))+"\n";
+  ctx += "  Rosenthaler FC: "+(brHatIst?"Ist "+fmtP(brRfc.rs.quote):"Soll "+fmtP(kGRs.fp))+"\n";
   ctx += "Ø Bon-Wert: "+fmtD(bwG.avg)+" aus "+bwG.count+" Bons (Ziel €22)\n";
   ctx += "Lieferando Brutto: "+fmt(ldoBruttoG)+" ("+fmtP(ldoAnteilG)+" vom Umsatz)\n\n";
 
@@ -4168,16 +4179,18 @@ function generiereKIBericht() {
   prompt += "- Umsatz/Personalstunde: "+fmt(umsatzStd)+"/h | Ziel: 75 Euro\n";
   if(smAll.length>0) prompt += "- Social Media: "+smAll.map(function(r){return r.mitarbeiter+" ("+r.standort.replace("Rosenthaler Strasse","Rosi")+")";}).join(", ")+"\n";
   var kiRfc=getRealFC("Alle Standorte");
+  var kiHatIst=istInBestandZeitraum(von,bis,kiRfc);
   prompt += "\nFOOD COST & WASTE:\n";
-  if(kiRfc.hat){
+  if(kiHatIst){
     var kiFcAmt=kiRfc.quote*k.u;
-    prompt += "- ECHTE Food Cost (Ist-Quote aus Bestandsbericht): "+fmtP(kiRfc.quote)+" = "+fmt(kiFcAmt)+" | Ziel: 25%\n";
+    prompt += "- ECHTE Food Cost (Ist direkt aus Bestandsbericht): "+fmtP(kiRfc.quote)+" = "+fmt(kiFcAmt)+" | Ziel: 25%\n";
     prompt += "- Basis: "+kiRfc.von+" → "+kiRfc.bis+" ("+kiRfc.tage+" Tage, "+fmt(kiRfc.revBestand)+" Umsatz im Zeitraum)\n";
     prompt += "- Aufschluesselung (Anteile am Umsatz): Verkauft "+fmtP(kiRfc.revBestand>0?kiRfc.verkauft/kiRfc.revBestand:0)+" | Verschwendet "+fmtP(kiRfc.revBestand>0?kiRfc.verschwendet/kiRfc.revBestand:0)+" | Schwund "+fmtP(kiRfc.revBestand>0?kiRfc.unkontrolliert/kiRfc.revBestand:0)+"\n";
     prompt += "- Mehringdamm Ist-FC: "+fmtP(kiRfc.md.quote)+" | Rosenthaler Ist-FC: "+fmtP(kiRfc.rs.quote)+"\n";
     prompt += "- Soll-FC (Rezeptur): "+fmtP(k.fp)+" ("+fmt(k.f)+") — Abweichung Ist vs Soll: "+fmtP(kiRfc.quote-k.fp)+"\n";
   } else {
     prompt += "- Food Cost (Soll/Rezeptur): "+fmt(k.f)+" ("+fmtP(k.fp)+") | Ziel: 25%\n";
+    if(kiRfc.hat) prompt += "- HINWEIS: Zeitraum liegt außerhalb Bestandsbericht ("+kiRfc.von+" → "+kiRfc.bis+"), daher Soll-Werte\n";
     prompt += "- Mehringdamm FC: "+fmtP(km.fp)+" | Rosenthaler FC: "+fmtP(kr.fp)+"\n";
   }
   prompt += "- Waste Mehringdamm: "+(wasteMd.length>0?fmt(wasteMdT)+" ("+wasteMd.length+" Positionen)":"NICHT ERFASST")+"\n";
@@ -4185,7 +4198,7 @@ function generiereKIBericht() {
   prompt += "TRINKGELD & STORNOS:\n";
   prompt += "- TK-Quote: "+fmtP(tkQ)+" | Gesamt: "+fmt(tkGes)+" | Ziel: 5%\n";
   prompt += "- Stornierungen: "+stornosN+"x\n\n";
-  var kiFC=kiRfc.hat?kiRfc.quote*k.u:k.f;
+  var kiFC=kiHatIst?kiRfc.quote*k.u:k.f;
   var kiCM=k.u-kiFC-ldoProv-pa;
   var kiEBITDA=kiCM-fkOv.gesamt-smKosten;
   prompt += "ERGEBNIS:\n";
