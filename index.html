@@ -1380,34 +1380,76 @@ function renderOverview(){
       <div class="box">
         <div class="box-title">Standortvergleich (normalisiert)</div>
         <div class="box-sub">Alle KPIs im direkten Vergleich</div>
-        ${[
-          {l:"Ø Tagesumsatz",md:fmt(km.u/Math.max(km.t,1)),rs:fmt(kr.u/Math.max(kr.t,1)),mdOk:km.u/Math.max(km.t,1)>=3000,rsOk:kr.u/Math.max(kr.t,1)>=3000},
-          {l:"Food Cost %",md:fmtP(anzFcMdPct),rs:fmtP(anzFcRsPct),mdOk:anzFcMdPct<=ZIELE.fc,rsOk:anzFcRsPct<=ZIELE.fc},
-          {l:"Personal-Quote",md:fmtP(km.u>0?pkMd.total/km.u:0),rs:fmtP(kr.u>0?pkRs.total/kr.u:0),mdOk:pkMd.total/Math.max(km.u,1)<=ZIELE.pa,rsOk:pkRs.total/Math.max(kr.u,1)<=ZIELE.pa},
-          {l:"Contribution Margin",md:fmtP(cmpMd),rs:fmtP(cmpRs),mdOk:cmpMd>=ZIELE.cm,rsOk:cmpRs>=ZIELE.cm},
-          {l:"Ø Bon-Wert (brutto)",md:fmtD(bonWertMd.avg),rs:fmtD(bonWertRs.avg),mdOk:bonWertMd.avg>=ZIELE.bonWert,rsOk:bonWertRs.avg>=ZIELE.bonWert}
-        ].map(function(row){
-          return'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1e2d40;font-size:12px">'+
-            '<span style="color:#64748b;flex:1">'+row.l+'</span>'+
-            '<span style="color:'+(row.mdOk?'#22c55e':'#ef4444')+';margin-right:12px">MD: '+row.md+'</span>'+
-            '<span style="color:'+(row.rsOk?'#22c55e':'#ef4444')+'">RS: '+row.rs+'</span>'+
-          '</div>';
-        }).join("")}
+        ${(function(){
+          var rows=[
+            {l:"Ø Tagesumsatz",mdV:km.u/Math.max(km.t,1),rsV:kr.u/Math.max(kr.t,1),mdS:fmt(km.u/Math.max(km.t,1)),rsS:fmt(kr.u/Math.max(kr.t,1)),higher:"more"},
+            {l:"Food Cost %",mdV:anzFcMdPct*100,rsV:anzFcRsPct*100,mdS:fmtP(anzFcMdPct),rsS:fmtP(anzFcRsPct),higher:"less"},
+            {l:"Personal-Quote",mdV:(km.u>0?pkMd.total/km.u:0)*100,rsV:(kr.u>0?pkRs.total/kr.u:0)*100,mdS:fmtP(km.u>0?pkMd.total/km.u:0),rsS:fmtP(kr.u>0?pkRs.total/kr.u:0),higher:"less"},
+            {l:"Contribution Margin",mdV:cmpMd*100,rsV:cmpRs*100,mdS:fmtP(cmpMd),rsS:fmtP(cmpRs),higher:"more"},
+            {l:"Ø Bon-Wert",mdV:bonWertMd.avg,rsV:bonWertRs.avg,mdS:fmtD(bonWertMd.avg),rsS:fmtD(bonWertRs.avg),higher:"more"}
+          ];
+          return rows.map(function(r){
+            var maxV=Math.max(r.mdV,r.rsV,0.01);
+            var mdPct=Math.round(r.mdV/maxV*100);
+            var rsPct=Math.round(r.rsV/maxV*100);
+            var mdWin=r.higher==="more"?r.mdV>=r.rsV:r.mdV<=r.rsV;
+            var rsWin=!mdWin;
+            return'<div style="padding:8px 0;border-bottom:1px solid #1e2d40">'
+              +'<div style="font-size:11px;color:#94a3b8;margin-bottom:5px">'+r.l+'</div>'
+              +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">'
+                +'<span style="font-size:10px;color:#f97316;width:22px;flex-shrink:0">MD</span>'
+                +'<div style="flex:1;height:16px;background:#1e2d40;border-radius:3px;overflow:hidden;position:relative">'
+                  +'<div style="width:'+mdPct+'%;height:100%;background:'+(mdWin?"#f97316":"rgba(249,115,22,0.4)")+';border-radius:3px;transition:width 0.3s"></div>'
+                +'</div>'
+                +'<span style="font-size:11px;color:'+(mdWin?"#f1f5f9":"#64748b")+';font-weight:'+(mdWin?"600":"400")+';min-width:60px;text-align:right">'+r.mdS+'</span>'
+              +'</div>'
+              +'<div style="display:flex;align-items:center;gap:8px">'
+                +'<span style="font-size:10px;color:#3b82f6;width:22px;flex-shrink:0">RS</span>'
+                +'<div style="flex:1;height:16px;background:#1e2d40;border-radius:3px;overflow:hidden;position:relative">'
+                  +'<div style="width:'+rsPct+'%;height:100%;background:'+(rsWin?"#3b82f6":"rgba(59,130,246,0.4)")+';border-radius:3px;transition:width 0.3s"></div>'
+                +'</div>'
+                +'<span style="font-size:11px;color:'+(rsWin?"#f1f5f9":"#64748b")+';font-weight:'+(rsWin?"600":"400")+';min-width:60px;text-align:right">'+r.rsS+'</span>'
+              +'</div>'
+            +'</div>';
+          }).join("");
+        })()}
       </div>
       <div class="box">
         <div class="box-title">KPI-Ampel</div>
         <div class="box-sub">Aktueller Status vs. Zielwerte</div>
-        ${[
-          {n:"Food Cost %",w:fmtP(anzFcPct),z:fmtP(ZIELE.fc),ok:anzFcPct<=ZIELE.fc,warn:anzFcPct<=ZIELE.fc+0.03},
-          {n:"Personal-Quote",w:fmtP(paPct),z:fmtP(ZIELE.pa),ok:paPct<=ZIELE.pa,warn:paPct<=ZIELE.pa+0.03},
-          {n:"Contribution Margin",w:fmtP(cmPct),z:fmtP(ZIELE.cm),ok:cmPct>=ZIELE.cm,warn:cmPct>=ZIELE.cm-0.03},
-          {n:"EBITDA-Marge",w:fmtP(ebitdaPct),z:fmtP(ZIELE.ebitda),ok:ebitdaPct>=ZIELE.ebitda,warn:ebitdaPct>=ZIELE.ebitda-0.03},
-          {n:"Umsatz/Personalstunde",w:fmt(umsatzStd),z:fmt(ZIELE.umsatzStd),ok:umsatzStd>=ZIELE.umsatzStd,warn:umsatzStd>=ZIELE.umsatzStd*0.9},
-          {n:"Ø Bon-Wert (brutto)",w:fmtD(bonWertData.avg),z:fmtD(ZIELE.bonWert),ok:bonWertData.avg>=ZIELE.bonWert,warn:bonWertData.avg>=ZIELE.bonWert*0.9}
-        ].map(function(a){
-          var col=a.ok?"#22c55e":a.warn?"#f97316":"#ef4444";
-          return'<div class="ampel-row"><span style="color:#64748b">'+a.n+'</span><div style="display:flex;align-items:center;gap:8px"><span style="color:#f1f5f9;font-weight:600">'+a.w+'</span><span style="font-size:10px;color:#475569">Ziel '+a.z+'</span><div class="ampel-dot" style="background:'+col+'"></div></div></div>';
-        }).join("")}
+        ${(function(){
+          var kpis=[
+            {n:"Food Cost %",val:anzFcPct,ziel:ZIELE.fc,wS:fmtP(anzFcPct),zS:fmtP(ZIELE.fc),inv:true},
+            {n:"Personal-Quote",val:paPct,ziel:ZIELE.pa,wS:fmtP(paPct),zS:fmtP(ZIELE.pa),inv:true},
+            {n:"Contribution Margin",val:cmPct,ziel:ZIELE.cm,wS:fmtP(cmPct),zS:fmtP(ZIELE.cm),inv:false},
+            {n:"EBITDA-Marge",val:ebitdaPct,ziel:ZIELE.ebitda,wS:fmtP(ebitdaPct),zS:fmtP(ZIELE.ebitda),inv:false},
+            {n:"Umsatz/Stunde",val:umsatzStd,ziel:ZIELE.umsatzStd,wS:fmt(umsatzStd),zS:fmt(ZIELE.umsatzStd),inv:false},
+            {n:"Ø Bon-Wert",val:bonWertData.avg,ziel:ZIELE.bonWert,wS:fmtD(bonWertData.avg),zS:fmtD(ZIELE.bonWert),inv:false}
+          ];
+          return kpis.map(function(a){
+            var ok=a.inv?a.val<=a.ziel:a.val>=a.ziel;
+            var warn=a.inv?a.val<=a.ziel+0.03:a.val>=a.ziel-0.03;
+            var col=ok?"#22c55e":(warn?"#f97316":"#ef4444");
+            // Progress: how close to target (cap at 150% for display)
+            var ratio=a.inv?(a.ziel>0?a.ziel/Math.max(a.val,0.001):1):(a.ziel>0?a.val/a.ziel:1);
+            var pct=Math.min(Math.round(ratio*100),100);
+            var zielPct=a.inv?Math.min(Math.round((a.ziel/Math.max(a.val,a.ziel*1.3))*100),100):Math.min(Math.round((a.ziel/Math.max(a.val,a.ziel*1.3))*100),100);
+            var barMax=Math.max(a.val,a.ziel)*1.15;
+            var valPct=Math.round(a.val/barMax*100);
+            var zielPos=Math.round(a.ziel/barMax*100);
+            return'<div style="padding:7px 0;border-bottom:1px solid #1e2d40">'
+              +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'
+                +'<span style="font-size:11px;color:#94a3b8">'+a.n+'</span>'
+                +'<span style="font-size:12px;color:#f1f5f9;font-weight:600">'+a.wS+'</span>'
+              +'</div>'
+              +'<div style="position:relative;height:14px;background:#1e2d40;border-radius:3px;overflow:visible">'
+                +'<div style="width:'+valPct+'%;height:100%;background:'+col+';border-radius:3px;opacity:0.85;transition:width 0.3s"></div>'
+                +'<div style="position:absolute;top:-1px;bottom:-1px;left:'+zielPos+'%;width:2px;background:#f1f5f9;border-radius:1px" title="Ziel '+a.zS+'"></div>'
+              +'</div>'
+              +'<div style="font-size:9px;color:#475569;margin-top:2px;text-align:right">Ziel '+a.zS+'</div>'
+            +'</div>';
+          }).join("");
+        })()}
       </div>
     </div>
 
