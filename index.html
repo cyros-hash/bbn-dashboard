@@ -1161,38 +1161,45 @@ function renderOverview(){
 
     <div id="d-ov-umsatz" class="drill-panel">
       <div class="drill-title">Umsatz — Aufschlüsselung</div>
-      <table style="width:100%;max-width:640px;border-collapse:collapse;font-size:12px">
-        <thead><tr style="border-bottom:2px solid #1e3a5f">
-          <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500"></th>
-          <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Umsatz</th>
-          <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Ø/Tag</th>
-          <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Ø Bon</th>
-          <th style="text-align:right;color:#64748b;padding:4px 0 6px 8px;font-weight:500">${vpLabel}</th>
-        </tr></thead>
-        <tbody>
-          <tr style="border-bottom:1px solid #1e2d40">
-            <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">Gesamt</td>
-            <td style="text-align:right;color:#22c55e;font-weight:600;padding:6px 8px">${fmt(k.u)}</td>
-            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(k.u/k.t)}</td>
-            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmtD(bonWertData.avg)}</td>
-            <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwUDiff,false)}</td>
-          </tr>
-          <tr style="border-bottom:1px solid #1e2d40">
-            <td style="color:#f97316;padding:6px 8px 6px 0">Mehringdamm</td>
-            <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${fmt(km.u)}</td>
-            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(km.u/Math.max(km.t,1))}</td>
-            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmtD(bonWertMd.avg)}</td>
-            <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwUMdDiff,false)}</td>
-          </tr>
-          <tr style="border-bottom:1px solid #1e2d40">
-            <td style="color:#3b82f6;padding:6px 8px 6px 0">Rosenthaler</td>
-            <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${fmt(kr.u)}</td>
-            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(kr.u/Math.max(kr.t,1))}</td>
-            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmtD(bonWertRs.avg)}</td>
-            <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwURsDiff,false)}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:0 0 auto">
+          <table style="border-collapse:collapse;font-size:12px">
+            <thead><tr style="border-bottom:2px solid #1e3a5f">
+              <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500"></th>
+              <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Umsatz</th>
+              <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Ø/Tag</th>
+              <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Ø Bon</th>
+              <th style="text-align:right;color:#64748b;padding:4px 0 6px 8px;font-weight:500">${vpLabel}</th>
+            </tr></thead>
+            <tbody>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">Gesamt</td>
+                <td style="text-align:right;color:#22c55e;font-weight:600;padding:6px 8px">${fmt(k.u)}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(k.u/k.t)}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmtD(bonWertData.avg)}</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwUDiff,false)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="color:#f97316;padding:6px 8px 6px 0">Mehringdamm</td>
+                <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${fmt(km.u)}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(km.u/Math.max(km.t,1))}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmtD(bonWertMd.avg)}</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwUMdDiff,false)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #1e2d40">
+                <td style="color:#3b82f6;padding:6px 8px 6px 0">Rosenthaler</td>
+                <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${fmt(kr.u)}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(kr.u/Math.max(kr.t,1))}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmtD(bonWertRs.avg)}</td>
+                <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwURsDiff,false)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="flex:1;min-width:300px;height:190px;position:relative">
+          <canvas id="c-ov-um-trend"></canvas>
+        </div>
+      </div>
       <div class="ai-box" style="margin-top:10px">${km.u>kr.u?"Mehringdamm liegt "+((km.u/kr.u-1)*100).toFixed(1)+"% über Rosenthaler im gewählten Zeitraum.":"Rosenthaler liegt "+((kr.u/km.u-1)*100).toFixed(1)+"% über Mehringdamm im gewählten Zeitraum."}</div>
     </div>
 
@@ -1424,6 +1431,44 @@ function renderOverview(){
   dc("c-ov-donut");
   // donutFC etc. bereits oben definiert
   charts["c-ov-donut"]=new Chart(document.getElementById("c-ov-donut"),{type:"doughnut",data:{labels:["Food Cost","Operative Personal","Personalgemeinkosten","Rest Gemeinkosten","EBITDA"],datasets:[{data:[donutFC,donutOpa,donutPG,donutRest,donutEBITDA],backgroundColor:["#ef4444","#8b5cf6","#3b82f6","#64748b","#22c55e"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:"72%"}});
+
+  // --- Umsatz-Trend Liniendiagramm ---
+  (function(){
+    var umEl=document.getElementById("c-ov-um-trend");
+    if(!umEl)return;
+    var tageSet={};
+    gefiltert.forEach(function(r){tageSet[r.datum]=1;});
+    var tage=Object.keys(tageSet).sort();
+    var uTagMd={},uTagRs={};
+    gefiltert.forEach(function(r){
+      if(r.st==="Mehringdamm"){uTagMd[r.datum]=(uTagMd[r.datum]||0)+r.u;}
+      else if(r.st==="Rosenthaler Straße"){uTagRs[r.datum]=(uTagRs[r.datum]||0)+r.u;}
+    });
+    var dMd=[],dRs=[];
+    tage.forEach(function(d){
+      dMd.push(uTagMd[d]||0);
+      dRs.push(uTagRs[d]||0);
+    });
+    var umLabels=tage.map(function(d){return d.slice(8,10)+"."+d.slice(5,7);});
+    dc("c-ov-um-trend");
+    charts["c-ov-um-trend"]=new Chart(umEl,{
+      type:"line",
+      data:{labels:umLabels,datasets:[
+        {label:"Mehringdamm",data:dMd,borderColor:"#f97316",backgroundColor:"rgba(249,115,22,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,fill:true},
+        {label:"Rosenthaler",data:dRs,borderColor:"#3b82f6",backgroundColor:"rgba(59,130,246,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,fill:true}
+      ]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:"bottom",labels:{color:"#94a3b8",font:{size:9},boxWidth:12,padding:6}},
+          tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+": € "+Math.round(ctx.parsed.y).toLocaleString("de-DE");}}},
+          title:{display:true,text:"Tagesumsatz pro Standort",color:"#94a3b8",font:{size:10,weight:"normal"},padding:{bottom:4}}},
+        scales:{
+          x:{ticks:{color:"#475569",font:{size:8},maxTicksLimit:8},grid:{color:"#1e2d40"}},
+          y:{ticks:{color:"#475569",font:{size:8},callback:function(v){return(v/1000).toFixed(1)+"k";}},grid:{color:"#1e2d40"}}
+        }
+      }
+    });
+  })();
 
   // --- PA-Quote Liniendiagramm ---
   (function(){
