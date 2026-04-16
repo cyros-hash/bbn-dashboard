@@ -1956,8 +1956,8 @@ function renderUmsatz(){
             </tbody>
           </table>
         </div>
-        <div style="flex:0 0 auto;width:150px;height:150px;position:relative">
-          <canvas id="c-um-md-kanal"></canvas>
+        <div style="flex:1;min-width:300px;height:180px;position:relative">
+          <canvas id="c-um-md-trend"></canvas>
         </div>
       </div>
       <div class="ai-box" style="margin-top:8px">Mehringdamm macht ${km.u+kr.u>0?((km.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${mdLdo>0?"Lieferando-Anteil "+fmtP(km.u>0?mdLdo/km.u:0)+".":""} ${bonWertMd.avg>bonWertRs.avg?"Höherer Bon-Wert als Rosenthaler (+"+fmtD(bonWertMd.avg-bonWertRs.avg)+"/Bon).":"Niedrigerer Bon-Wert als Rosenthaler ("+fmtD(bonWertMd.avg-bonWertRs.avg)+"/Bon)."}</div>
@@ -2013,8 +2013,8 @@ function renderUmsatz(){
             </tbody>
           </table>
         </div>
-        <div style="flex:0 0 auto;width:150px;height:150px;position:relative">
-          <canvas id="c-um-rs-kanal"></canvas>
+        <div style="flex:1;min-width:300px;height:180px;position:relative">
+          <canvas id="c-um-rs-trend"></canvas>
         </div>
       </div>
       <div class="ai-box" style="margin-top:8px">Rosenthaler macht ${km.u+kr.u>0?((kr.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${rsLdo>0?"Lieferando-Anteil "+fmtP(kr.u>0?rsLdo/kr.u:0)+".":""} ${bonWertRs.avg>bonWertMd.avg?"Höherer Bon-Wert als Mehringdamm (+"+fmtD(bonWertRs.avg-bonWertMd.avg)+"/Bon).":"Niedrigerer Bon-Wert als Mehringdamm ("+fmtD(bonWertRs.avg-bonWertMd.avg)+"/Bon)."}</div>
@@ -2068,26 +2068,54 @@ function renderUmsatz(){
   dc("c-um-st");
   charts["c-um-st"]=new Chart(document.getElementById("c-um-st"),{type:"bar",data:{labels:labs,datasets:[{label:"Mehringdamm",data:dm,backgroundColor:"#f97316",borderRadius:2},{label:"Rosenthaler",data:dr,backgroundColor:"#3b82f6",borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#475569",font:{size:9},maxTicksLimit:10},grid:{color:"#1e2d40"}},y:{ticks:{color:"#475569",font:{size:9},callback:function(v){return(v/1000).toFixed(0)+"k";}},grid:{color:"#1e2d40"}}}}});
 
-  // --- MD Kanal-Donut ---
+  // --- MD Tagestrend ---
   (function(){
-    var el=document.getElementById("c-um-md-kanal");
+    var el=document.getElementById("c-um-md-trend");
     if(!el)return;
-    dc("c-um-md-kanal");
-    charts["c-um-md-kanal"]=new Chart(el,{type:"doughnut",
-      data:{labels:["Inhouse","Lieferando","Take Away"],datasets:[{data:[mdInhouse,mdLdo,mdTakeaway],backgroundColor:["#3b82f6","#f97316","#8b5cf6"],borderWidth:0}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:function(ctx){return ctx.label+": "+fmt(ctx.parsed)+" ("+(km.u>0?fmtP(ctx.parsed/km.u):"—")+")";}}}},cutout:"65%"}
+    var tageSet={};
+    gefiltert.filter(function(r){return r.st==="Mehringdamm";}).forEach(function(r){tageSet[r.datum]=(tageSet[r.datum]||0)+r.u;});
+    var tage=Object.keys(tageSet).sort();
+    var dU=tage.map(function(d){return tageSet[d];});
+    var avg=dU.length>0?dU.reduce(function(s,v){return s+v;},0)/dU.length:0;
+    var dAvg=tage.map(function(){return avg;});
+    var tL=tage.map(function(d){return d.slice(8,10)+"."+d.slice(5,7);});
+    dc("c-um-md-trend");
+    charts["c-um-md-trend"]=new Chart(el,{type:"line",
+      data:{labels:tL,datasets:[
+        {label:"Mehringdamm",data:dU,borderColor:"#f97316",backgroundColor:"rgba(249,115,22,0.1)",borderWidth:2,pointRadius:tage.length>14?0:3,tension:0.3,fill:true},
+        {label:"Ø/Tag",data:dAvg,borderColor:"#475569",borderDash:[4,3],borderWidth:1,pointRadius:0}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:"bottom",labels:{color:"#94a3b8",font:{size:9},boxWidth:12,padding:6}},
+          tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+": € "+Math.round(ctx.parsed.y).toLocaleString("de-DE");}}},
+          title:{display:true,text:"Tagesumsatz Mehringdamm",color:"#94a3b8",font:{size:10,weight:"normal"},padding:{bottom:4}}},
+        scales:{x:{ticks:{color:"#475569",font:{size:8},maxTicksLimit:8},grid:{color:"#1e2d40"}},
+          y:{ticks:{color:"#475569",font:{size:8},callback:function(v){return(v/1000).toFixed(1)+"k";}},grid:{color:"#1e2d40"}}}}
     });
   })();
-  // --- RS Kanal-Donut ---
+  // --- RS Tagestrend ---
   (function(){
-    var el=document.getElementById("c-um-rs-kanal");
+    var el=document.getElementById("c-um-rs-trend");
     if(!el)return;
-    dc("c-um-rs-kanal");
-    charts["c-um-rs-kanal"]=new Chart(el,{type:"doughnut",
-      data:{labels:["Inhouse","Lieferando","Take Away"],datasets:[{data:[rsInhouse,rsLdo,rsTakeaway],backgroundColor:["#3b82f6","#f97316","#8b5cf6"],borderWidth:0}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:function(ctx){return ctx.label+": "+fmt(ctx.parsed)+" ("+(kr.u>0?fmtP(ctx.parsed/kr.u):"—")+")";}}}},cutout:"65%"}
+    var tageSet={};
+    gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";}).forEach(function(r){tageSet[r.datum]=(tageSet[r.datum]||0)+r.u;});
+    var tage=Object.keys(tageSet).sort();
+    var dU=tage.map(function(d){return tageSet[d];});
+    var avg=dU.length>0?dU.reduce(function(s,v){return s+v;},0)/dU.length:0;
+    var dAvg=tage.map(function(){return avg;});
+    var tL=tage.map(function(d){return d.slice(8,10)+"."+d.slice(5,7);});
+    dc("c-um-rs-trend");
+    charts["c-um-rs-trend"]=new Chart(el,{type:"line",
+      data:{labels:tL,datasets:[
+        {label:"Rosenthaler",data:dU,borderColor:"#3b82f6",backgroundColor:"rgba(59,130,246,0.1)",borderWidth:2,pointRadius:tage.length>14?0:3,tension:0.3,fill:true},
+        {label:"Ø/Tag",data:dAvg,borderColor:"#475569",borderDash:[4,3],borderWidth:1,pointRadius:0}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:"bottom",labels:{color:"#94a3b8",font:{size:9},boxWidth:12,padding:6}},
+          tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+": € "+Math.round(ctx.parsed.y).toLocaleString("de-DE");}}},
+          title:{display:true,text:"Tagesumsatz Rosenthaler",color:"#94a3b8",font:{size:10,weight:"normal"},padding:{bottom:4}}},
+        scales:{x:{ticks:{color:"#475569",font:{size:8},maxTicksLimit:8},grid:{color:"#1e2d40"}},
+          y:{ticks:{color:"#475569",font:{size:8},callback:function(v){return(v/1000).toFixed(1)+"k";}},grid:{color:"#1e2d40"}}}}
     });
   })();
 
