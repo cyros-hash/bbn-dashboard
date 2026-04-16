@@ -42,14 +42,13 @@ select{background:#1a2538;color:#e2e8f0;border:1px solid #2d3f54;border-radius:6
 .delta-dn{color:#ef4444}
 .delta-neu{color:#f97316}
 /* DRILL PANEL */
-.drill-panel{background:#0a1628;border:1px solid #1e3a5f;border-radius:8px;padding:12px 14px;margin-bottom:14px;display:none;max-width:640px}
+.drill-panel{background:#0a1628;border:1px solid #1e3a5f;border-radius:8px;padding:12px 14px;margin-bottom:14px;display:none}
 .drill-panel.open{display:block}
 .drill-title{font-size:11px;font-weight:600;color:#60a5fa;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px}
-.drill-row{display:flex;align-items:baseline;padding:6px 0;border-bottom:1px solid #1e2d40;font-size:12px;gap:8px}
+.drill-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e2d40;font-size:12px}
 .drill-row:last-of-type{border-bottom:none}
-.drill-row span:first-child{color:#64748b;flex-shrink:0}
-.drill-row::after{content:'';flex:1;border-bottom:1px dotted #1e3a5f;min-width:20px;margin:0 2px;align-self:baseline;position:relative;top:-3px}
-.drill-row span:last-child{color:#e2e8f0;font-weight:600;flex-shrink:0;text-align:right}
+.drill-row span:first-child{color:#64748b}
+.drill-row span:last-child{color:#e2e8f0;font-weight:600}
 .ai-box{background:#0c1f3a;border-left:3px solid #3b82f6;border-radius:0 6px 6px 0;padding:8px 10px;margin-top:10px;font-size:11px;color:#93c5fd;line-height:1.6}
 /* BOX */
 .box{background:#111827;border-radius:10px;padding:16px;border:1px solid #1e2d40;margin-bottom:14px}
@@ -1162,55 +1161,139 @@ function renderOverview(){
 
     <div id="d-ov-umsatz" class="drill-panel">
       <div class="drill-title">Umsatz — Aufschlüsselung</div>
-      <div class="drill-row"><span>Gesamt</span><span>${fmt(k.u)} · Ø ${fmt(k.u/k.t)}/Tag${vwBadge(vwUDiff,false)}</span></div>
-      <div class="drill-row"><span>Mehringdamm</span><span>${fmt(km.u)} · Ø ${fmt(km.u/Math.max(km.t,1))}/Tag${vwBadge(vwUMdDiff,false)}</span></div>
-      <div class="drill-row"><span>Rosenthaler Straße</span><span>${fmt(kr.u)} · Ø ${fmt(kr.u/Math.max(kr.t,1))}/Tag${vwBadge(vwURsDiff,false)}</span></div>
-      <div class="drill-row"><span>Ø Bon-Wert gesamt (brutto)</span><span>${fmtD(bonWertData.avg)} (${bonWertData.count} Bons)</span></div>
-      <div class="ai-box">${km.u>kr.u?"Mehringdamm liegt "+((km.u/kr.u-1)*100).toFixed(1)+"% über Rosenthaler im gewählten Zeitraum.":"Rosenthaler liegt "+((kr.u/km.u-1)*100).toFixed(1)+"% über Mehringdamm im gewählten Zeitraum."}</div>
+      <div style="text-align:center;padding:8px 0 12px;border-bottom:1px solid #1e2d40;margin-bottom:12px">
+        <span style="font-size:18px;font-weight:700;color:#22c55e">${fmt(k.u)}</span>
+        <span style="font-size:11px;color:#64748b;margin-left:8px">Ø ${fmt(k.u/k.t)}/Tag · ${bonWertData.count} Bons · Ø Bon ${fmtD(bonWertData.avg)}${vwBadge(vwUDiff,false)}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div style="background:#0d1f38;border-radius:6px;padding:10px 12px;border-left:3px solid #f97316">
+          <div style="font-size:11px;font-weight:600;color:#f97316;margin-bottom:6px">Mehringdamm${vwBadge(vwUMdDiff,false)}</div>
+          <div style="font-size:16px;font-weight:700;color:#f1f5f9">${fmt(km.u)}</div>
+          <div style="font-size:10px;color:#64748b;margin-top:4px">Ø ${fmt(km.u/Math.max(km.t,1))}/Tag · ${km.u+kr.u>0?((km.u/(km.u+kr.u))*100).toFixed(1):50}% Anteil</div>
+          <div style="font-size:10px;color:#64748b">Ø Bon: ${fmtD(bonWertMd.avg)}</div>
+        </div>
+        <div style="background:#0d1f38;border-radius:6px;padding:10px 12px;border-left:3px solid #3b82f6">
+          <div style="font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:6px">Rosenthaler Straße${vwBadge(vwURsDiff,false)}</div>
+          <div style="font-size:16px;font-weight:700;color:#f1f5f9">${fmt(kr.u)}</div>
+          <div style="font-size:10px;color:#64748b;margin-top:4px">Ø ${fmt(kr.u/Math.max(kr.t,1))}/Tag · ${km.u+kr.u>0?((kr.u/(km.u+kr.u))*100).toFixed(1):50}% Anteil</div>
+          <div style="font-size:10px;color:#64748b">Ø Bon: ${fmtD(bonWertRs.avg)}</div>
+        </div>
+      </div>
+      <div class="ai-box" style="margin-top:10px">${km.u>kr.u?"Mehringdamm liegt "+((km.u/kr.u-1)*100).toFixed(1)+"% über Rosenthaler im gewählten Zeitraum.":"Rosenthaler liegt "+((kr.u/km.u-1)*100).toFixed(1)+"% über Mehringdamm im gewählten Zeitraum."}</div>
     </div>
 
     <div id="d-ov-pa" class="drill-panel">
       <div class="drill-title">Personal — Aufschlüsselung</div>
-      <div class="drill-row"><span>Gesamt</span><span>${fmt(pa)} · ${fmtP(paPct)}${vwBadge(vwPaDiff,true)}</span></div>
-      <div class="drill-row"><span>Mehringdamm</span><span>${fmt(pkMd.total)} · ${km.u>0?fmtP(pkMd.total/km.u):"—"}${vwBadge(vwPaMdDiff,true)}</span></div>
-      <div class="drill-row"><span>Rosenthaler Straße</span><span>${fmt(pkRs.total)} · ${kr.u>0?fmtP(pkRs.total/kr.u):"—"}${vwBadge(vwPaRsDiff,true)}</span></div>
-      <div class="drill-row"><span>Gesamtstunden</span><span>${Math.round(pk.stunden)} h</span></div>
-      <div class="drill-row"><span>Umsatz pro Personalstunde</span><span style="color:${umsatzStd>=ZIELE.umsatzStd?'#22c55e':'#ef4444'}">${fmt(umsatzStd)}/h · Ziel ${fmt(ZIELE.umsatzStd)}</span></div>
-      <div class="ai-box">${paPct>ZIELE.pa?"Personalkosten "+fmtP(paPct-ZIELE.pa)+" über Ziel. Potenzial: "+fmt((paPct-ZIELE.pa)*k.u)+" Einsparung möglich bei Ziel-Quote.":"Personalkosten im Zielbereich."} ${cmpMd>0&&cmpRs>0&&cmpMd<cmpRs?" Mehringdamm hat "+fmtP(cmpRs-cmpMd)+" schlechtere Effizienz als Rosenthaler.":""}</div>
+      <table style="width:100%;max-width:600px;border-collapse:collapse;font-size:12px">
+        <thead><tr style="border-bottom:2px solid #1e3a5f">
+          <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500"></th>
+          <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Kosten</th>
+          <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Quote</th>
+          <th style="text-align:right;color:#64748b;padding:4px 0 6px 8px;font-weight:500">${vpLabel}</th>
+        </tr></thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #1e2d40">
+            <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">Gesamt</td>
+            <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${fmt(pa)}</td>
+            <td style="text-align:right;color:${paPct>ZIELE.pa?'#ef4444':'#22c55e'};font-weight:600;padding:6px 8px">${fmtP(paPct)}</td>
+            <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwPaDiff,true)}</td>
+          </tr>
+          <tr style="border-bottom:1px solid #1e2d40">
+            <td style="color:#f97316;padding:6px 8px 6px 0">Mehringdamm</td>
+            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(pkMd.total)}</td>
+            <td style="text-align:right;color:${km.u>0&&pkMd.total/km.u>ZIELE.pa?'#ef4444':'#22c55e'};padding:6px 8px">${km.u>0?fmtP(pkMd.total/km.u):"—"}</td>
+            <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwPaMdDiff,true)}</td>
+          </tr>
+          <tr style="border-bottom:1px solid #1e2d40">
+            <td style="color:#3b82f6;padding:6px 8px 6px 0">Rosenthaler</td>
+            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(pkRs.total)}</td>
+            <td style="text-align:right;color:${kr.u>0&&pkRs.total/kr.u>ZIELE.pa?'#ef4444':'#22c55e'};padding:6px 8px">${kr.u>0?fmtP(pkRs.total/kr.u):"—"}</td>
+            <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwPaRsDiff,true)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="display:flex;gap:16px;margin-top:10px;font-size:11px;color:#64748b">
+        <span>⏱ ${Math.round(pk.stunden)} h gesamt</span>
+        <span style="color:${umsatzStd>=ZIELE.umsatzStd?'#22c55e':'#ef4444'}">💰 ${fmt(umsatzStd)}/h (Ziel ${fmt(ZIELE.umsatzStd)})</span>
+      </div>
+      <div class="ai-box" style="margin-top:8px">${paPct>ZIELE.pa?"Personalkosten "+fmtP(paPct-ZIELE.pa)+" über Ziel. Potenzial: "+fmt((paPct-ZIELE.pa)*k.u)+" Einsparung möglich bei Ziel-Quote.":"Personalkosten im Zielbereich."} ${cmpMd>0&&cmpRs>0&&cmpMd<cmpRs?" Mehringdamm hat "+fmtP(cmpRs-cmpMd)+" schlechtere Effizienz als Rosenthaler.":""}</div>
     </div>
 
     <div id="d-ov-fc" class="drill-panel">
       <div class="drill-title">Food Cost — Aufschlüsselung ${hatIstFC?'<span style="font-size:10px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px">Ist (direkt)</span>':'<span style="font-size:10px;background:#eab308;color:#000;padding:1px 5px;border-radius:3px">Soll</span>'}</div>
-      <div class="drill-row"><span>Gesamt ${hatIstFC?"(Ist)":"(Soll)"}</span><span style="color:${anzFcPct>ZIELE.fc?'#ef4444':'#22c55e'}">${fmt(fcAmt)} · ${fmtP(anzFcPct)}${vwBadge(vwFcDiff,true)}</span></div>
-      ${hatIstFC&&rfc.md&&rfc.md.n>0?(function(){
-        var m=rfc.md, mRev=m.rev||1, mFcAmt=m.quote*km.u;
-        var mSc=km.u/mRev;
-        return'<div class="drill-row" style="border-top:1px solid #1e293b;margin-top:4px;padding-top:4px"><span style="font-weight:600">Mehringdamm</span><span style="color:'+(anzFcMdPct>ZIELE.fc?'#ef4444':'#22c55e')+';font-weight:600">'+fmtP(anzFcMdPct)+' · '+fmt(mFcAmt)+'</span></div>'
-        +'<div class="drill-row"><span>↳ Verkauft</span><span>'+fmt(m.verkauft*mSc)+' ('+fmtP(m.verkauft/mRev)+')</span></div>'
-        +'<div class="drill-row"><span>↳ Verschwendet</span><span style="color:#f97316">'+fmt(m.verschwendet*mSc)+' ('+fmtP(m.verschwendet/mRev)+')</span></div>'
-        +'<div class="drill-row"><span>↳ Schwund</span><span style="color:#ef4444;font-weight:600">'+fmt(m.unkontrolliert*mSc)+' ('+fmtP(m.unkontrolliert/mRev)+')</span></div>';
-      })():'<div class="drill-row"><span>Mehringdamm</span><span style="color:${anzFcMdPct>ZIELE.fc?"#ef4444":"#22c55e"}">${fmtP(anzFcMdPct)}</span></div>'}
-      ${hatIstFC&&rfc.rs&&rfc.rs.n>0?(function(){
-        var r=rfc.rs, rRev=r.rev||1, rFcAmt=r.quote*kr.u;
-        var rSc=kr.u/rRev;
-        return'<div class="drill-row" style="border-top:1px solid #1e293b;margin-top:4px;padding-top:4px"><span style="font-weight:600">Rosenthaler Straße</span><span style="color:'+(anzFcRsPct>ZIELE.fc?'#ef4444':'#22c55e')+';font-weight:600">'+fmtP(anzFcRsPct)+' · '+fmt(rFcAmt)+'</span></div>'
-        +'<div class="drill-row"><span>↳ Verkauft</span><span>'+fmt(r.verkauft*rSc)+' ('+fmtP(r.verkauft/rRev)+')</span></div>'
-        +'<div class="drill-row"><span>↳ Verschwendet</span><span style="color:#f97316">'+fmt(r.verschwendet*rSc)+' ('+fmtP(r.verschwendet/rRev)+')</span></div>'
-        +'<div class="drill-row"><span>↳ Schwund</span><span style="color:#ef4444;font-weight:600">'+fmt(r.unkontrolliert*rSc)+' ('+fmtP(r.unkontrolliert/rRev)+')</span></div>';
-      })():'<div class="drill-row"><span>Rosenthaler Straße</span><span style="color:${anzFcRsPct>ZIELE.fc?"#ef4444":"#22c55e"}">${fmtP(anzFcRsPct)}</span></div>'}
-      <div class="drill-row" style="border-top:1px solid #1e293b;margin-top:4px;padding-top:4px"><span>Soll (Rezeptur)</span><span>${fmt(k.f)} · ${fmtP(k.fp)}</span></div>
-      ${hatIstFC?'<div class="drill-row"><span>Abweichung Ist vs. Soll</span><span style="color:'+(fcAmt>k.f?'#ef4444':'#22c55e')+'">'+fmt(fcAmt-k.f)+' ('+fmtP(anzFcPct-k.fp)+')</span></div>':''}
-      <div class="drill-row"><span>Ziel</span><span>${fmtP(ZIELE.fc)}</span></div>
-      <div class="ai-box">${hatIstFC?"Basis: "+rfc.von+" → "+rfc.bis+" ("+rfc.tage+" Tage, "+fmt(rfc.revBestand)+" Umsatz). FC-Quote "+fmtP(rfc.quote)+" gilt für jeden Tag. "+(rfc.revBestand>0&&rfc.unkontrolliert/rfc.revBestand>0.02?"⚠️ Schwund "+fmtP(rfc.unkontrolliert/rfc.revBestand)+" vom Umsatz — Optimierungspotenzial!":"Schwund im akzeptablen Bereich."):"Keine Ist-Daten verfügbar — zeigt Soll-Werte aus Apicbase-Rezepturen."}</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">
+        <div style="background:#0d1f38;border-radius:6px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:#64748b;margin-bottom:4px">Gesamt ${hatIstFC?"(Ist)":"(Soll)"}</div>
+          <div style="font-size:18px;font-weight:700;color:${anzFcPct>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(anzFcPct)}</div>
+          <div style="font-size:11px;color:#e2e8f0;margin-top:2px">${fmt(fcAmt)}</div>
+          <div style="font-size:9px;margin-top:2px">${vwBadge(vwFcDiff,true)}</div>
+        </div>
+        <div style="background:#0d1f38;border-radius:6px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:#64748b;margin-bottom:4px">Soll (Rezeptur)</div>
+          <div style="font-size:18px;font-weight:700;color:#94a3b8">${fmtP(k.fp)}</div>
+          <div style="font-size:11px;color:#e2e8f0;margin-top:2px">${fmt(k.f)}</div>
+        </div>
+        <div style="background:#0d1f38;border-radius:6px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:#64748b;margin-bottom:4px">Ziel</div>
+          <div style="font-size:18px;font-weight:700;color:#64748b">${fmtP(ZIELE.fc)}</div>
+          ${hatIstFC?'<div style="font-size:10px;color:'+(anzFcPct<=ZIELE.fc?'#22c55e':'#ef4444')+';margin-top:4px">'+(anzFcPct<=ZIELE.fc?'✓ im Ziel':''+fmtP(anzFcPct-ZIELE.fc)+' drüber')+'</div>':''}
+        </div>
+      </div>
+      ${hatIstFC?(function(){
+        function fcCard(name,col,st,stRev,stQuote,dashU){
+          if(!st||st.n===0)return'';
+          var sc=dashU/(stRev||1);
+          return'<div style="background:#0d1f38;border-radius:6px;padding:10px 12px;border-left:3px solid '+col+'">'
+            +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+            +'<span style="font-size:11px;font-weight:600;color:'+col+'">'+name+'</span>'
+            +'<span style="font-size:14px;font-weight:700;color:'+(stQuote>ZIELE.fc?'#ef4444':'#22c55e')+'">'+fmtP(stQuote)+'</span></div>'
+            +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:10px">'
+            +'<div style="background:#0a1628;border-radius:4px;padding:6px;text-align:center"><div style="color:#64748b">Verkauft</div><div style="color:#e2e8f0;font-weight:600;margin-top:2px">'+fmt(st.verkauft*sc)+'</div><div style="color:#64748b">'+fmtP(st.verkauft/(stRev||1))+'</div></div>'
+            +'<div style="background:#0a1628;border-radius:4px;padding:6px;text-align:center"><div style="color:#f97316">Verschwendet</div><div style="color:#f97316;font-weight:600;margin-top:2px">'+fmt(st.verschwendet*sc)+'</div><div style="color:#64748b">'+fmtP(st.verschwendet/(stRev||1))+'</div></div>'
+            +'<div style="background:#0a1628;border-radius:4px;padding:6px;text-align:center"><div style="color:#ef4444">Schwund</div><div style="color:#ef4444;font-weight:600;margin-top:2px">'+fmt(st.unkontrolliert*sc)+'</div><div style="color:#64748b">'+fmtP(st.unkontrolliert/(stRev||1))+'</div></div>'
+            +'</div></div>';
+        }
+        return'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+          +fcCard('Mehringdamm','#f97316',rfc.md,rfc.md.rev,anzFcMdPct,km.u)
+          +fcCard('Rosenthaler','#3b82f6',rfc.rs,rfc.rs.rev,anzFcRsPct,kr.u)
+          +'</div>';
+      })():'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div style="background:#0d1f38;border-radius:6px;padding:10px 12px;border-left:3px solid #f97316;display:flex;justify-content:space-between"><span style="font-size:11px;color:#f97316;font-weight:600">Mehringdamm</span><span style="font-size:14px;font-weight:700;color:'+(anzFcMdPct>ZIELE.fc?'#ef4444':'#22c55e')+'">'+fmtP(anzFcMdPct)+'</span></div><div style="background:#0d1f38;border-radius:6px;padding:10px 12px;border-left:3px solid #3b82f6;display:flex;justify-content:space-between"><span style="font-size:11px;color:#3b82f6;font-weight:600">Rosenthaler</span><span style="font-size:14px;font-weight:700;color:'+(anzFcRsPct>ZIELE.fc?'#ef4444':'#22c55e')+'">'+fmtP(anzFcRsPct)+'</span></div></div>'}
+      <div class="ai-box" style="margin-top:10px">${hatIstFC?"Basis: "+rfc.von+" → "+rfc.bis+" ("+rfc.tage+" Tage, "+fmt(rfc.revBestand)+" Umsatz). "+(rfc.revBestand>0&&rfc.unkontrolliert/rfc.revBestand>0.02?"⚠️ Schwund "+fmtP(rfc.unkontrolliert/rfc.revBestand)+" vom Umsatz — Optimierungspotenzial!":"Schwund im akzeptablen Bereich."):"Soll-Werte aus Apicbase-Rezepturen — Zeitraum außerhalb Bestandsbericht"+(rfc.hat?" ("+rfc.von+" → "+rfc.bis+")":"")+"."}</div>
     </div>
 
-    <div id="d-ov-cm" class="drill-panel">
+    <div id="d-ov-cm" class="drill-panel" style="max-width:680px">
       <div class="drill-title">Contribution Margin — Aufschlüsselung</div>
-      <div class="drill-row"><span>Gesamt</span><span style="color:${cmPct>=ZIELE.cm?'#22c55e':'#f97316'}">${fmtP(cmPct)} · ${fmt(cm)}${vwBadge(vwCmDiff,false)}</span></div>
-      <div class="drill-row"><span>Mehringdamm</span><span style="color:${cmpMd>=ZIELE.cm?'#22c55e':'#f97316'}">${fmtP(cmpMd)} · ${fmt(km.u-km.f-pkMd.total)}</span></div>
-      <div class="drill-row"><span>Rosenthaler Straße</span><span style="color:${cmpRs>=ZIELE.cm?'#22c55e':'#f97316'}">${fmtP(cmpRs)} · ${fmt(kr.u-kr.f-pkRs.total)}</span></div>
-      <div class="drill-row"><span>EBITDA (geschätzt)</span><span style="color:${ebitda>0?'#22c55e':'#ef4444'}">${fmt(ebitda)} · ${fmtP(ebitdaPct)}</span></div>
-      <div class="ai-box">Contribution Margin ist die wichtigste Kennzahl für Standort-Profitabilität. Ziel: ${fmtP(ZIELE.cm)}+. ${cmPct>=ZIELE.cm?"Aktuell im Zielbereich.":"Aktuell unter Ziel. Hebel: Personal-Effizienz und Food Cost."}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div style="background:#0d1f38;border-radius:6px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:#64748b;margin-bottom:4px">CM gesamt${vwBadge(vwCmDiff,false)}</div>
+          <div style="font-size:22px;font-weight:700;color:${cmPct>=ZIELE.cm?'#22c55e':'#f97316'}">${fmtP(cmPct)}</div>
+          <div style="font-size:12px;color:#e2e8f0;margin-top:2px">${fmt(cm)}</div>
+          <div style="font-size:10px;color:#64748b;margin-top:4px">Ziel: ${fmtP(ZIELE.cm)}</div>
+        </div>
+        <div style="background:#0d1f38;border-radius:6px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:#64748b;margin-bottom:4px">EBITDA (geschätzt)</div>
+          <div style="font-size:22px;font-weight:700;color:${ebitda>0?'#22c55e':'#ef4444'}">${fmtP(ebitdaPct)}</div>
+          <div style="font-size:12px;color:#e2e8f0;margin-top:2px">${fmt(ebitda)}</div>
+          <div style="font-size:10px;color:#64748b;margin-top:4px">Ziel: ${fmtP(ZIELE.ebitda)}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="background:#0d1f38;border-radius:6px;padding:10px 12px;border-left:3px solid #f97316">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:11px;font-weight:600;color:#f97316">Mehringdamm</span>
+            <span style="font-size:15px;font-weight:700;color:${cmpMd>=ZIELE.cm?'#22c55e':'#f97316'}">${fmtP(cmpMd)}</span>
+          </div>
+          <div style="font-size:10px;color:#64748b;margin-top:4px">${fmt(km.u-km.f-pkMd.total)}</div>
+        </div>
+        <div style="background:#0d1f38;border-radius:6px;padding:10px 12px;border-left:3px solid #3b82f6">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:11px;font-weight:600;color:#3b82f6">Rosenthaler</span>
+            <span style="font-size:15px;font-weight:700;color:${cmpRs>=ZIELE.cm?'#22c55e':'#f97316'}">${fmtP(cmpRs)}</span>
+          </div>
+          <div style="font-size:10px;color:#64748b;margin-top:4px">${fmt(kr.u-kr.f-pkRs.total)}</div>
+        </div>
+      </div>
+      <div class="ai-box" style="margin-top:10px">${cmPct>=ZIELE.cm?"Aktuell im Zielbereich.":"Aktuell unter Ziel. Hebel: Personal-Effizienz und Food Cost."} ${cmpMd>0&&cmpRs>0&&cmpMd!==cmpRs?(cmpRs>cmpMd?"Rosenthaler effizienter (+"+fmtP(cmpRs-cmpMd)+").":"Mehringdamm effizienter (+"+fmtP(cmpMd-cmpRs)+")."):"Beide Standorte ähnlich."}</div>
     </div>
 
     <div class="grid2">
