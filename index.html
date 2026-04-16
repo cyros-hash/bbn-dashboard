@@ -1243,7 +1243,9 @@ function renderOverview(){
 
     <div id="d-ov-fc" class="drill-panel">
       <div class="drill-title">Food Cost — Aufschlüsselung ${hatIstFC?'<span style="font-size:10px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px">Ist (direkt)</span>':'<span style="font-size:10px;background:#eab308;color:#000;padding:1px 5px;border-radius:3px">Soll</span>'}</div>
-      <table style="width:100%;max-width:640px;border-collapse:collapse;font-size:12px">
+      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+      <div style="flex:0 0 auto">
+      <table style="border-collapse:collapse;font-size:12px">
         <thead><tr style="border-bottom:2px solid #1e3a5f">
           <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500"></th>
           <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Betrag</th>
@@ -1278,17 +1280,27 @@ function renderOverview(){
           ${hatIstFC?'<tr style="border-bottom:1px solid #1e2d40"><td style="color:#94a3b8;padding:6px 8px 6px 0">Abweichung Ist vs. Soll</td><td style="text-align:right;color:'+(fcAmt>k.f?'#ef4444':'#22c55e')+';padding:6px 8px">'+fmt(fcAmt-k.f)+'</td><td style="text-align:right;color:'+(anzFcPct>k.fp?'#ef4444':'#22c55e')+';padding:6px 8px">'+fmtP(anzFcPct-k.fp)+'</td><td></td></tr>':''}
         </tbody>
       </table>
+      </div>
+      <div style="flex:1;min-width:300px;height:190px;position:relative">
+        <canvas id="c-ov-fc-quote"></canvas>
+      </div>
+      </div>
       ${hatIstFC?(function(){
         var m=rfc.md, r=rfc.rs, mRev=m.rev||1, rRev=r.rev||1, mSc=km.u/mRev, rSc=kr.u/rRev;
         var mVerl=(m.verschwendet+m.unkontrolliert)*mSc, rVerl=(r.verschwendet+r.unkontrolliert)*rSc, gVerl=mVerl+rVerl;
-        return'<table style="width:100%;max-width:640px;border-collapse:collapse;font-size:11px;margin-top:10px">'
+        return'<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-top:10px">'
+          +'<div style="flex:0 0 auto">'
+          +'<table style="border-collapse:collapse;font-size:11px">'
           +'<thead><tr style="border-bottom:2px solid #1e3a5f"><th style="text-align:left;color:#64748b;padding:4px 8px 4px 0;font-weight:500">Traceability</th><th style="text-align:right;color:#f97316;padding:4px 8px;font-weight:500">Mehringdamm</th><th style="text-align:right;color:#3b82f6;padding:4px 8px;font-weight:500">Rosenthaler</th><th style="text-align:right;color:#e2e8f0;padding:4px 0 4px 8px;font-weight:500">Gesamt</th></tr></thead>'
           +'<tbody>'
           +'<tr style="border-bottom:1px solid #1e2d40"><td style="color:#64748b;padding:5px 8px 5px 0">Verkauft</td><td style="text-align:right;color:#e2e8f0;padding:5px 8px">'+fmt(m.verkauft*mSc)+' ('+fmtP(m.verkauft/mRev)+')</td><td style="text-align:right;color:#e2e8f0;padding:5px 8px">'+fmt(r.verkauft*rSc)+' ('+fmtP(r.verkauft/rRev)+')</td><td style="text-align:right;color:#e2e8f0;padding:5px 0 5px 8px">'+fmt(m.verkauft*mSc+r.verkauft*rSc)+'</td></tr>'
           +'<tr style="border-bottom:1px solid #1e2d40"><td style="color:#f97316;padding:5px 8px 5px 0">Verschwendet</td><td style="text-align:right;color:#f97316;padding:5px 8px">'+fmt(m.verschwendet*mSc)+' ('+fmtP(m.verschwendet/mRev)+')</td><td style="text-align:right;color:#f97316;padding:5px 8px">'+fmt(r.verschwendet*rSc)+' ('+fmtP(r.verschwendet/rRev)+')</td><td style="text-align:right;color:#f97316;padding:5px 0 5px 8px">'+fmt(m.verschwendet*mSc+r.verschwendet*rSc)+'</td></tr>'
           +'<tr style="border-bottom:1px solid #1e2d40"><td style="color:#ef4444;padding:5px 8px 5px 0">Schwund</td><td style="text-align:right;color:#ef4444;font-weight:600;padding:5px 8px">'+fmt(m.unkontrolliert*mSc)+' ('+fmtP(m.unkontrolliert/mRev)+')</td><td style="text-align:right;color:#ef4444;font-weight:600;padding:5px 8px">'+fmt(r.unkontrolliert*rSc)+' ('+fmtP(r.unkontrolliert/rRev)+')</td><td style="text-align:right;color:#ef4444;font-weight:600;padding:5px 0 5px 8px">'+fmt(m.unkontrolliert*mSc+r.unkontrolliert*rSc)+'</td></tr>'
           +'<tr style="border-top:2px solid #1e3a5f"><td style="color:#f1f5f9;font-weight:600;padding:6px 8px 5px 0">Verlust gesamt</td><td style="text-align:right;color:#ef4444;font-weight:600;padding:6px 8px">'+fmt(mVerl)+'</td><td style="text-align:right;color:#ef4444;font-weight:600;padding:6px 8px">'+fmt(rVerl)+'</td><td style="text-align:right;color:#ef4444;font-weight:700;padding:6px 0 5px 8px">'+fmt(gVerl)+'</td></tr>'
-          +'</tbody></table>';
+          +'</tbody></table>'
+          +'</div>'
+          +'<div style="flex:1;min-width:220px;height:170px;position:relative"><canvas id="c-ov-fc-verlust"></canvas></div>'
+          +'</div>';
       })():''}
       <div class="ai-box" style="margin-top:10px">${hatIstFC?"Basis: "+rfc.von+" → "+rfc.bis+" ("+rfc.tage+" Tage, "+fmt(rfc.revBestand)+" Umsatz). "+(rfc.revBestand>0&&rfc.unkontrolliert/rfc.revBestand>0.02?"⚠️ Schwund "+fmtP(rfc.unkontrolliert/rfc.revBestand)+" vom Umsatz — Optimierungspotenzial!":"Schwund im akzeptablen Bereich."):"Soll-Werte aus Apicbase-Rezepturen — Zeitraum außerhalb Bestandsbericht"+(rfc.hat?" ("+rfc.von+" → "+rfc.bis+")":"")+"."}</div>
     </div>
@@ -1457,6 +1469,73 @@ function renderOverview(){
           x:{ticks:{color:"#475569",font:{size:8},maxTicksLimit:8},grid:{color:"#1e2d40"}},
           y:{ticks:{color:"#475569",font:{size:8},callback:function(v){return v+"%";}},grid:{color:"#1e2d40"},
             suggestedMin:Math.max(0,(ZIELE.pa*100)-10),suggestedMax:(ZIELE.pa*100)+15}
+        }
+      }
+    });
+  })();
+
+  // --- FC-Quote Liniendiagramm ---
+  (function(){
+    var fcEl=document.getElementById("c-ov-fc-quote");
+    if(!fcEl)return;
+    var tageSet={};
+    gefiltert.forEach(function(r){tageSet[r.datum]=1;});
+    var tage=Object.keys(tageSet).sort();
+    var uTagMd={},uTagRs={},fTagMd={},fTagRs={};
+    gefiltert.forEach(function(r){
+      if(r.st==="Mehringdamm"){uTagMd[r.datum]=(uTagMd[r.datum]||0)+r.u;fTagMd[r.datum]=(fTagMd[r.datum]||0)+r.f;}
+      else if(r.st==="Rosenthaler Straße"){uTagRs[r.datum]=(uTagRs[r.datum]||0)+r.u;fTagRs[r.datum]=(fTagRs[r.datum]||0)+r.f;}
+    });
+    var dMd=[],dRs=[],dZiel=[];
+    tage.forEach(function(d){
+      var uM=uTagMd[d]||0,uR=uTagRs[d]||0;
+      dMd.push(uM>0?((fTagMd[d]||0)/uM*100):null);
+      dRs.push(uR>0?((fTagRs[d]||0)/uR*100):null);
+      dZiel.push(ZIELE.fc*100);
+    });
+    var fcLabels=tage.map(function(d){return d.slice(8,10)+"."+d.slice(5,7);});
+    dc("c-ov-fc-quote");
+    charts["c-ov-fc-quote"]=new Chart(fcEl,{
+      type:"line",
+      data:{labels:fcLabels,datasets:[
+        {label:"Mehringdamm",data:dMd,borderColor:"#f97316",backgroundColor:"rgba(249,115,22,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,spanGaps:true},
+        {label:"Rosenthaler",data:dRs,borderColor:"#3b82f6",backgroundColor:"rgba(59,130,246,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,spanGaps:true},
+        {label:"Ziel",data:dZiel,borderColor:"#475569",borderDash:[4,3],borderWidth:1,pointRadius:0}
+      ]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:"bottom",labels:{color:"#94a3b8",font:{size:9},boxWidth:12,padding:6}},
+          tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+": "+ctx.parsed.y.toFixed(1)+"%";}}},
+          title:{display:true,text:"Food-Cost-Quote / Tag (Soll)",color:"#94a3b8",font:{size:10,weight:"normal"},padding:{bottom:4}}},
+        scales:{
+          x:{ticks:{color:"#475569",font:{size:8},maxTicksLimit:8},grid:{color:"#1e2d40"}},
+          y:{ticks:{color:"#475569",font:{size:8},callback:function(v){return v+"%";}},grid:{color:"#1e2d40"},
+            suggestedMin:Math.max(0,(ZIELE.fc*100)-10),suggestedMax:(ZIELE.fc*100)+15}
+        }
+      }
+    });
+  })();
+
+  // --- Verluste gestapeltes Balkendiagramm ---
+  (function(){
+    var vlEl=document.getElementById("c-ov-fc-verlust");
+    if(!vlEl)return;
+    var m=rfc.md,r=rfc.rs,mRev=m.rev||1,rRev=r.rev||1,mSc=km.u/mRev,rSc=kr.u/rRev;
+    dc("c-ov-fc-verlust");
+    charts["c-ov-fc-verlust"]=new Chart(vlEl,{
+      type:"bar",
+      data:{labels:["Mehringdamm","Rosenthaler"],datasets:[
+        {label:"Verschwendet",data:[m.verschwendet*mSc,r.verschwendet*rSc],backgroundColor:"#f97316",borderRadius:2},
+        {label:"Schwund",data:[m.unkontrolliert*mSc,r.unkontrolliert*rSc],backgroundColor:"#ef4444",borderRadius:2}
+      ]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:"bottom",labels:{color:"#94a3b8",font:{size:9},boxWidth:12,padding:6}},
+          tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+": € "+Math.round(ctx.parsed.y).toLocaleString("de-DE");}}},
+          title:{display:true,text:"Verluste nach Standort",color:"#94a3b8",font:{size:10,weight:"normal"},padding:{bottom:4}}},
+        scales:{
+          x:{stacked:true,ticks:{color:"#94a3b8",font:{size:9}},grid:{display:false}},
+          y:{stacked:true,ticks:{color:"#475569",font:{size:8},callback:function(v){return"€ "+v;}},grid:{color:"#1e2d40"}}
         }
       }
     });
