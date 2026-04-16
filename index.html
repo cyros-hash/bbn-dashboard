@@ -2025,12 +2025,41 @@ function renderUmsatz(){
       <div class="box">
         <div class="box-title">💳 Zahlungsarten</div>
         <div class="box-sub">${lsPay.length>0?"Lightspeed Live":"Keine LS-Daten"}</div>
-        <div class="r" style="cursor:default"><span>Karte</span><span>${fmt(totalKarte)} (${totalZahl>0?(totalKarte/totalZahl*100).toFixed(1):0}%)</span></div>
-        <div class="r" style="cursor:default"><span>Lieferando</span><span style="color:${totalLdoPay/Math.max(totalZahl,1)>0.2?'#f97316':'#e2e8f0'}">${fmt(totalLdoPay)} (${totalZahl>0?(totalLdoPay/totalZahl*100).toFixed(1):0}%)</span></div>
-        <div class="r" style="cursor:default"><span>Online Order (QR-Tisch)</span><span>${fmt(totalOnlineOrder)} (${totalZahl>0?(totalOnlineOrder/totalZahl*100).toFixed(1):0}%)</span></div>
-        <div class="r" style="cursor:default"><span>Bar / Manuell</span><span>${fmt(totalBar)} (${totalZahl>0?(totalBar/totalZahl*100).toFixed(1):0}%)</span></div>
-        <div class="r" style="cursor:default;border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9;font-weight:600">Gesamt</span><span style="color:#22c55e;font-weight:600">${fmt(totalZahl)}</span></div>
-        ${totalLdoPay/Math.max(totalZahl,1)>0.2?'<div class="ai-box">Lieferando-Anteil über 20% — erhöht Food Cost durch Portionsgrößen und Provisionen. Prüfe ob Lieferando-Preise angepasst werden sollten.</div>':""}
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="border-bottom:2px solid #1e3a5f">
+            <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500">Zahlungsart</th>
+            <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Betrag</th>
+            <th style="text-align:right;color:#64748b;padding:4px 0 6px 8px;font-weight:500">Anteil</th>
+          </tr></thead>
+          <tbody>
+            <tr style="border-bottom:1px solid #1e2d40">
+              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block"></span><span style="color:#e2e8f0">Karte</span></span></td>
+              <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(totalKarte)}</td>
+              <td style="text-align:right;color:#e2e8f0;padding:6px 0 6px 8px">${totalZahl>0?(totalKarte/totalZahl*100).toFixed(1):0}%</td>
+            </tr>
+            <tr style="border-bottom:1px solid #1e2d40">
+              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f97316;display:inline-block"></span><span style="color:#f97316">Lieferando</span></span></td>
+              <td style="text-align:right;color:#f97316;padding:6px 8px">${fmt(totalLdoPay)}</td>
+              <td style="text-align:right;color:#f97316;padding:6px 0 6px 8px">${totalZahl>0?(totalLdoPay/totalZahl*100).toFixed(1):0}%</td>
+            </tr>
+            <tr style="border-bottom:1px solid #1e2d40">
+              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block"></span><span style="color:#22c55e">Online Order</span></span></td>
+              <td style="text-align:right;color:#22c55e;padding:6px 8px">${fmt(totalOnlineOrder)}</td>
+              <td style="text-align:right;color:#22c55e;padding:6px 0 6px 8px">${totalZahl>0?(totalOnlineOrder/totalZahl*100).toFixed(1):0}%</td>
+            </tr>
+            <tr style="border-bottom:1px solid #1e2d40">
+              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span><span style="color:#8b5cf6">Bar / Manuell</span></span></td>
+              <td style="text-align:right;color:#8b5cf6;padding:6px 8px">${fmt(totalBar)}</td>
+              <td style="text-align:right;color:#8b5cf6;padding:6px 0 6px 8px">${totalZahl>0?(totalBar/totalZahl*100).toFixed(1):0}%</td>
+            </tr>
+            <tr style="border-top:2px solid #1e3a5f">
+              <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">Gesamt</td>
+              <td style="text-align:right;color:#22c55e;font-weight:600;padding:6px 8px">${fmt(totalZahl)}</td>
+              <td style="text-align:right;color:#e2e8f0;padding:6px 0 6px 8px">100%</td>
+            </tr>
+          </tbody>
+        </table>
+        ${totalLdoPay/Math.max(totalZahl,1)>0.2?'<div class="ai-box" style="margin-top:8px">Lieferando-Anteil über 20% — erhöht Food Cost durch Portionsgrößen und Provisionen. Prüfe ob Lieferando-Preise angepasst werden sollten.</div>':""}
       </div>
       <div class="box">
         <div class="box-title">⏰ Umsatz nach Stunde</div>
