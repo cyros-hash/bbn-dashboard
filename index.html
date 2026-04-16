@@ -1252,13 +1252,13 @@ function renderOverview(){
           </tr>
           <tr style="border-bottom:1px solid #1e2d40">
             <td style="color:#f97316;padding:6px 8px 6px 0">Mehringdamm</td>
-            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${hatIstFC?fmt(rfc.md.quote*km.u):'—'}</td>
+            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(hatIstFC?rfc.md.fc:km.f)}</td>
             <td style="text-align:right;color:${anzFcMdPct>ZIELE.fc?'#ef4444':'#22c55e'};padding:6px 8px">${fmtP(anzFcMdPct)}</td>
             <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.fc)}</td>
           </tr>
           <tr style="border-bottom:1px solid #1e2d40">
             <td style="color:#3b82f6;padding:6px 8px 6px 0">Rosenthaler</td>
-            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${hatIstFC?fmt(rfc.rs.quote*kr.u):'—'}</td>
+            <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(hatIstFC?rfc.rs.fc:kr.f)}</td>
             <td style="text-align:right;color:${anzFcRsPct>ZIELE.fc?'#ef4444':'#22c55e'};padding:6px 8px">${fmtP(anzFcRsPct)}</td>
             <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.fc)}</td>
           </tr>
