@@ -4550,7 +4550,10 @@ function sendTagesbericht() {
     method: "POST",
     headers: {"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
     body: JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,system:systemPrompt,messages:aiHistory})
-  }).then(function(r){return r.json();}).then(function(data){
+  }).then(function(r){
+    if(!r.ok) return r.json().then(function(err){throw new Error((err.error&&err.error.message)||"HTTP "+r.status);});
+    return r.json();
+  }).then(function(data){
     thinkingEl.remove();
     var reply = data.content && data.content[0] ? data.content[0].text : "Fehler beim Generieren.";
     addAiMessage("assistant", reply);
@@ -4559,7 +4562,12 @@ function sendTagesbericht() {
     document.getElementById("ai-send").disabled = false;
   }).catch(function(e){
     thinkingEl.remove();
-    addAiMessage("assistant", "⚠️ Fehler: " + e.message);
+    var msg=e.message||"";
+    if(msg==="Failed to fetch") msg="Verbindung zur API fehlgeschlagen. Mögliche Ursachen: API-Key ungültig/abgelaufen, Netzwerk blockiert, oder CORS-Problem. Bitte Key prüfen.";
+    else if(msg.indexOf("401")!==-1||msg.indexOf("authentication")!==-1) msg="API-Key ungültig oder abgelaufen. Bitte neuen Key eingeben.";
+    else if(msg.indexOf("429")!==-1) msg="Zu viele Anfragen — bitte kurz warten und erneut versuchen.";
+    else if(msg.indexOf("overloaded")!==-1) msg="API überlastet — bitte in 1-2 Minuten erneut versuchen.";
+    addAiMessage("assistant", "⚠️ "+msg);
     aiThinking = false;
     document.getElementById("ai-send").disabled = false;
     aiHistory.pop();
@@ -4842,11 +4850,13 @@ function generiereKIBericht() {
       max_tokens: 800,
       messages: [{role: "user", content: prompt}]
     })
-  }).then(function(r){return r.json();}).then(function(data){
+  }).then(function(r){
+    if(!r.ok) return r.json().then(function(err){throw new Error((err.error&&err.error.message)||"HTTP "+r.status);});
+    return r.json();
+  }).then(function(data){
     btn.disabled = false;
     btn.textContent = "🤖 Aktualisieren";
     if(data.content && data.content[0]) {
-      // Format response into colored sections
       var text = data.content[0].text;
       inhalt.innerHTML = text;
     } else {
@@ -4855,7 +4865,9 @@ function generiereKIBericht() {
   }).catch(function(e){
     btn.disabled = false;
     btn.textContent = "🤖 Aktualisieren";
-    inhalt.innerHTML = '<div style="color:#ef4444">Fehler: '+e.message+'</div>';
+    var msg=e.message||"";
+    if(msg==="Failed to fetch") msg="Verbindung zur API fehlgeschlagen. API-Key prüfen oder später erneut versuchen.";
+    inhalt.innerHTML = '<div style="color:#ef4444">⚠️ '+msg+'</div>';
   });
 }
 
@@ -5030,7 +5042,7 @@ async function sendAiMessage() {
         "Content-Type": "application/json",
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-allow-browser": "true"
+        "anthropic-dangerous-direct-browser-access": "true"
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
@@ -5057,12 +5069,12 @@ async function sendAiMessage() {
   } catch(e) {
     thinkingEl.remove();
     var errMsg = e.message || "Unbekannter Fehler";
-    if(errMsg.includes("401") || errMsg.includes("auth")) {
-      addAiMessage("assistant", "⚠️ API-Authentifizierungsfehler. Das Dashboard muss mit --disable-web-security gestartet sein und die Anthropic API muss erreichbar sein.");
-    } else {
-      addAiMessage("assistant", "⚠️ Fehler: " + errMsg);
-    }
-    aiHistory.pop(); // Remove failed user message from history
+    if(errMsg==="Failed to fetch") errMsg="Verbindung zur API fehlgeschlagen. API-Key prüfen oder später erneut versuchen.";
+    else if(errMsg.includes("401") || errMsg.includes("auth")) errMsg="API-Key ungültig oder abgelaufen. Bitte neuen Key eingeben.";
+    else if(errMsg.includes("429")) errMsg="Zu viele Anfragen — bitte kurz warten.";
+    else if(errMsg.includes("overloaded")) errMsg="API überlastet — bitte in 1-2 Minuten erneut versuchen.";
+    addAiMessage("assistant", "⚠️ " + errMsg);
+    aiHistory.pop();
   } finally {
     aiThinking = false;
     document.getElementById("ai-send").disabled = false;
