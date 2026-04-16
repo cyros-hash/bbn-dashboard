@@ -2080,16 +2080,6 @@ function renderUmsatz(){
       <canvas id="c-um-kanal" style="max-height:200px"></canvas>
     </div>
 
-    <div class="box">
-      <div class="box-title">🧾 Lightspeed KPIs</div>
-      <div class="box-sub">${txG.length} Tage mit Daten</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
-        <div><div class="kpi-label">Bons gesamt</div><div style="font-size:18px;font-weight:700;color:#f97316">${totalBons.toLocaleString("de-DE")}</div></div>
-        <div><div class="kpi-label">Trinkgeld</div><div style="font-size:18px;font-weight:700;color:#8b5cf6">${fmt(totalTrinkgeld)}</div></div>
-        <div><div class="kpi-label">Lieferando</div><div style="font-size:18px;font-weight:700;color:#f97316">${fmt(totalLdo)}</div></div>
-        <div><div class="kpi-label">Trinkgeld-Quote</div><div style="font-size:18px;font-weight:700;color:#22c55e">${txG.reduce(function(s,r){return s+r.umsatz;},0)>0?(totalTrinkgeld/txG.reduce(function(s,r){return s+r.umsatz;},0)*100).toFixed(1):0}%</div></div>
-      </div>
-    </div>
     ${renderArtikelProStunde(von, bis, st)}`;
 
   // --- MD Tagestrend ---
@@ -4999,6 +4989,41 @@ function buildAiContext() {
     ctx += "Trinkgeld (ohne Lieferando): " + fmt(tkGesamt) + " (" + fmtP(totalOhneLdo>0?tkGesamt/totalOhneLdo:0) + " Quote)\n\n";
   }
 
+  // Zahlungsarten (Lightspeed Payments)
+  var payFilt = lsPay.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  if(payFilt.length > 0) {
+    var pBar = payFilt.reduce(function(s,r){return s+r.bar;},0);
+    var pMan = payFilt.reduce(function(s,r){return s+(r.manuell||0);},0);
+    var pKarte = payFilt.reduce(function(s,r){return s+r.karte;},0);
+    var pLdo = payFilt.reduce(function(s,r){return s+r.ldo;},0);
+    var pOnline = payFilt.reduce(function(s,r){return s+(r.onlineOrder||0);},0);
+    var pTotal = pBar+pMan+pKarte+pLdo+pOnline;
+    ctx += "=== ZAHLUNGSARTEN (Lightspeed) ===\n";
+    ctx += "Karte: " + fmt(pKarte) + " (" + fmtP(pTotal>0?pKarte/pTotal:0) + ")\n";
+    ctx += "Bar (Bargeld): " + fmt(pBar) + " (" + fmtP(pTotal>0?pBar/pTotal:0) + ")\n";
+    ctx += "Manuell: " + fmt(pMan) + " (" + fmtP(pTotal>0?pMan/pTotal:0) + ")\n";
+    ctx += "Lieferando: " + fmt(pLdo) + " (" + fmtP(pTotal>0?pLdo/pTotal:0) + ")\n";
+    ctx += "Online Order: " + fmt(pOnline) + " (" + fmtP(pTotal>0?pOnline/pTotal:0) + ")\n";
+    ctx += "Gesamt: " + fmt(pTotal) + "\n\n";
+  }
+
+  // Umsatz nach Kanal (Inhouse/Takeaway/Lieferando)
+  var bFilt = bons.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===0;});
+  if(bFilt.length > 0) {
+    var kanalMap = {};
+    bFilt.forEach(function(r){
+      var k = r.kanal || "Sonstige";
+      if(!kanalMap[k]) kanalMap[k] = {umsatz:0, bons:0};
+      kanalMap[k].umsatz += r.total;
+      kanalMap[k].bons += 1;
+    });
+    ctx += "=== UMSATZ NACH KANAL ===\n";
+    Object.entries(kanalMap).sort(function(a,b){return b[1].umsatz-a[1].umsatz;}).forEach(function(e){
+      ctx += e[0] + ": " + fmt(e[1].umsatz) + " (" + e[1].bons + " Bons, Ø " + fmtD(e[1].umsatz/Math.max(e[1].bons,1)) + "/Bon)\n";
+    });
+    ctx += "\n";
+  }
+
   // FC aus Bestandsbericht (wenn verfügbar)
   try {
     var rfc = getRealFC(st);
@@ -5092,11 +5117,16 @@ async function sendAiMessage() {
 
   try {
     // System prompt mit allen Daten
-    var systemPrompt = "Du bist ein erfahrener Restaurant-Betriebsanalyst für Bang Bang Noodles Berlin. " +
+    var systemPrompt = "Du bist ein erfahrener Restaurant-Betriebsanalyst für Bang Bang Noodles (BBN) Berlin. " +
+      "BBN ist ein asiatisches Nudelrestaurant mit 2 Standorten: Mehringdamm (MD) und Rosenthaler Straße (RS). " +
+      "Kanäle: Inhouse (vor Ort), Takeaway, Lieferando. Kassensystem: Lightspeed (LS). Personalsystem: Ordio. Warenwirtschaft: Apicbase. " +
+      "Zahlungsarten: Karte, Bar (=Bargeld), Manuell, Lieferando, Online Order. 'Bar' bedeutet IMMER Barzahlung/Bargeld, NIEMALS eine Getränkebar. " +
+      "Management: Kevin Weber, Jan Haring, Buted Deleg. " +
       "Du sprichst Deutsch, bist direkt, konkret und datenbasiert. " +
       "Keine langen Einleitungen — komm direkt zum Punkt. " +
       "Nenne immer konkrete Zahlen aus den Daten. " +
-      "Wenn du Handlungsempfehlungen gibst, mach sie spezifisch und umsetzbar.\n\n" +
+      "Wenn du Handlungsempfehlungen gibst, mach sie spezifisch und umsetzbar. " +
+      "Erfinde keine Daten — wenn du etwas nicht in den Daten siehst, sag das klar.\n\n" +
       buildAiContext();
 
     var apiKey = localStorage.getItem("bbn_ai_key") || "";
