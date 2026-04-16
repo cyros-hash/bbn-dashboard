@@ -2020,14 +2020,6 @@ function renderUmsatz(){
       <div class="ai-box" style="margin-top:8px">Rosenthaler macht ${km.u+kr.u>0?((kr.u/(km.u+kr.u))*100).toFixed(1):50}% des Gesamtumsatzes. ${rsLdo>0?"Lieferando-Anteil "+fmtP(kr.u>0?rsLdo/kr.u:0)+".":""} ${bonWertRs.avg>bonWertMd.avg?"Höherer Bon-Wert als Mehringdamm (+"+fmtD(bonWertRs.avg-bonWertMd.avg)+"/Bon).":"Niedrigerer Bon-Wert als Mehringdamm ("+fmtD(bonWertRs.avg-bonWertMd.avg)+"/Bon)."}</div>
     </div>
 
-    <div class="box">
-      <div class="box-title">Tagesumsatz nach Standort</div>
-      <div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px">
-        <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:#f97316;display:inline-block"></span><span style="color:#94a3b8">Mehringdamm</span></span>
-        <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:#3b82f6;display:inline-block"></span><span style="color:#94a3b8">Rosenthaler</span></span>
-      </div>
-      <canvas id="c-um-st" style="max-height:200px"></canvas>
-    </div>
 
     <div class="grid2">
       <div class="box">
@@ -2064,9 +2056,6 @@ function renderUmsatz(){
       </div>
     </div>
     ${renderArtikelProStunde(von, bis, st)}`;
-
-  dc("c-um-st");
-  charts["c-um-st"]=new Chart(document.getElementById("c-um-st"),{type:"bar",data:{labels:labs,datasets:[{label:"Mehringdamm",data:dm,backgroundColor:"#f97316",borderRadius:2},{label:"Rosenthaler",data:dr,backgroundColor:"#3b82f6",borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#475569",font:{size:9},maxTicksLimit:10},grid:{color:"#1e2d40"}},y:{ticks:{color:"#475569",font:{size:9},callback:function(v){return(v/1000).toFixed(0)+"k";}},grid:{color:"#1e2d40"}}}}});
 
   // --- MD Tagestrend ---
   (function(){
@@ -2119,31 +2108,33 @@ function renderUmsatz(){
     });
   })();
 
-  // --- Gesamt Tagestrend ---
+  // --- Gesamt Tagestrend (MD + RS) ---
   (function(){
     var el=document.getElementById("c-um-ges-trend");
     if(!el)return;
     var tageSet={};
     gefiltert.forEach(function(r){tageSet[r.datum]=1;});
     var tage=Object.keys(tageSet).sort();
-    var uTag={};
-    gefiltert.forEach(function(r){uTag[r.datum]=(uTag[r.datum]||0)+r.u;});
-    var dGes=tage.map(function(d){return uTag[d]||0;});
-    var avg=dGes.length>0?dGes.reduce(function(s,v){return s+v;},0)/dGes.length:0;
-    var dAvg=tage.map(function(){return avg;});
+    var uMd={},uRs={};
+    gefiltert.forEach(function(r){
+      if(r.st==="Mehringdamm"){uMd[r.datum]=(uMd[r.datum]||0)+r.u;}
+      else if(r.st==="Rosenthaler Straße"){uRs[r.datum]=(uRs[r.datum]||0)+r.u;}
+    });
+    var dMd=tage.map(function(d){return uMd[d]||0;});
+    var dRs=tage.map(function(d){return uRs[d]||0;});
     var tLabels=tage.map(function(d){return d.slice(8,10)+"."+d.slice(5,7);});
     dc("c-um-ges-trend");
     charts["c-um-ges-trend"]=new Chart(el,{
       type:"line",
       data:{labels:tLabels,datasets:[
-        {label:"Gesamtumsatz",data:dGes,borderColor:"#22c55e",backgroundColor:"rgba(34,197,94,0.1)",borderWidth:2,pointRadius:tage.length>14?0:3,tension:0.3,fill:true},
-        {label:"Ø/Tag",data:dAvg,borderColor:"#475569",borderDash:[4,3],borderWidth:1,pointRadius:0}
+        {label:"Mehringdamm",data:dMd,borderColor:"#f97316",backgroundColor:"rgba(249,115,22,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,fill:true},
+        {label:"Rosenthaler",data:dRs,borderColor:"#3b82f6",backgroundColor:"rgba(59,130,246,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,fill:true}
       ]},
       options:{
         responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,position:"bottom",labels:{color:"#94a3b8",font:{size:9},boxWidth:12,padding:6}},
           tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+": € "+Math.round(ctx.parsed.y).toLocaleString("de-DE");}}},
-          title:{display:true,text:"Tagesumsatz gesamt",color:"#94a3b8",font:{size:10,weight:"normal"},padding:{bottom:4}}},
+          title:{display:true,text:"Tagesumsatz nach Standort",color:"#94a3b8",font:{size:10,weight:"normal"},padding:{bottom:4}}},
         scales:{
           x:{ticks:{color:"#475569",font:{size:8},maxTicksLimit:8},grid:{color:"#1e2d40"}},
           y:{ticks:{color:"#475569",font:{size:8},callback:function(v){return(v/1000).toFixed(1)+"k";}},grid:{color:"#1e2d40"}}
