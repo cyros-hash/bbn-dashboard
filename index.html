@@ -3184,7 +3184,36 @@ function renderPersonal(){
               '</div>'+
             '</div>';
           }).join("")+
-        '</div>':''}
+        '</div>'+
+        (function(){
+          var stKeys=Object.keys(abbauStMap);
+          if(stKeys.length<2) return'';
+          var a=abbauStMap[stKeys[0]]||{stunden:0,count:0,kosten:0};
+          var b=abbauStMap[stKeys[1]]||{stunden:0,count:0,kosten:0};
+          var avgA=a.count>0?a.stunden/a.count:0, avgB=b.count>0?b.stunden/b.count:0;
+          var aufA=aufbauStMap[stKeys[0]]||{stunden:0,count:0};
+          var aufB=aufbauStMap[stKeys[1]]||{stunden:0,count:0};
+          var avgAufA=aufA.count>0?aufA.stunden/aufA.count:0, avgAufB=aufB.count>0?aufB.stunden/aufB.count:0;
+          var aufDiff=Math.abs(aufA.stunden-aufB.stunden);
+          var abDiff=Math.abs(a.stunden-b.stunden);
+          var abKostDiff=Math.abs(a.kosten-b.kosten);
+          var aufSimilar=aufDiff<5;
+          var abBigger=abDiff>10;
+          var slowSt=avgA>avgB?stKeys[0]:stKeys[1];
+          var fastSt=avgA>avgB?stKeys[1]:stKeys[0];
+          var slowAvg=Math.max(avgA,avgB);
+          var fastAvg=Math.min(avgA,avgB);
+          var txt='';
+          if(aufSimilar&&abBigger){
+            txt='Aufbau ist bei beiden Standorten nahezu identisch (Ø '+avgAufA.toFixed(1)+'h vs. '+avgAufB.toFixed(1)+'h), aber beim <strong>Abbau gibt es einen klaren Unterschied</strong>: '+slowSt+' braucht Ø '+slowAvg.toFixed(1)+'h pro Schicht vs. '+fastAvg.toFixed(1)+'h bei '+fastSt+'. Das sind <strong>'+fmt(abKostDiff)+' Mehrkosten</strong> im Zeitraum. Hier liegt Optimierungspotenzial — z.B. Closing-Prozesse von '+fastSt+' auf '+slowSt+' übertragen.';
+          } else if(abBigger){
+            txt=slowSt+' braucht beim Abbau Ø '+slowAvg.toFixed(1)+'h vs. '+fastAvg.toFixed(1)+'h bei '+fastSt+' — <strong>'+fmt(abKostDiff)+' Differenz</strong>. Closing-Abläufe vergleichen könnte sich lohnen.';
+          } else {
+            txt='Beide Standorte sind bei Aufbau und Abbau relativ ähnlich. Ø Abbau: '+avgA.toFixed(1)+'h ('+stKeys[0]+') vs. '+avgB.toFixed(1)+'h ('+stKeys[1]+').';
+          }
+          return'<div class="ai-box" style="margin-top:10px">'+txt+'</div>';
+        })()+
+      '':''}
     </div>
 
     <div class="grid2" style="margin-top:0">
