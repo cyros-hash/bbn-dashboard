@@ -417,15 +417,19 @@ var OEFFNUNG={
   5:{open:12,close:22},  // Freitag
   6:{open:12,close:22}   // Samstag
 };
-// Schicht-Klassifikation: Opening = startStunde <= open+1, Closing = endeStunde >= close-1, Mitte = rest
-function classifyShift(r){
+// Berechnet Aufbau-Stunden (vor Öffnung) und Abbau-Stunden (nach Ladenschluss) pro Schicht
+// Stundenlohn = kosten/stunden der Schicht, dann anteilig auf vor/nach rechnen
+function getShiftOverhead(r){
   var d=new Date(r.datum+"T12:00:00");
   var wt=d.getDay();
   var oz=OEFFNUNG[wt];
-  if(!oz) return"Mitte";
-  if(r.startStunde<=oz.open+1 && r.endeStunde<oz.close-1) return"Opening";
-  if(r.endeStunde>=oz.close-1) return"Closing";
-  return"Mitte";
+  var stdLohn=r.stunden>0?r.kosten/r.stunden:0;
+  var vorStd=0,nachStd=0;
+  if(oz){
+    if(r.startStunde<oz.open) vorStd=Math.min(oz.open-r.startStunde, r.stunden);
+    if(r.endeStunde>oz.close) nachStd=Math.min(r.endeStunde-oz.close, r.stunden);
+  }
+  return{vorStd:vorStd,nachStd:nachStd,vorKosten:vorStd*stdLohn,nachKosten:nachStd*stdLohn,stdLohn:stdLohn,open:oz?oz.open:12,close:oz?oz.close:21};
 }
 
 function getFixkostenTage(von, bis) {
@@ -2903,126 +2907,133 @@ function renderPersonal(){
   var maxStd=maList.length>0?maList[0][1].stunden:1;
   var avgStdMA=maList.length>0?maList.reduce(function(s,e){return s+e[1].stunden;},0)/maList.length:0;
 
-  // === SHIFT CLASSIFICATION: Opening / Mitte / Closing ===
-  var shiftMap={Opening:{kosten:0,stunden:0,count:0,data:[]},Mitte:{kosten:0,stunden:0,count:0,data:[]},Closing:{kosten:0,stunden:0,count:0,data:[]}};
+  // === AUFBAU / ABBAU ANALYSE ===
+  // Für jede Schicht: Stunden VOR 12:00 = Aufbau, Stunden NACH Ladenschluss = Abbau
+  var aufbau={stunden:0,kosten:0,count:0,data:[]};
+  var abbau={stunden:0,kosten:0,count:0,data:[]};
+  var betrieb={stunden:0,kosten:0}; // während Öffnungszeit
   pk.data.forEach(function(r){
-    var cls=classifyShift(r);
-    shiftMap[cls].kosten+=r.kosten;
-    shiftMap[cls].stunden+=r.stunden;
-    shiftMap[cls].count++;
-    shiftMap[cls].data.push(r);
-  });
-  var shiftTotal=shiftMap.Opening.kosten+shiftMap.Mitte.kosten+shiftMap.Closing.kosten;
-
-  // === CLOSING-DAUER ANALYSE: Stunden nach Ladenschluss pro Schicht ===
-  var closingAnalyse=[];
-  shiftMap.Closing.data.forEach(function(r){
-    var d=new Date(r.datum+"T12:00:00");var wt=d.getDay();var oz=OEFFNUNG[wt];
-    if(!oz)return;
-    var ueberStd=r.endeStunde>oz.close?r.endeStunde-oz.close:0;
-    closingAnalyse.push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,endeStunde:r.endeStunde,closeStunde:oz.close,ueberStd:ueberStd,stunden:r.stunden,kosten:r.kosten});
+    var oh=getShiftOverhead(r);
+    if(oh.vorStd>0){
+      aufbau.stunden+=oh.vorStd;aufbau.kosten+=oh.vorKosten;aufbau.count++;
+      aufbau.data.push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,vorStd:oh.vorStd,vorKosten:oh.vorKosten,startStunde:r.startStunde,open:oh.open});
+    }
+    if(oh.nachStd>0){
+      abbau.stunden+=oh.nachStd;abbau.kosten+=oh.nachKosten;abbau.count++;
+      abbau.data.push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,nachStd:oh.nachStd,nachKosten:oh.nachKosten,endeStunde:r.endeStunde,close:oh.close});
+    }
+    // Betriebsstunden = Gesamtstunden minus Aufbau/Abbau
+    betrieb.stunden+=(r.stunden-oh.vorStd-oh.nachStd);
+    betrieb.kosten+=(r.kosten-oh.vorKosten-oh.nachKosten);
   });
 
-  // Closing-Dauer pro Mitarbeiter
-  var closingMaMap={};
-  closingAnalyse.forEach(function(r){
-    if(!closingMaMap[r.mitarbeiter])closingMaMap[r.mitarbeiter]={count:0,totalUeber:0,totalStd:0,standorte:{}};
-    closingMaMap[r.mitarbeiter].count++;
-    closingMaMap[r.mitarbeiter].totalUeber+=r.ueberStd;
-    closingMaMap[r.mitarbeiter].totalStd+=r.stunden;
-    if(!closingMaMap[r.mitarbeiter].standorte[r.standort])closingMaMap[r.mitarbeiter].standorte[r.standort]={count:0,totalUeber:0};
-    closingMaMap[r.mitarbeiter].standorte[r.standort].count++;
-    closingMaMap[r.mitarbeiter].standorte[r.standort].totalUeber+=r.ueberStd;
-  });
-  var closingMaList=Object.entries(closingMaMap).filter(function(e){return e[1].count>=2;}).sort(function(a,b){return(a[1].totalUeber/a[1].count)-(b[1].totalUeber/b[1].count);});
-
-  // Closing-Dauer pro Standort
-  var closingStMap={};
-  closingAnalyse.forEach(function(r){
-    if(!closingStMap[r.standort])closingStMap[r.standort]={count:0,totalUeber:0,totalStd:0,kosten:0};
-    closingStMap[r.standort].count++;
-    closingStMap[r.standort].totalUeber+=r.ueberStd;
-    closingStMap[r.standort].totalStd+=r.stunden;
-    closingStMap[r.standort].kosten+=r.kosten;
+  // Aufbau pro Standort
+  var aufbauStMap={};
+  aufbau.data.forEach(function(r){
+    if(!aufbauStMap[r.standort])aufbauStMap[r.standort]={stunden:0,kosten:0,count:0};
+    aufbauStMap[r.standort].stunden+=r.vorStd;
+    aufbauStMap[r.standort].kosten+=r.vorKosten;
+    aufbauStMap[r.standort].count++;
   });
 
-  // Closing-Trend nach Wochentag
-  var closingWtMap={};
-  closingAnalyse.forEach(function(r){
+  // Abbau pro Standort
+  var abbauStMap={};
+  abbau.data.forEach(function(r){
+    if(!abbauStMap[r.standort])abbauStMap[r.standort]={stunden:0,kosten:0,count:0};
+    abbauStMap[r.standort].stunden+=r.nachStd;
+    abbauStMap[r.standort].kosten+=r.nachKosten;
+    abbauStMap[r.standort].count++;
+  });
+
+  // Abbau pro Mitarbeiter (Closing-Effizienz)
+  var abbauMaMap={};
+  abbau.data.forEach(function(r){
+    if(!abbauMaMap[r.mitarbeiter])abbauMaMap[r.mitarbeiter]={stunden:0,kosten:0,count:0,standorte:{}};
+    abbauMaMap[r.mitarbeiter].stunden+=r.nachStd;
+    abbauMaMap[r.mitarbeiter].kosten+=r.nachKosten;
+    abbauMaMap[r.mitarbeiter].count++;
+    if(!abbauMaMap[r.mitarbeiter].standorte[r.standort])abbauMaMap[r.mitarbeiter].standorte[r.standort]={stunden:0,count:0};
+    abbauMaMap[r.mitarbeiter].standorte[r.standort].stunden+=r.nachStd;
+    abbauMaMap[r.mitarbeiter].standorte[r.standort].count++;
+  });
+  var abbauMaList=Object.entries(abbauMaMap).filter(function(e){return e[1].count>=2;}).sort(function(a,b){return(a[1].stunden/a[1].count)-(b[1].stunden/b[1].count);});
+
+  // Aufbau pro Mitarbeiter
+  var aufbauMaMap={};
+  aufbau.data.forEach(function(r){
+    if(!aufbauMaMap[r.mitarbeiter])aufbauMaMap[r.mitarbeiter]={stunden:0,kosten:0,count:0};
+    aufbauMaMap[r.mitarbeiter].stunden+=r.vorStd;
+    aufbauMaMap[r.mitarbeiter].kosten+=r.vorKosten;
+    aufbauMaMap[r.mitarbeiter].count++;
+  });
+  var aufbauMaList=Object.entries(aufbauMaMap).filter(function(e){return e[1].count>=2;}).sort(function(a,b){return(a[1].stunden/a[1].count)-(b[1].stunden/b[1].count);});
+
+  // Abbau-Trend nach Wochentag
+  var abbauWtMap={};
+  abbau.data.forEach(function(r){
     var d=new Date(r.datum+"T12:00:00");var wt=d.getDay();
     var wtName=["So","Mo","Di","Mi","Do","Fr","Sa"][wt];
-    if(!closingWtMap[wtName])closingWtMap[wtName]={count:0,totalUeber:0};
-    closingWtMap[wtName].count++;
-    closingWtMap[wtName].totalUeber+=r.ueberStd;
+    if(!abbauWtMap[wtName])abbauWtMap[wtName]={stunden:0,kosten:0,count:0};
+    abbauWtMap[wtName].stunden+=r.nachStd;
+    abbauWtMap[wtName].kosten+=r.nachKosten;
+    abbauWtMap[wtName].count++;
   });
 
-  // Opening-Dauer Analyse
-  var openingAnalyse=[];
-  shiftMap.Opening.data.forEach(function(r){
-    var d=new Date(r.datum+"T12:00:00");var wt=d.getDay();var oz=OEFFNUNG[wt];
-    if(!oz)return;
-    var vorStd=r.startStunde<oz.open?oz.open-r.startStunde:0;
-    openingAnalyse.push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,startStunde:r.startStunde,openStunde:oz.open,vorStd:vorStd,stunden:r.stunden,kosten:r.kosten});
-  });
-  var openingStMap={};
-  openingAnalyse.forEach(function(r){
-    if(!openingStMap[r.standort])openingStMap[r.standort]={count:0,totalVor:0,kosten:0};
-    openingStMap[r.standort].count++;
-    openingStMap[r.standort].totalVor+=r.vorStd;
-    openingStMap[r.standort].kosten+=r.kosten;
-  });
-
-  // Team-Kombination Analyse für Closings
-  var closingTeamMap={};
-  var closingByDate={};
-  closingAnalyse.forEach(function(r){
+  // Team-Kombination Analyse für Abbau
+  var abbauByDate={};
+  abbau.data.forEach(function(r){
     var key=r.datum+"|"+r.standort;
-    if(!closingByDate[key])closingByDate[key]={datum:r.datum,standort:r.standort,members:[],totalUeber:0,count:0};
-    closingByDate[key].members.push(r.mitarbeiter);
-    closingByDate[key].totalUeber+=r.ueberStd;
-    closingByDate[key].count++;
+    if(!abbauByDate[key])abbauByDate[key]={datum:r.datum,standort:r.standort,members:[],totalNach:0,count:0};
+    abbauByDate[key].members.push(r.mitarbeiter);
+    abbauByDate[key].totalNach+=r.nachStd;
+    abbauByDate[key].count++;
   });
-  Object.values(closingByDate).forEach(function(day){
+  var abbauTeamMap={};
+  Object.values(abbauByDate).forEach(function(day){
     var teamKey=day.members.sort().join(" + ");
-    if(!closingTeamMap[teamKey])closingTeamMap[teamKey]={count:0,totalUeber:0,standort:day.standort};
-    closingTeamMap[teamKey].count++;
-    closingTeamMap[teamKey].totalUeber+=day.totalUeber/Math.max(day.count,1);
+    if(!abbauTeamMap[teamKey])abbauTeamMap[teamKey]={count:0,totalNach:0,standort:day.standort};
+    abbauTeamMap[teamKey].count++;
+    abbauTeamMap[teamKey].totalNach+=day.totalNach/Math.max(day.count,1);
   });
-  var closingTeamList=Object.entries(closingTeamMap).filter(function(e){return e[1].count>=2;}).sort(function(a,b){return(a[1].totalUeber/a[1].count)-(b[1].totalUeber/b[1].count);});
+  var abbauTeamList=Object.entries(abbauTeamMap).filter(function(e){return e[1].count>=2;}).sort(function(a,b){return(a[1].totalNach/a[1].count)-(b[1].totalNach/b[1].count);});
 
   // Insights generieren
   var insights=[];
-  // 1. Schnellste Closer
-  if(closingMaList.length>0){
-    var fastest=closingMaList[0];
-    var slowest=closingMaList[closingMaList.length-1];
-    if(fastest[1].count>=2)insights.push("⚡ Schnellster Closer: <strong>"+fastest[0]+"</strong> (Ø "+(fastest[1].totalUeber/fastest[1].count).toFixed(1)+"h nach Schluss, "+fastest[1].count+" Closings)");
-    if(slowest[1].count>=2&&closingMaList.length>1)insights.push("🐢 Längster Closer: <strong>"+slowest[0]+"</strong> (Ø "+(slowest[1].totalUeber/slowest[1].count).toFixed(1)+"h nach Schluss, "+slowest[1].count+" Closings)");
+  // 1. Aufbau-Kosten Einordnung
+  var aufbauPct=pk.total>0?aufbau.kosten/pk.total:0;
+  var abbauPct=pk.total>0?abbau.kosten/pk.total:0;
+  if(aufbau.kosten>0) insights.push("🌅 <strong>Aufbaukosten: "+fmt(aufbau.kosten)+"</strong> ("+fmtP(aufbauPct)+" der PA) — Ø "+(aufbau.count>0?(aufbau.stunden/aufbau.count).toFixed(1):"0")+"h vor Öffnung pro Schicht");
+  if(abbau.kosten>0) insights.push("🌙 <strong>Abbaukosten: "+fmt(abbau.kosten)+"</strong> ("+fmtP(abbauPct)+" der PA) — Ø "+(abbau.count>0?(abbau.stunden/abbau.count).toFixed(1):"0")+"h nach Schluss pro Schicht");
+  // 2. Schnellster Abbauer
+  if(abbauMaList.length>0){
+    var fastest=abbauMaList[0];
+    var slowest=abbauMaList[abbauMaList.length-1];
+    if(fastest[1].count>=2)insights.push("⚡ Schnellster Abbau: <strong>"+fastest[0]+"</strong> (Ø "+(fastest[1].stunden/fastest[1].count).toFixed(1)+"h nach Schluss, "+fastest[1].count+"×)");
+    if(slowest[1].count>=2&&abbauMaList.length>1)insights.push("🐢 Längster Abbau: <strong>"+slowest[0]+"</strong> (Ø "+(slowest[1].stunden/slowest[1].count).toFixed(1)+"h nach Schluss, "+slowest[1].count+"×)");
   }
-  // 2. Standort-Unterschied
-  var stNames=Object.keys(closingStMap);
-  if(stNames.length===2){
-    var s1=closingStMap[stNames[0]],s2=closingStMap[stNames[1]];
-    var avg1=s1.count>0?s1.totalUeber/s1.count:0,avg2=s2.count>0?s2.totalUeber/s2.count:0;
-    if(Math.abs(avg1-avg2)>0.3){
-      var faster=avg1<avg2?stNames[0]:stNames[1];
-      var slower=avg1<avg2?stNames[1]:stNames[0];
-      var diff=Math.abs(avg1-avg2);
-      insights.push("🏪 <strong>"+faster+"</strong> schließt Ø "+diff.toFixed(1)+"h schneller als "+slower);
+  // 3. Standort-Unterschied Abbau
+  var abbauStNames=Object.keys(abbauStMap);
+  if(abbauStNames.length===2){
+    var as1=abbauStMap[abbauStNames[0]],as2=abbauStMap[abbauStNames[1]];
+    var aAvg1=as1.count>0?as1.stunden/as1.count:0,aAvg2=as2.count>0?as2.stunden/as2.count:0;
+    if(Math.abs(aAvg1-aAvg2)>0.2){
+      var aFaster=aAvg1<aAvg2?abbauStNames[0]:abbauStNames[1];
+      var aSlower=aAvg1<aAvg2?abbauStNames[1]:abbauStNames[0];
+      insights.push("🏪 Abbau <strong>"+aFaster+"</strong> Ø "+Math.abs(aAvg1-aAvg2).toFixed(1)+"h schneller als "+aSlower);
     }
   }
-  // 3. Bestes Closing-Team
-  if(closingTeamList.length>0){
-    var bestTeam=closingTeamList[0];
-    if(bestTeam[1].count>=2)insights.push("👥 Effizientestes Closing-Team: <strong>"+bestTeam[0]+"</strong> (Ø "+(bestTeam[1].totalUeber/bestTeam[1].count).toFixed(1)+"h, "+bestTeam[1].count+"×)");
+  // 4. Bestes Abbau-Team
+  if(abbauTeamList.length>0){
+    var bestTeam=abbauTeamList[0];
+    if(bestTeam[1].count>=2)insights.push("👥 Effizientestes Abbau-Team: <strong>"+bestTeam[0]+"</strong> (Ø "+(bestTeam[1].totalNach/bestTeam[1].count).toFixed(1)+"h, "+bestTeam[1].count+"×)");
   }
-  // 4. Wochentag-Muster
-  var wtEntries=Object.entries(closingWtMap).filter(function(e){return e[1].count>=2;});
+  // 5. Wochentag-Muster Abbau
+  var wtEntries=Object.entries(abbauWtMap).filter(function(e){return e[1].count>=2;});
   if(wtEntries.length>=2){
-    wtEntries.sort(function(a,b){return(a[1].totalUeber/a[1].count)-(b[1].totalUeber/b[1].count);});
+    wtEntries.sort(function(a,b){return(a[1].stunden/a[1].count)-(b[1].stunden/b[1].count);});
     var fastDay=wtEntries[0],slowDay=wtEntries[wtEntries.length-1];
-    if((slowDay[1].totalUeber/slowDay[1].count)-(fastDay[1].totalUeber/fastDay[1].count)>0.2){
-      insights.push("📅 Schnellster Closing-Tag: <strong>"+fastDay[0]+"</strong> (Ø "+(fastDay[1].totalUeber/fastDay[1].count).toFixed(1)+"h) · Längster: <strong>"+slowDay[0]+"</strong> (Ø "+(slowDay[1].totalUeber/slowDay[1].count).toFixed(1)+"h)");
+    if((slowDay[1].stunden/slowDay[1].count)-(fastDay[1].stunden/fastDay[1].count)>0.2){
+      insights.push("📅 Schnellster Abbau: <strong>"+fastDay[0]+"</strong> (Ø "+(fastDay[1].stunden/fastDay[1].count).toFixed(1)+"h) · Längster: <strong>"+slowDay[0]+"</strong> (Ø "+(slowDay[1].stunden/slowDay[1].count).toFixed(1)+"h)");
     }
   }
 
@@ -3128,100 +3139,124 @@ function renderPersonal(){
       </div>
     </div>
 
-    <!-- OPENING / CLOSING BREAKDOWN -->
-    <div class="grid2" style="margin-top:0">
-      <div class="box">
-        <div class="box-title">🌅 Opening vs 🌙 Closing</div>
-        <div class="box-sub">Personalkosten nach Schichttyp</div>
-        ${["Opening","Mitte","Closing"].map(function(typ){
-          var s=shiftMap[typ];
-          var pct=shiftTotal>0?s.kosten/shiftTotal:0;
-          var emoji=typ==="Opening"?"🌅":typ==="Closing"?"🌙":"☀️";
-          var col=typ==="Opening"?"#f59e0b":typ==="Closing"?"#6366f1":"#3b82f6";
-          var avgH=s.count>0?s.stunden/s.count:0;
-          return'<div style="padding:10px 0;border-bottom:1px solid #1e2d40;cursor:pointer" onclick="drill(\'d-shift-'+typ+'\')">'+
-            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
-              '<span style="color:#f1f5f9;font-weight:600;font-size:13px">'+emoji+' '+typ+'</span>'+
-              '<span style="color:'+col+';font-weight:700">'+fmt(s.kosten)+'</span>'+
-            '</div>'+
-            '<div style="background:#1e2d40;border-radius:4px;height:6px;margin-bottom:4px">'+
-              '<div style="background:'+col+';height:100%;border-radius:4px;width:'+Math.round(pct*100)+'%"></div>'+
-            '</div>'+
-            '<div style="display:flex;justify-content:space-between;font-size:11px;color:#475569">'+
-              '<span>'+s.count+' Schichten · '+Math.round(s.stunden)+' h</span>'+
-              '<span>'+fmtP(pct)+' der PA · Ø '+avgH.toFixed(1)+' h/Schicht</span>'+
-            '</div>'+
-          '</div>'+
-          '<div id="d-shift-'+typ+'" class="drill-panel">'+
-            '<div class="drill-title">'+typ+'-Schichten Details</div>'+
-            (function(){
-              var smMap={};
-              s.data.forEach(function(r){
-                if(!smMap[r.mitarbeiter])smMap[r.mitarbeiter]={stunden:0,kosten:0,count:0};
-                smMap[r.mitarbeiter].stunden+=r.stunden;
-                smMap[r.mitarbeiter].kosten+=r.kosten;
-                smMap[r.mitarbeiter].count++;
-              });
-              return Object.entries(smMap).sort(function(a,b){return b[1].stunden-a[1].stunden;}).slice(0,8).map(function(e){
-                return'<div class="drill-row"><span>'+e[0]+' ('+e[1].count+'×)</span><span>'+Math.round(e[1].stunden)+' h · '+fmt(e[1].kosten)+'</span></div>';
-              }).join("");
-            })()+
-          '</div>';
-        }).join("")}
+    <!-- AUFBAU / ABBAU KOSTENANALYSE -->
+    <div class="box" style="margin-bottom:14px">
+      <div class="box-title">🌅 Aufbau & 🌙 Abbau — Kosten außerhalb der Öffnungszeiten</div>
+      <div class="box-sub">Stunden & Kosten vor 12:00 (Aufbau) und nach Ladenschluss (Abbau)</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0">
+        <div style="background:#1a2538;border-radius:10px;padding:14px;border-left:3px solid #f59e0b">
+          <div style="font-size:10px;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">🌅 Aufbau (vor 12:00)</div>
+          <div style="font-size:22px;font-weight:700;color:#f59e0b">${fmt(aufbau.kosten)}</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:4px">${aufbau.stunden.toFixed(1)} h · ${aufbau.count} Schichten</div>
+          <div style="font-size:11px;color:#475569;margin-top:2px">Ø ${aufbau.count>0?(aufbau.stunden/aufbau.count).toFixed(1):'0'} h vor Öffnung</div>
+          <div style="font-size:11px;color:#475569">${fmtP(pk.total>0?aufbau.kosten/pk.total:0)} der Personalkosten</div>
+        </div>
+        <div style="background:#1a2538;border-radius:10px;padding:14px;border-left:3px solid #22c55e">
+          <div style="font-size:10px;color:#22c55e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">☀️ Betrieb (Öffnungszeit)</div>
+          <div style="font-size:22px;font-weight:700;color:#22c55e">${fmt(betrieb.kosten)}</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:4px">${betrieb.stunden.toFixed(1)} h</div>
+          <div style="font-size:11px;color:#475569;margin-top:2px">Umsatzgenerierende Stunden</div>
+          <div style="font-size:11px;color:#475569">${fmtP(pk.total>0?betrieb.kosten/pk.total:0)} der Personalkosten</div>
+        </div>
+        <div style="background:#1a2538;border-radius:10px;padding:14px;border-left:3px solid #6366f1">
+          <div style="font-size:10px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">🌙 Abbau (nach Schluss)</div>
+          <div style="font-size:22px;font-weight:700;color:#6366f1">${fmt(abbau.kosten)}</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:4px">${abbau.stunden.toFixed(1)} h · ${abbau.count} Schichten</div>
+          <div style="font-size:11px;color:#475569;margin-top:2px">Ø ${abbau.count>0?(abbau.stunden/abbau.count).toFixed(1):'0'} h nach Schluss</div>
+          <div style="font-size:11px;color:#475569">${fmtP(pk.total>0?abbau.kosten/pk.total:0)} der Personalkosten</div>
+        </div>
       </div>
+      <!-- Standort-Vergleich -->
+      ${(Object.keys(aufbauStMap).length>0||Object.keys(abbauStMap).length>0)?
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">'+
+          Object.keys(aufbauStMap).concat(Object.keys(abbauStMap)).filter(function(v,i,a){return a.indexOf(v)===i;}).map(function(st){
+            var auf=aufbauStMap[st]||{stunden:0,kosten:0,count:0};
+            var ab=abbauStMap[st]||{stunden:0,kosten:0,count:0};
+            return'<div style="background:#111827;border-radius:8px;padding:10px;border:1px solid #1e2d40">'+
+              '<div style="font-size:12px;font-weight:600;color:#f1f5f9;margin-bottom:8px">'+st+'</div>'+
+              '<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid #1e2d40">'+
+                '<span style="color:#f59e0b">🌅 Aufbau</span>'+
+                '<span style="color:#f59e0b">'+auf.stunden.toFixed(1)+' h · '+fmt(auf.kosten)+' ('+auf.count+'×)</span>'+
+              '</div>'+
+              '<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0">'+
+                '<span style="color:#6366f1">🌙 Abbau</span>'+
+                '<span style="color:#6366f1">'+ab.stunden.toFixed(1)+' h · '+fmt(ab.kosten)+' ('+ab.count+'×)</span>'+
+              '</div>'+
+            '</div>';
+          }).join("")+
+        '</div>':''}
+    </div>
 
+    <div class="grid2" style="margin-top:0">
+      <!-- ABBAU-EFFIZIENZ RANKING -->
       <div class="box">
-        <div class="box-title">🔍 Closing-Effizienz</div>
-        <div class="box-sub">Ø Dauer nach Ladenschluss</div>
-        ${closingMaList.length>0?closingMaList.slice(0,8).map(function(e,i){
+        <div class="box-title">🌙 Abbau-Effizienz nach Mitarbeiter</div>
+        <div class="box-sub">Ø Stunden nach Ladenschluss (min. 2 Schichten)</div>
+        ${abbauMaList.length>0?abbauMaList.slice(0,10).map(function(e,i){
           var name=e[0],d=e[1];
-          var avgUeber=d.totalUeber/d.count;
-          var maxBar=closingMaList.length>0?closingMaList[closingMaList.length-1][1].totalUeber/closingMaList[closingMaList.length-1][1].count:1;
-          var pct=maxBar>0?avgUeber/maxBar*100:0;
-          var col=avgUeber<=0.5?"#22c55e":avgUeber<=1?"#f59e0b":"#ef4444";
+          var avg=d.stunden/d.count;
+          var maxBar=abbauMaList.length>0?abbauMaList[abbauMaList.length-1][1].stunden/abbauMaList[abbauMaList.length-1][1].count:1;
+          var pct=maxBar>0?avg/maxBar*100:0;
+          var col=avg<=0.5?"#22c55e":avg<=1?"#f59e0b":"#ef4444";
           return'<div style="padding:6px 0;border-bottom:1px solid #1e2d40">'+
             '<div style="display:flex;justify-content:space-between;margin-bottom:3px">'+
               '<span style="color:#e2e8f0;font-size:12px">'+(i+1)+'. '+name+'</span>'+
-              '<span style="color:'+col+';font-weight:600;font-size:12px">Ø '+avgUeber.toFixed(1)+' h</span>'+
+              '<span style="color:'+col+';font-weight:600;font-size:12px">Ø '+avg.toFixed(1)+' h · '+fmt(d.kosten)+'</span>'+
             '</div>'+
             '<div style="background:#1e2d40;border-radius:3px;height:4px">'+
-              '<div style="background:'+col+';height:100%;border-radius:3px;width:'+Math.round(pct)+'%"></div>'+
+              '<div style="background:'+col+';height:100%;border-radius:3px;width:'+Math.max(Math.round(pct),5)+'%"></div>'+
             '</div>'+
-            '<div style="font-size:10px;color:#475569;margin-top:2px">'+d.count+' Closings · Ø '+((d.totalStd/d.count)).toFixed(1)+' h Schichtlänge'+
-              (Object.keys(d.standorte).length>1?' · '+Object.entries(d.standorte).map(function(s){return s[0].substring(0,2)+': '+(s[1].totalUeber/s[1].count).toFixed(1)+'h';}).join(', '):'')+
+            '<div style="font-size:10px;color:#475569;margin-top:2px">'+d.count+' Abbau-Schichten'+
+              (Object.keys(d.standorte).length>1?' · '+Object.entries(d.standorte).map(function(s){return s[0].substring(0,2)+': Ø '+(s[1].stunden/s[1].count).toFixed(1)+'h';}).join(', '):'')+
             '</div>'+
           '</div>';
-        }).join(""):'<div style="color:#475569;font-size:12px;padding:12px 0">Nicht genügend Closing-Daten für Analyse (min. 2 Schichten pro MA).</div>'}
-        ${Object.keys(closingStMap).length>0?'<div style="margin-top:10px;padding-top:8px;border-top:1px solid #1e2d40">'+
-          '<div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Nach Standort</div>'+
-          Object.entries(closingStMap).map(function(e){
-            var name=e[0],d=e[1];
-            var avg=d.count>0?d.totalUeber/d.count:0;
-            var col=avg<=0.5?"#22c55e":avg<=1?"#f59e0b":"#ef4444";
-            return'<div class="drill-row"><span>'+name+'</span><span style="color:'+col+'">Ø '+avg.toFixed(1)+' h nach Schluss · '+d.count+' Closings</span></div>';
-          }).join("")+
-        '</div>':''}
+        }).join(""):'<div style="color:#475569;font-size:12px;padding:12px 0">Nicht genügend Abbau-Daten (min. 2 Schichten pro MA).</div>'}
+      </div>
+
+      <!-- AUFBAU-EFFIZIENZ RANKING -->
+      <div class="box">
+        <div class="box-title">🌅 Aufbau-Effizienz nach Mitarbeiter</div>
+        <div class="box-sub">Ø Stunden vor Öffnung (min. 2 Schichten)</div>
+        ${aufbauMaList.length>0?aufbauMaList.slice(0,10).map(function(e,i){
+          var name=e[0],d=e[1];
+          var avg=d.stunden/d.count;
+          var maxBar=aufbauMaList.length>0?aufbauMaList[aufbauMaList.length-1][1].stunden/aufbauMaList[aufbauMaList.length-1][1].count:1;
+          var pct=maxBar>0?avg/maxBar*100:0;
+          var col=avg<=0.5?"#22c55e":avg<=1?"#f59e0b":"#ef4444";
+          return'<div style="padding:6px 0;border-bottom:1px solid #1e2d40">'+
+            '<div style="display:flex;justify-content:space-between;margin-bottom:3px">'+
+              '<span style="color:#e2e8f0;font-size:12px">'+(i+1)+'. '+name+'</span>'+
+              '<span style="color:'+col+';font-weight:600;font-size:12px">Ø '+avg.toFixed(1)+' h · '+fmt(d.kosten)+'</span>'+
+            '</div>'+
+            '<div style="background:#1e2d40;border-radius:3px;height:4px">'+
+              '<div style="background:'+col+';height:100%;border-radius:3px;width:'+Math.max(Math.round(pct),5)+'%"></div>'+
+            '</div>'+
+            '<div style="font-size:10px;color:#475569;margin-top:2px">'+d.count+' Aufbau-Schichten</div>'+
+          '</div>';
+        }).join(""):'<div style="color:#475569;font-size:12px;padding:12px 0">Nicht genügend Aufbau-Daten (min. 2 Schichten pro MA).</div>'}
       </div>
     </div>
 
     <!-- PATTERN INSIGHTS -->
-    ${insights.length>0?'<div class="box" style="margin-bottom:14px"><div class="box-title">🧠 Erkannte Muster</div><div class="box-sub">Automatisch erkannte Trends aus Opening/Closing-Daten</div>'+
+    ${insights.length>0?'<div class="box" style="margin-bottom:14px"><div class="box-title">🧠 Erkannte Muster</div><div class="box-sub">Automatische Trends aus Aufbau/Abbau-Daten</div>'+
       insights.map(function(ins){
         return'<div style="padding:8px 10px;margin:6px 0;background:#1a2538;border-radius:8px;border-left:3px solid #f97316;font-size:12px;color:#e2e8f0;line-height:1.6">'+ins+'</div>';
       }).join("")+
     '</div>':''}
 
-    <!-- CLOSING TREND NACH WOCHENTAG -->
-    ${Object.keys(closingWtMap).length>0?'<div class="box" style="margin-bottom:14px"><div class="box-title">📅 Closing nach Wochentag</div><div class="box-sub">Ø Dauer nach Ladenschluss</div>'+
+    <!-- ABBAU NACH WOCHENTAG -->
+    ${Object.keys(abbauWtMap).length>0?'<div class="box" style="margin-bottom:14px"><div class="box-title">📅 Abbau nach Wochentag</div><div class="box-sub">Ø Stunden & Kosten nach Ladenschluss</div>'+
       '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
-        ["Mo","Di","Mi","Do","Fr","Sa","So"].filter(function(wt){return closingWtMap[wt];}).map(function(wt){
-          var d=closingWtMap[wt];
-          var avg=d.count>0?d.totalUeber/d.count:0;
+        ["Di","Mi","Do","Fr","Sa","So"].filter(function(wt){return abbauWtMap[wt];}).map(function(wt){
+          var d=abbauWtMap[wt];
+          var avg=d.count>0?d.stunden/d.count:0;
+          var avgK=d.count>0?d.kosten/d.count:0;
           var col=avg<=0.5?"#22c55e":avg<=1?"#f59e0b":"#ef4444";
-          return'<div style="flex:1;min-width:60px;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center">'+
+          return'<div style="flex:1;min-width:70px;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center">'+
             '<div style="font-size:10px;color:#64748b;margin-bottom:4px">'+wt+'</div>'+
             '<div style="font-size:16px;font-weight:700;color:'+col+'">'+avg.toFixed(1)+'h</div>'+
-            '<div style="font-size:9px;color:#475569;margin-top:2px">'+d.count+'× Closings</div>'+
+            '<div style="font-size:10px;color:#94a3b8;margin-top:2px">'+fmt(avgK)+'/Tag</div>'+
+            '<div style="font-size:9px;color:#475569;margin-top:2px">'+d.count+'× Abbau</div>'+
           '</div>';
         }).join("")+
       '</div>'+
