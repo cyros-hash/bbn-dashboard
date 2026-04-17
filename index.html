@@ -237,6 +237,39 @@ canvas{max-height:220px}
 </head>
 <body>
 
+<div id="lock-screen" style="position:fixed;inset:0;z-index:99999;background:#0a1628;display:flex;align-items:center;justify-content:center">
+  <div style="text-align:center;max-width:340px;width:100%">
+    <div style="font-size:48px;margin-bottom:12px">🍜</div>
+    <h2 style="color:#f1f5f9;margin:0 0 4px;font-size:18px">Bang Bang Noodles</h2>
+    <div style="color:#64748b;font-size:12px;margin-bottom:24px">Intelligence Dashboard</div>
+    <input id="lock-pw" type="password" placeholder="Passwort eingeben"
+      style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #1e3a5f;background:#0f1d32;color:#f1f5f9;font-size:14px;outline:none;box-sizing:border-box"
+      onkeydown="if(event.key==='Enter')unlockDash()">
+    <button onclick="unlockDash()"
+      style="width:100%;margin-top:10px;padding:10px;border-radius:8px;border:none;background:#3b82f6;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Entsperren</button>
+    <div id="lock-err" style="color:#ef4444;font-size:12px;margin-top:8px;min-height:16px"></div>
+  </div>
+</div>
+
+<script>
+var _pwHash="3a14121eb933376c8c353a1409dc9124ef4518c42d62ccb1bf1ee4cc850171c7";
+async function sha256(s){var buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,"0");}).join("");}
+async function unlockDash(){
+  var pw=document.getElementById("lock-pw").value;
+  if(!pw){document.getElementById("lock-err").textContent="Bitte Passwort eingeben.";return;}
+  var h=await sha256(pw);
+  if(h===_pwHash){
+    sessionStorage.setItem("bbn_unlocked","1");
+    document.getElementById("lock-screen").style.display="none";
+  }else{
+    document.getElementById("lock-err").textContent="Falsches Passwort.";
+    document.getElementById("lock-pw").value="";
+    document.getElementById("lock-pw").focus();
+  }
+}
+if(sessionStorage.getItem("bbn_unlocked")==="1"){document.getElementById("lock-screen").style.display="none";}
+</script>
+
 <div class="header">
   <div>
     <h1>🍜 Bang Bang Noodles — Intelligence Dashboard</h1>
@@ -2547,6 +2580,30 @@ function renderGuV(){
   var rs=gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";});
   var km=kpi(md),kr=kpi(rs);
   var pkMd=getOrdio(von,bis,"Mehringdamm"),pkRs=getOrdio(von,bis,"Rosenthaler Straße");
+  var paMd=pkMd.total>0?pkMd.total:km.u*0.33, paRs=pkRs.total>0?pkRs.total:kr.u*0.33;
+
+  // Per-Standort Lieferando-Provision (aligned)
+  var mdDatumSet={};md.forEach(function(r){mdDatumSet[r.datum]=1;});
+  var rsDatumSet={};rs.forEach(function(r){rsDatumSet[r.datum]=1;});
+  var ldoMd=txGuvG.filter(function(r){return r.standort==="Mehringdamm"&&mdDatumSet[r.datum];}).reduce(function(s,r){return s+r.ldo;},0)*0.20;
+  var ldoRs=txGuvG.filter(function(r){return r.standort==="Rosenthaler Straße"&&rsDatumSet[r.datum];}).reduce(function(s,r){return s+r.ldo;},0)*0.20;
+
+  // Per-Standort FC (Ist oder Soll)
+  var fcMdAmt=guvHatIst&&uRfc.md?uRfc.md.quote*km.u:km.f;
+  var fcRsAmt=guvHatIst&&uRfc.rs?uRfc.rs.quote*kr.u:kr.f;
+  var fcMdPct=km.u>0?fcMdAmt/km.u:0, fcRsPct=kr.u>0?fcRsAmt/kr.u:0;
+
+  // Per-Standort CM
+  var rohMd=km.u-fcMdAmt-ldoMd, rohRs=kr.u-fcRsAmt-ldoRs;
+  var cmMd=rohMd-paMd, cmRs=rohRs-paRs;
+  var cmMdPct=km.u>0?cmMd/km.u:0, cmRsPct=kr.u>0?cmRs/kr.u:0;
+
+  // Per-Standort Fixkosten (50/50) und EBITDA
+  var fkHalf={};Object.keys(fk).forEach(function(key){fkHalf[key]=fk[key]/2;});
+  var smMd=getSocialMediaKosten(von,bis,"Mehringdamm"),smRs=getSocialMediaKosten(von,bis,"Rosenthaler Straße");
+  var ebitdaMd=cmMd-fkHalf.gesamt-smMd, ebitdaRs=cmRs-fkHalf.gesamt-smRs;
+  var ebitdaMdPct=km.u>0?ebitdaMd/km.u:0, ebitdaRsPct=kr.u>0?ebitdaRs/kr.u:0;
+  var paMdPct=km.u>0?paMd/km.u:0, paRsPct=kr.u>0?paRs/kr.u:0;
 
   document.getElementById("t-guv").innerHTML=`
     <div class="grid2">
@@ -2693,28 +2750,78 @@ function renderGuV(){
       </div>
 
       <div class="box">
-        <div class="box-title">KPI-Ampel</div>
-        <div class="box-sub">Ist vs. Ziel</div>
-        ${[
-          {n:"Food Cost % "+uFcLabel,w:fmtP(uFcPct),z:fmtP(ZIELE.fc),ok:uFcPct<=ZIELE.fc,warn:uFcPct<=ZIELE.fc+0.03},
-          {n:"Operative Personal-Quote",w:fmtP(paPct)+(paReal?" (live)":""),z:fmtP(ZIELE.pa),ok:paPct<=ZIELE.pa,warn:paPct<=ZIELE.pa+0.03},
-          {n:"Contribution Margin",w:fmtP(cmPct),z:fmtP(ZIELE.cm),ok:cmPct>=ZIELE.cm,warn:cmPct>=ZIELE.cm-0.03},
-          {n:"Rohertrag-Marge",w:fmtP(k.u>0?rohertrag/k.u:0),z:"65%+",ok:rohertrag/k.u>=0.65,warn:rohertrag/k.u>=0.62},
-          {n:"EBITDA-Marge",w:fmtP(ebitdaPct),z:fmtP(ZIELE.ebitda),ok:ebitdaPct>=ZIELE.ebitda,warn:ebitdaPct>=ZIELE.ebitda*0.9},
-          {n:"Ø Tagesumsatz",w:fmt(k.u/k.t),z:"€ 3.200+",ok:k.u/k.t>=3200,warn:k.u/k.t>=2800},
-          {n:"Ø Bon-Wert (brutto)",w:fmtD(bonWertData.avg),z:fmtD(ZIELE.bonWert),ok:bonWertData.avg>=ZIELE.bonWert,warn:bonWertData.avg>=ZIELE.bonWert*0.9}
-        ].map(function(a){
-          var col=a.ok?"#22c55e":a.warn?"#f97316":"#ef4444";
-          return'<div class="ampel-row"><span style="color:#64748b">'+a.n+'</span><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;color:#f1f5f9">'+a.w+'</span><span style="font-size:10px;color:#475569">Ziel: '+a.z+'</span><div class="ampel-dot" style="background:'+col+'"></div></div></div>';
-        }).join("")}
+        <div class="box-title">📊 KPI-Ampel</div>
+        <div class="box-sub">Ist vs. Ziel — Progress Bars</div>
+        ${(function(){
+          var kpis=[
+            {n:"Food Cost "+uFcLabel,val:uFcPct,ziel:ZIELE.fc,wS:fmtP(uFcPct),zS:fmtP(ZIELE.fc),inv:true},
+            {n:"Personal-Quote"+(paReal?" (Live)":""),val:paPct,ziel:ZIELE.pa,wS:fmtP(paPct),zS:fmtP(ZIELE.pa),inv:true},
+            {n:"Contribution Margin",val:cmPct,ziel:ZIELE.cm,wS:fmtP(cmPct),zS:fmtP(ZIELE.cm),inv:false},
+            {n:"Rohertrag-Marge",val:k.u>0?rohertrag/k.u:0,ziel:0.65,wS:fmtP(k.u>0?rohertrag/k.u:0),zS:"65%",inv:false},
+            {n:"EBITDA-Marge",val:ebitdaPct,ziel:ZIELE.ebitda,wS:fmtP(ebitdaPct),zS:fmtP(ZIELE.ebitda),inv:false},
+            {n:"Ø Tagesumsatz",val:k.u/k.t,ziel:3200,wS:fmt(k.u/k.t),zS:"€ 3.200",inv:false},
+            {n:"Ø Bon-Wert",val:bonWertData.avg,ziel:ZIELE.bonWert,wS:fmtD(bonWertData.avg),zS:fmtD(ZIELE.bonWert),inv:false}
+          ];
+          return kpis.map(function(a){
+            var ok=a.inv?a.val<=a.ziel:a.val>=a.ziel;
+            var warn=a.inv?a.val<=a.ziel+0.03:a.val>=a.ziel-0.03;
+            var col=ok?"#22c55e":(warn?"#f97316":"#ef4444");
+            var barMax=Math.max(Math.abs(a.val),a.ziel)*1.15;
+            var valPct=Math.min(Math.round(Math.abs(a.val)/barMax*100),100);
+            var zielPos=Math.round(a.ziel/barMax*100);
+            return'<div style="padding:7px 0;border-bottom:1px solid #1e2d40">'
+              +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'
+                +'<span style="font-size:11px;color:#94a3b8">'+a.n+'</span>'
+                +'<span style="font-size:12px;color:#f1f5f9;font-weight:600">'+a.wS+'</span>'
+              +'</div>'
+              +'<div style="position:relative;height:14px;background:#1e2d40;border-radius:3px;overflow:visible">'
+                +'<div style="width:'+valPct+'%;height:100%;background:'+col+';border-radius:3px;opacity:0.85;transition:width 0.3s"></div>'
+                +'<div style="position:absolute;top:-1px;bottom:-1px;left:'+zielPos+'%;width:2px;background:#f1f5f9;border-radius:1px" title="Ziel '+a.zS+'"></div>'
+              +'</div>'
+              +'<div style="font-size:9px;color:#475569;margin-top:2px;text-align:right">Ziel '+a.zS+'</div>'
+            +'</div>';
+          }).join("");
+        })()}
+      </div>
+    </div>
 
-        <div class="ai-box" style="margin-top:14px">
-          ${ebitdaPct>=ZIELE.ebitda&&cmPct>=ZIELE.cm?"Starke Performance — alle Hauptkennzahlen im Ziel.":
-            cmPct>=ZIELE.cm?"Contribution Margin gut. Fixkosten: "+fmt(fk.gesamt)+" im Zeitraum ("+fmt(FIXKOSTEN_GESAMT)+"/Monat).":
-            paPct>ZIELE.pa&&k.fp>ZIELE.fc?"Beide Kostenblöcke über Ziel. Priorität: Personal-Effizienz ("+fmt((paPct-ZIELE.pa)*k.u)+" Potenzial).":
-            paPct>ZIELE.pa?"Operative Personalkosten über Ziel. "+fmt((paPct-ZIELE.pa)*k.u)+" Einsparungspotenzial.":
-            "Food Cost über Ziel. Portionsgrößen und Wareneinsatz prüfen."}
-        </div>
+    <div class="box" style="margin-top:14px">
+      <div class="box-title">🏪 Standort-Vergleich — Mini-GuV</div>
+      <div class="box-sub">Mehringdamm vs. Rosenthaler vs. Gesamt · ${fk.tage} Tage</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:12px">
+        ${(function(){
+          var standorte=[
+            {name:"Mehringdamm",emoji:"🔴",u:km.u,fc:fcMdAmt,fcP:fcMdPct,pa:paMd,paP:paMdPct,ldo:ldoMd,roh:rohMd,cm:cmMd,cmP:cmMdPct,ebitda:ebitdaMd,ebitdaP:ebitdaMdPct,t:km.t},
+            {name:"Rosenthaler",emoji:"🔵",u:kr.u,fc:fcRsAmt,fcP:fcRsPct,pa:paRs,paP:paRsPct,ldo:ldoRs,roh:rohRs,cm:cmRs,cmP:cmRsPct,ebitda:ebitdaRs,ebitdaP:ebitdaRsPct,t:kr.t},
+            {name:"Gesamt",emoji:"🟢",u:k.u,fc:uFcAmt,fcP:uFcPct,pa:pa,paP:paPct,ldo:ldoProv,roh:rohertrag,cm:cm,cmP:cmPct,ebitda:ebitda,ebitdaP:ebitdaPct,t:k.t}
+          ];
+          return standorte.map(function(s){
+            function row(label,val,pct,isGood){
+              var c=isGood?"#22c55e":"#ef4444";
+              return'<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1e2d4080;font-size:11px">'
+                +'<span style="color:#94a3b8">'+label+'</span>'
+                +'<span style="color:'+c+';font-weight:600">'+val+(pct!==null?' <span style="color:#475569;font-weight:400">('+pct+')</span>':'')+'</span>'
+              +'</div>';
+            }
+            return'<div style="background:#0a1628;border-radius:8px;padding:14px;border-top:3px solid '+(s.name==="Mehringdamm"?"#ef4444":s.name==="Rosenthaler"?"#3b82f6":"#22c55e")+'">'
+              +'<div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:2px">'+s.emoji+' '+s.name+'</div>'
+              +'<div style="font-size:10px;color:#475569;margin-bottom:10px">'+s.t+' Tage mit Daten</div>'
+              +'<div style="font-size:20px;font-weight:700;color:#22c55e;margin-bottom:10px">'+fmt(s.u)+'</div>'
+              +row("Food Cost","- "+fmt(s.fc),fmtP(s.fcP),s.fcP<=ZIELE.fc)
+              +row("Ldo-Provision","- "+fmt(s.ldo),null,true)
+              +'<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #334155;font-size:11px"><span style="color:#f1f5f9;font-weight:600">Rohertrag</span><span style="color:#f1f5f9;font-weight:600">'+fmt(s.roh)+'</span></div>'
+              +row("Personal","- "+fmt(s.pa),fmtP(s.paP),s.paP<=ZIELE.pa)
+              +'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:2px solid #3b82f6;font-size:12px"><span style="color:#60a5fa;font-weight:700">CM</span><span style="color:#60a5fa;font-weight:700">'+fmt(s.cm)+' ('+fmtP(s.cmP)+')</span></div>'
+              +'<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11px;color:#475569"><span>Fixkosten</span><span>- '+fmt(s.name==="Gesamt"?fk.gesamt+smKosten:fkHalf.gesamt+(s.name==="Mehringdamm"?smMd:smRs))+'</span></div>'
+              +'<div style="display:flex;justify-content:space-between;padding:6px 0;margin-top:2px;border-top:2px solid #f97316;font-size:13px"><span style="color:#f1f5f9;font-weight:700">EBITDA</span><span style="color:'+(s.ebitda>=0?'#22c55e':'#ef4444')+';font-weight:700;font-size:15px">'+fmt(s.ebitda)+'</span></div>'
+              +'<div style="text-align:right;font-size:10px;color:#475569">Marge: '+fmtP(s.ebitdaP)+'</div>'
+            +'</div>';
+          }).join("");
+        })()}
+      </div>
+      <div class="ai-box" style="margin-top:12px">
+        ${cmMdPct>cmRsPct?"Mehringdamm hat die bessere CM-Quote ("+fmtP(cmMdPct)+" vs. "+fmtP(cmRsPct)+").":"Rosenthaler hat die bessere CM-Quote ("+fmtP(cmRsPct)+" vs. "+fmtP(cmMdPct)+")."}
+        ${Math.abs(paMdPct-paRsPct)>0.03?" Personal-Unterschied: "+(paMdPct>paRsPct?"MD "+fmtP(paMdPct)+" vs. RS "+fmtP(paRsPct):"RS "+fmtP(paRsPct)+" vs. MD "+fmtP(paMdPct))+".":""}
       </div>
     </div>`;
 }
