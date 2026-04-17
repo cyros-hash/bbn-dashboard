@@ -2605,153 +2605,147 @@ function renderGuV(){
   var ebitdaMdPct=km.u>0?ebitdaMd/km.u:0, ebitdaRsPct=kr.u>0?ebitdaRs/kr.u:0;
   var paMdPct=km.u>0?paMd/km.u:0, paRsPct=kr.u>0?paRs/kr.u:0;
 
+  // Bon-Werte pro Standort
+  var bonWertMd=getBonWert(von,bis,"Mehringdamm"), bonWertRs=getBonWert(von,bis,"Rosenthaler Straße");
+
+  // GuV-Karten-Generator
+  function guvCard(p,id){
+    var fcLbl=guvHatIst?"Ist":"Soll";
+    var _fk=p.fkMul; // Fixkosten-Multiplikator (0.5 pro Standort, 1 gesamt)
+    var _sm=p.sm;
+    var fkPG=fk.personalGemein*_fk+fk.managementFee*_fk+_sm;
+    var fkBetr=fk.miete*_fk+fk.versicherung*_fk+fk.werbeReise*_fk+fk.sonstBetrieb*_fk+fk.verwaltung*_fk+fk.instandhaltung*_fk+fk.abschreibung*_fk;
+    var fkGes=fkPG+fkBetr;
+    var gR=function(label,val,col,drillId){
+      return'<div class="guv-row"'+(drillId?' onclick="drill(\''+drillId+'\')"':' style="cursor:default"')+'><span style="color:#94a3b8">'+label+(drillId?' ↓':'')+'</span><span style="color:'+col+'">'+val+'</span></div>';
+    };
+    var dR=function(label,val){return'<div class="drill-row"><span>'+label+'</span><span>'+val+'</span></div>';};
+
+    return'<div class="box" style="border-top:3px solid '+p.color+'">'
+      +'<div class="box-title">'+p.emoji+' '+p.name+'</div>'
+      +'<div class="box-sub">'+p.t+' Tage · '+fmtP(p.cmP)+' CM · EBITDA '+fmtP(p.ebitdaP)+'</div>'
+
+      // Umsatz
+      +gR("Nettoumsatz",fmt(p.u),"#22c55e;font-size:15px;font-weight:700")
+
+      // FC
+      +gR("— Food Cost ("+fcLbl+" "+fmtP(p.fcP)+")","- "+fmt(p.fc),"#ef4444","d-guv-"+id+"-fc")
+      +'<div id="d-guv-'+id+'-fc" class="drill-panel">'
+        +dR("Quote",fmtP(p.fcP)+" vom Umsatz")
+        +dR("Betrag",fmt(p.fc))
+        +dR("Ziel",fmtP(ZIELE.fc))
+        +(p.fcP>ZIELE.fc?'<div class="ai-box">FC '+fmtP(p.fcP-ZIELE.fc)+' über Ziel. Überschuss: '+fmt((p.fcP-ZIELE.fc)*p.u)+'.</div>':'<div class="ai-box">FC im Zielbereich.</div>')
+      +'</div>'
+
+      // Lieferando
+      +gR("— Lieferando-Provision 20%","- "+fmt(p.ldo),"#ef4444","d-guv-"+id+"-ldo")
+      +'<div id="d-guv-'+id+'-ldo" class="drill-panel">'
+        +dR("Ldo-Bruttoumsatz",fmt(p.ldoBrutto))
+        +dR("Provision 20%",fmt(p.ldo))
+        +dR("Anteil am Umsatz",fmtP(p.u>0?p.ldoBrutto/p.u:0))
+      +'</div>'
+
+      // Rohertrag
+      +'<div class="guv-row" style="cursor:default;border-top:1px solid #334155"><span style="color:#f1f5f9;font-weight:700">= Rohertrag</span><span style="color:#f1f5f9;font-weight:700">'+fmt(p.roh)+' ('+fmtP(p.u>0?p.roh/p.u:0)+')</span></div>'
+
+      // Personal
+      +gR("— Personal ("+fmtP(p.paP)+")","- "+fmt(p.pa),"#8b5cf6","d-guv-"+id+"-pa")
+      +'<div id="d-guv-'+id+'-pa" class="drill-panel">'
+        +dR("Kosten",fmt(p.pa))
+        +dR("Quote",fmtP(p.paP)+" (Ziel "+fmtP(ZIELE.pa)+")")
+        +dR("Stunden",Math.round(p.stunden)+" h")
+        +(p.stunden>0?dR("Ø Kosten/Stunde",fmtD(p.pa/p.stunden)):"")
+        +(p.stunden>0?dR("Umsatz/Stunde",fmtD(p.u/p.stunden)+" (Ziel €"+ZIELE.umsatzStd+")"):"")
+      +'</div>'
+
+      // CM
+      +'<div class="guv-row" style="cursor:default;border-top:2px solid #3b82f6"><span style="color:#60a5fa;font-weight:700">= Contribution Margin</span><span style="color:#60a5fa;font-weight:700">'+fmt(p.cm)+' ('+fmtP(p.cmP)+')</span></div>'
+
+      // Fixkosten Header
+      +'<div style="font-size:10px;color:#475569;padding:5px 0 3px;text-transform:uppercase;letter-spacing:0.5px">Fixkosten ('+fk.tage+'T'+(p.fkMul<1?' · 50%':'')+')</div>'
+
+      // Personalgemeinkosten
+      +gR("— Personalgemein + SM","- "+fmt(fk.personalGemein*_fk+_sm),"#ef4444","d-guv-"+id+"-pg")
+      +'<div id="d-guv-'+id+'-pg" class="drill-panel">'
+        +dR("Kevin Weber","€ 4.175/Mo"+(p.fkMul<1?" × 50%":""))
+        +dR("Jan Haring","€ 6.050/Mo"+(p.fkMul<1?" × 50%":""))
+        +dR("Buted Deleg","€ 800/Mo"+(p.fkMul<1?" × 50%":""))
+        +dR("Social Media",fmt(_sm))
+      +'</div>'
+
+      // Management Fee
+      +gR("— Management Fee","- "+fmt(fk.managementFee*_fk),"#ef4444","d-guv-"+id+"-mgmt")
+      +'<div id="d-guv-'+id+'-mgmt" class="drill-panel">'
+        +dR("Miete/Pacht MD","€ 3.850/Mo")
+        +dR("AFA Inventar","€ 785/Mo")
+        +dR("15% Aufschlag","€ 695/Mo")
+        +dR("GF-Fee","€ 6.000/Mo")
+        +dR("Gesamt/Mo","€ 11.330"+(p.fkMul<1?" × 50%":""))
+      +'</div>'
+
+      // Miete
+      +gR("— Miete & Leasing","- "+fmt(fk.miete*_fk),"#ef4444","d-guv-"+id+"-miete")
+      +'<div id="d-guv-'+id+'-miete" class="drill-panel">'
+        +dR("Mieten & Pachten","€ 9.971/Mo")
+        +dR("Nebenkosten","€ 1.764/Mo")
+        +dR("Einrichtungen","€ 1.662/Mo")
+        +dR("Mietleasing","€ 42/Mo")
+        +'<div class="drill-row" style="color:#475569;font-size:10px"><span>− Savory Stories</span><span>− € 4.428/Mo</span></div>'
+        +dR("Netto/Mo",fmt(FIXKOSTEN.miete)+(p.fkMul<1?" × 50%":""))
+      +'</div>'
+
+      // Sonstige Betriebskosten
+      +gR("— Sonstige Betriebskosten","- "+fmt(fk.sonstBetrieb*_fk),"#ef4444","d-guv-"+id+"-sonst")
+      +'<div id="d-guv-'+id+'-sonst" class="drill-panel">'
+        +dR("Fremdleistungen","€ 6.057/Mo")
+        +dR("Lizenzen & Konzessionen","€ 1.594/Mo")
+        +dR("Küchenutensilien","€ 774/Mo")
+        +dR("Lightspeed","€ 522/Mo")
+        +dR("Reinigung","€ 482/Mo")
+        +dR("Sonstiges","€ 1.634/Mo")
+        +dR("Netto/Mo",fmt(FIXKOSTEN.sonstBetrieb)+(p.fkMul<1?" × 50%":""))
+      +'</div>'
+
+      // Werbe & Reise
+      +gR("— Werbe- & Reisekosten","- "+fmt(fk.werbeReise*_fk),"#ef4444")
+
+      // Verwaltung
+      +gR("— Verwaltungskosten","- "+fmt(fk.verwaltung*_fk),"#ef4444")
+
+      // Instandhaltung
+      +gR("— Instandhaltung & AFA","- "+fmt((fk.instandhaltung+fk.abschreibung)*_fk),"#ef4444")
+
+      // Versicherung
+      +gR("— Versicherungen","- "+fmt(fk.versicherung*_fk),"#ef4444")
+
+      // FK gesamt
+      +'<div class="guv-row" style="cursor:default;font-size:10px;color:#475569"><span>Fixkosten gesamt</span><span>'+fmt(fkGes)+'</span></div>'
+
+      // EBITDA
+      +'<div class="guv-row" style="cursor:default;border-top:2px solid #f97316;margin-top:2px">'
+        +'<span style="color:#f1f5f9;font-weight:700;font-size:14px">= EBITDA</span>'
+        +'<span style="color:'+(p.ebitda>=0?'#22c55e':'#ef4444')+';font-weight:700;font-size:16px">'+fmt(p.ebitda)+'</span>'
+      +'</div>'
+      +'<div style="text-align:right;font-size:11px;color:'+(p.ebitdaP>=ZIELE.ebitda?'#22c55e':'#ef4444')+'">Marge: '+fmtP(p.ebitdaP)+' (Ziel '+fmtP(ZIELE.ebitda)+')</div>'
+    +'</div>';
+  }
+
+  // Lieferando Brutto pro Standort (für Drill)
+  var ldoMdBrutto=txGuvG.filter(function(r){return r.standort==="Mehringdamm"&&mdDatumSet[r.datum];}).reduce(function(s,r){return s+r.ldo;},0);
+  var ldoRsBrutto=txGuvG.filter(function(r){return r.standort==="Rosenthaler Straße"&&rsDatumSet[r.datum];}).reduce(function(s,r){return s+r.ldo;},0);
+
   document.getElementById("t-guv").innerHTML=`
-    <div class="grid2">
-      <div class="box">
-        <div class="box-title" style="color:#f97316">📄 Gewinn & Verlustrechnung</div>
-        <div class="box-sub">Zeitraum: ${von} – ${bis} · ${fk.tage} Tag${fk.tage!==1?"e":""}</div>
-        ${!paReal?'<div style="background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:8px 10px;font-size:11px;color:#f97316;margin-bottom:12px">⚠️ Operative Personalkosten sind Schätzwerte (33%). Für echte Zahlen Ordio-Daten laden.</div>':""}
+    ${!paReal?'<div style="background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:8px 10px;font-size:11px;color:#f97316;margin-bottom:12px">⚠️ Operative Personalkosten sind Schätzwerte (33%). Für echte Zahlen Ordio-Daten laden.</div>':""}
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+      ${guvCard({name:"Mehringdamm",emoji:"🔴",color:"#ef4444",u:km.u,fc:fcMdAmt,fcP:fcMdPct,pa:paMd,paP:paMdPct,ldo:ldoMd,ldoBrutto:ldoMdBrutto,roh:rohMd,cm:cmMd,cmP:cmMdPct,ebitda:ebitdaMd,ebitdaP:ebitdaMdPct,t:km.t,stunden:pkMd.stunden,sm:smMd,fkMul:0.5},"md")}
+      ${guvCard({name:"Rosenthaler",emoji:"🔵",color:"#3b82f6",u:kr.u,fc:fcRsAmt,fcP:fcRsPct,pa:paRs,paP:paRsPct,ldo:ldoRs,ldoBrutto:ldoRsBrutto,roh:rohRs,cm:cmRs,cmP:cmRsPct,ebitda:ebitdaRs,ebitdaP:ebitdaRsPct,t:kr.t,stunden:pkRs.stunden,sm:smRs,fkMul:0.5},"rs")}
+      ${guvCard({name:"Gesamt",emoji:"🟢",color:"#22c55e",u:k.u,fc:uFcAmt,fcP:uFcPct,pa:pa,paP:paPct,ldo:ldoProv,ldoBrutto:ldoUmsatz,roh:rohertrag,cm:cm,cmP:cmPct,ebitda:ebitda,ebitdaP:ebitdaPct,t:k.t,stunden:pk.stunden,sm:smKosten,fkMul:1},"ges")}
+    </div>
 
-        <div class="guv-row" style="cursor:default"><span style="color:#94a3b8">Nettoumsatz</span><span style="color:#22c55e;font-size:15px;font-weight:700">${fmt(k.u)}</span></div>
-
-        <div class="guv-row" onclick="drill('d-guv-fc')"><span style="color:#94a3b8">— Food Cost ${guvHatIst?'(Ist direkt '+fmtP(uFcPct)+')':'(Soll '+fmtP(k.fp)+')'} ↓</span><span style="color:#ef4444">- ${fmt(uFcAmt)}</span></div>
-        <div id="d-guv-fc" class="drill-panel">
-          <div class="drill-row"><span>Mehringdamm ${guvHatIst?'(Ist direkt)':'(Soll)'}</span><span style="color:${(guvHatIst?uRfc.md.quote:km.fp)>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(guvHatIst?uRfc.md.quote:km.fp)}</span></div>
-          <div class="drill-row"><span>Rosenthaler ${guvHatIst?'(Ist direkt)':'(Soll)'}</span><span style="color:${(guvHatIst?uRfc.rs.quote:kr.fp)>ZIELE.fc?'#ef4444':'#22c55e'}">${fmtP(guvHatIst?uRfc.rs.quote:kr.fp)}</span></div>
-          ${guvHatIst?'<div class="drill-row"><span>Soll (Rezeptur)</span><span>'+fmtP(k.fp)+' · '+fmt(k.f)+'</span></div>':''}
-          <div class="ai-box">${guvHatIst?"Ist-Daten aus Bestandsbericht "+uRfc.von+" → "+uRfc.bis+". Quote "+fmtP(uRfc.quote)+". "+(uRfc.quote>k.fp?"Ist liegt "+fmtP(uRfc.quote-k.fp)+" über Soll — Schwund/Verschwendung prüfen.":"Ist liegt unter Soll — gute Kontrolle."):"Soll-Werte (Rezeptur) — Zeitraum außerhalb Bestandsbericht"+(uRfc.hat?" ("+uRfc.von+" → "+uRfc.bis+")":"")+"."}</div>
-        </div>
-
-        <div class="guv-row" onclick="drill('d-guv-ldo')"><span style="color:#94a3b8">— Lieferando-Provision 20% (${fmtP(ldoProvPct)}) ↓</span><span style="color:#ef4444">- ${fmt(ldoProv)}</span></div>
-        <div id="d-guv-ldo" class="drill-panel">
-          <div class="drill-row"><span>Lieferando-Bruttoumsatz</span><span>${fmt(ldoUmsatz)}</span></div>
-          <div class="drill-row"><span>Provision 20%</span><span>${fmt(ldoProv)}</span></div>
-          <div class="drill-row"><span>Anteil am Gesamtumsatz</span><span>${fmtP(ldoProvPct)}</span></div>
-          <div class="ai-box">${ldoUmsatz>0?"Lieferando-Anteil "+fmtP(k.u>0?ldoUmsatz/k.u:0)+" vom Umsatz. Provision drückt Rohertrag um "+fmt(ldoProv)+".":"Kein Lieferando-Umsatz im Zeitraum."}</div>
-        </div>
-
-        <div class="guv-row" style="cursor:default;border-top:1px solid #334155"><span style="color:#f1f5f9;font-weight:700">= Rohertrag</span><span style="color:#f1f5f9;font-weight:700">${fmt(rohertrag)} (${fmtP(k.u>0?rohertrag/k.u:0)})</span></div>
-
-        <div class="guv-row" onclick="drill('d-guv-pa')">
-          <span style="color:#94a3b8">— Operative Personalkosten (${fmtP(paPct)}) ${paReal?'<span class="badge bb" style="font-size:9px">Ordio Live</span>':'<span class="badge by" style="font-size:9px">Schätzung</span>'} ↓</span>
-          <span style="color:#8b5cf6">- ${fmt(pa)}</span>
-        </div>
-        <div id="d-guv-pa" class="drill-panel">
-          <div class="drill-row"><span>Mehringdamm</span><span>${fmt(pkMd.total)} · ${km.u>0?fmtP(pkMd.total/km.u):"—"}</span></div>
-          <div class="drill-row"><span>Rosenthaler</span><span>${fmt(pkRs.total)} · ${kr.u>0?fmtP(pkRs.total/kr.u):"—"}</span></div>
-          <div class="drill-row"><span>Gesamtstunden (operativ)</span><span>${Math.round(pk.stunden)} h</span></div>
-          <div class="ai-box">${paPct>ZIELE.pa?"Operative Personalkosten "+fmtP(paPct-ZIELE.pa)+" über Ziel. Einsparungspotenzial: "+fmt((paPct-ZIELE.pa)*k.u)+".":"Operative Personalkosten im Zielbereich."}</div>
-        </div>
-
-        <div class="guv-row" style="cursor:default;border-top:2px solid #3b82f6"><span style="color:#60a5fa;font-weight:700;font-size:14px">= Contribution Margin</span><span style="color:#60a5fa;font-weight:700;font-size:14px">${fmt(cm)} (${fmtP(cmPct)})</span></div>
-
-        <div style="font-size:11px;color:#475569;padding:6px 0 4px;text-transform:uppercase;letter-spacing:0.5px">Fixkosten (${fk.tage} Tage anteilig)</div>
-
-        <div class="guv-row" onclick="drill('d-guv-personalgemein')"><span style="color:#94a3b8">— Personalgemeinkosten ↓</span><span style="color:#ef4444">- ${fmt(fk.personalGemein+smKosten)}</span></div>
-        <div id="d-guv-personalgemein" class="drill-panel">
-          <div class="drill-row"><span>Kevin Weber</span><span>€ 4.175/Monat</span></div>
-          <div class="drill-row"><span>Jan Haring</span><span>€ 6.050/Monat</span></div>
-          <div class="drill-row"><span>Buted Deleg</span><span>€ 800/Monat</span></div>
-          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Fix Gesamt/Monat</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.personalGemein)}</span></div>
-          <div class="drill-row"><span>Social Media (variabel)</span><span style="color:#f97316">${fmt(smKosten)} (${fk.tage} Tage)</span></div>
-          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9;font-weight:700">Gesamt Personalgemeinkosten</span><span style="color:#ef4444;font-weight:700">${fmt(fk.personalGemein+smKosten)}</span></div>
-        </div>
-
-        <div class="guv-row" onclick="drill('d-guv-mgmtfee')"><span style="color:#94a3b8">— Management Fee (Savory Stories) ↓</span><span style="color:#ef4444">- ${fmt(fk.managementFee)}</span></div>
-        <div id="d-guv-mgmtfee" class="drill-panel">
-          <div class="drill-row"><span>Miete/Pacht Mehringdamm</span><span>€ 3.850/Monat</span></div>
-          <div class="drill-row"><span>AFA Inventar (Anlagen)</span><span>€ 785/Monat</span></div>
-          <div class="drill-row"><span>Aufschlag 15%</span><span>€ 695/Monat</span></div>
-          <div class="drill-row"><span>Geschäftsführung (GF-Fee)</span><span>€ 6.000/Monat</span></div>
-          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Gesamt/Monat (lt. Vereinbarung)</span><span style="color:#f1f5f9">€ 11.330/Monat</span></div>
-          <div class="drill-row"><span>Tagesanteil</span><span>${fmtD(FIXKOSTEN.managementFee/30)}/Tag</span></div>
-        </div>
-
-        <div class="guv-row" onclick="drill('d-guv-miete')"><span style="color:#94a3b8">— Miete & Leasing ↓</span><span style="color:#ef4444">- ${fmt(fk.miete)}</span></div>
-        <div id="d-guv-miete" class="drill-panel">
-          <div class="drill-row"><span>Mieten und Pachten (BWA)</span><span>€ 9.971/Monat</span></div>
-          <div class="drill-row"><span>Miet- und Pachtnebenkosten</span><span>€ 1.764/Monat</span></div>
-          <div class="drill-row"><span>Mieten Einrichtungen/bewegl. WG</span><span>€ 1.662/Monat</span></div>
-          <div class="drill-row"><span>Mietleasing</span><span>€ 42/Monat</span></div>
-          <div class="drill-row" style="color:#475569;font-size:10px"><span>− davon Savory Stories (inkl. 15%)</span><span>− € 4.428/Monat</span></div>
-          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Gesamt/Monat</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.miete)}</span></div>
-          <div class="drill-row"><span>Tagesanteil</span><span>${fmtD(FIXKOSTEN.miete/30)}/Tag</span></div>
-        </div>
-
-        <div class="guv-row" onclick="drill('d-guv-werbe')"><span style="color:#94a3b8">— Werbe- & Reisekosten ↓</span><span style="color:#ef4444">- ${fmt(fk.werbeReise)}</span></div>
-        <div id="d-guv-werbe" class="drill-panel">
-          <div class="drill-row"><span>Werbekosten</span><span>€ 1.982/Monat</span></div>
-          <div class="drill-row"><span>Bewirtungskosten</span><span>€ 450/Monat</span></div>
-          <div class="drill-row"><span>Reisekosten Arbeitnehmer</span><span>€ 720/Monat</span></div>
-          <div class="drill-row"><span>Nicht abzugsfähige Bewirtung</span><span>€ 194/Monat</span></div>
-          <div class="drill-row"><span>Nicht abzugsfähige Betriebsausg.</span><span>€ 68/Monat</span></div>
-          <div class="drill-row"><span>Repräsentation, Geschenke, Aufmerksamkeiten</span><span>€ 71/Monat</span></div>
-          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Gesamt/Monat</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.werbeReise)}</span></div>
-          <div class="drill-row"><span>Tagesanteil</span><span>${fmtD(FIXKOSTEN.werbeReise/30)}/Tag</span></div>
-        </div>
-
-        <div class="guv-row" onclick="drill('d-guv-sonst')"><span style="color:#94a3b8">— Sonstige Betriebskosten ↓</span><span style="color:#ef4444">- ${fmt(fk.sonstBetrieb)}</span></div>
-        <div id="d-guv-sonst" class="drill-panel">
-          <div class="drill-row"><span>Fremdleistungen & Fremdarbeiten</span><span>€ 6.057/Monat</span></div>
-          <div class="drill-row"><span>Aufwand Lizenzen & Konzessionen</span><span>€ 1.594/Monat</span></div>
-          <div class="drill-row"><span>Küchenutensilien</span><span>€ 774/Monat</span></div>
-          <div class="drill-row"><span>Lightspeed Gebühren</span><span>€ 522/Monat</span></div>
-          <div class="drill-row"><span>Reinigungsmittel & -bedarf</span><span>€ 482/Monat</span></div>
-          <div class="drill-row"><span>Sonstiger Betriebsbedarf</span><span>€ 362/Monat</span></div>
-          <div class="drill-row"><span>Abraum- & Abfallbeseitigung</span><span>€ 229/Monat</span></div>
-          <div class="drill-row"><span>Gästebedarf, Geschirr, Besteck, Deko</span><span>€ 452/Monat</span></div>
-          <div class="drill-row"><span>Reinigung & Fremdreinigung</span><span>€ 85/Monat</span></div>
-          <div class="drill-row"><span>Fahrzeugkosten & Kfz-Leasing</span><span>€ 384/Monat</span></div>
-          <div class="drill-row"><span>Bürobedarf, Sicherheit, Sonstiges</span><span>€ 207/Monat</span></div>
-          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Gesamt/Monat (bereinigt)</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.sonstBetrieb)}</span></div>
-          <div class="drill-row"><span>Tagesanteil</span><span>${fmtD(FIXKOSTEN.sonstBetrieb/30)}/Tag</span></div>
-        </div>
-
-        <div class="guv-row" onclick="drill('d-guv-verwalt')"><span style="color:#94a3b8">— Verwaltungskosten ↓</span><span style="color:#ef4444">- ${fmt(fk.verwaltung)}</span></div>
-        <div id="d-guv-verwalt" class="drill-panel">
-          <div class="drill-row"><span>Buchführungskosten</span><span>€ 1.564/Monat</span></div>
-          <div class="drill-row"><span>Abschluss- & Prüfungskosten</span><span>€ 1.765/Monat</span></div>
-          <div class="drill-row"><span>Verpackungsmaterial</span><span>€ 1.811/Monat</span></div>
-          <div class="drill-row"><span>Rechts- & Beratungskosten</span><span>€ 254/Monat</span></div>
-          <div class="drill-row"><span>Telefon & Porto</span><span>€ 48/Monat</span></div>
-          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Gesamt/Monat</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.verwaltung)}</span></div>
-          <div class="drill-row"><span>Tagesanteil</span><span>${fmtD(FIXKOSTEN.verwaltung/30)}/Tag</span></div>
-        </div>
-
-        <div class="guv-row" onclick="drill('d-guv-instand')"><span style="color:#94a3b8">— Instandhaltung & Abschreibung ↓</span><span style="color:#ef4444">- ${fmt(fk.instandhaltung+fk.abschreibung)}</span></div>
-        <div id="d-guv-instand" class="drill-panel">
-          <div class="drill-row"><span>Reparatur & Instandhaltung Anlagen</span><span>€ 456/Monat</span></div>
-          <div class="drill-row"><span>Werkzeuge & Kleingeräte</span><span>€ 248/Monat</span></div>
-          <div class="drill-row"><span>Instandhaltung Beleuchtung</span><span>€ 13/Monat</span></div>
-          <div class="drill-row"><span>Abschreibungen Sachanlagen & Gebäude</span><span>€ 375/Monat</span></div>
-          <div class="drill-row"><span>Sofortabschreibung GWG</span><span>€ 407/Monat</span></div>
-          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Gesamt/Monat</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.instandhaltung+FIXKOSTEN.abschreibung)}</span></div>
-          <div class="drill-row"><span>Tagesanteil</span><span>${fmtD((FIXKOSTEN.instandhaltung+FIXKOSTEN.abschreibung)/30)}/Tag</span></div>
-        </div>
-
-        <div class="guv-row" onclick="drill('d-guv-versich')"><span style="color:#94a3b8">— Versicherungen & Beiträge ↓</span><span style="color:#ef4444">- ${fmt(fk.versicherung)}</span></div>
-        <div id="d-guv-versich" class="drill-panel">
-          <div class="drill-row"><span>Beiträge</span><span>€ 21/Monat</span></div>
-          <div class="drill-row"><span>Gebühren</span><span>€ 18/Monat</span></div>
-          <div class="drill-row"><span>Verspätungszuschläge</span><span>€ 5/Monat</span></div>
-          <div class="drill-row" style="border-top:1px solid #334155;margin-top:4px"><span style="color:#f1f5f9">Gesamt/Monat</span><span style="color:#f1f5f9">${fmt(FIXKOSTEN.versicherung)}</span></div>
-          <div class="drill-row"><span>Tagesanteil</span><span>${fmtD(FIXKOSTEN.versicherung/30)}/Tag</span></div>
-        </div>
-
-        <div class="guv-row" style="cursor:default;font-size:11px;color:#475569">
-          <span>Fixkosten gesamt/Monat</span><span>${fmt(FIXKOSTEN_GESAMT)}</span>
-        </div>
-
-        <div class="guv-row" style="cursor:default;border-top:2px solid #f97316;margin-top:4px">
-          <span style="color:#f1f5f9;font-weight:700;font-size:15px">= EBITDA</span>
-          <span style="color:${ebitda>0?'#22c55e':'#ef4444'};font-weight:700;font-size:18px">${fmt(ebitda)}</span>
-        </div>
-        <div style="text-align:right;font-size:12px;color:${ebitdaPct>=ZIELE.ebitda?'#22c55e':'#ef4444'};margin-top:4px">EBITDA-Marge: ${fmtP(ebitdaPct)} (Ziel: ${fmtP(ZIELE.ebitda)})</div>
-      </div>
-
-      <div class="box">
-        <div class="box-title">📊 KPI-Ampel</div>
-        <div class="box-sub">Ist vs. Ziel — Progress Bars</div>
+    <div class="box" style="margin-top:14px">
+      <div class="box-title">📊 KPI-Ampel</div>
+      <div class="box-sub">Ist vs. Ziel</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0 24px">
         ${(function(){
           var kpis=[
             {n:"Food Cost "+uFcLabel,val:uFcPct,ziel:ZIELE.fc,wS:fmtP(uFcPct),zS:fmtP(ZIELE.fc),inv:true},
@@ -2779,42 +2773,6 @@ function renderGuV(){
                 +'<div style="position:absolute;top:-1px;bottom:-1px;left:'+zielPos+'%;width:2px;background:#f1f5f9;border-radius:1px" title="Ziel '+a.zS+'"></div>'
               +'</div>'
               +'<div style="font-size:9px;color:#475569;margin-top:2px;text-align:right">Ziel '+a.zS+'</div>'
-            +'</div>';
-          }).join("");
-        })()}
-      </div>
-    </div>
-
-    <div class="box" style="margin-top:14px">
-      <div class="box-title">🏪 Standort-Vergleich — Mini-GuV</div>
-      <div class="box-sub">Mehringdamm vs. Rosenthaler vs. Gesamt · ${fk.tage} Tage</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:12px">
-        ${(function(){
-          var standorte=[
-            {name:"Mehringdamm",emoji:"🔴",u:km.u,fc:fcMdAmt,fcP:fcMdPct,pa:paMd,paP:paMdPct,ldo:ldoMd,roh:rohMd,cm:cmMd,cmP:cmMdPct,ebitda:ebitdaMd,ebitdaP:ebitdaMdPct,t:km.t},
-            {name:"Rosenthaler",emoji:"🔵",u:kr.u,fc:fcRsAmt,fcP:fcRsPct,pa:paRs,paP:paRsPct,ldo:ldoRs,roh:rohRs,cm:cmRs,cmP:cmRsPct,ebitda:ebitdaRs,ebitdaP:ebitdaRsPct,t:kr.t},
-            {name:"Gesamt",emoji:"🟢",u:k.u,fc:uFcAmt,fcP:uFcPct,pa:pa,paP:paPct,ldo:ldoProv,roh:rohertrag,cm:cm,cmP:cmPct,ebitda:ebitda,ebitdaP:ebitdaPct,t:k.t}
-          ];
-          return standorte.map(function(s){
-            function row(label,val,pct,isGood){
-              var c=isGood?"#22c55e":"#ef4444";
-              return'<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1e2d4080;font-size:11px">'
-                +'<span style="color:#94a3b8">'+label+'</span>'
-                +'<span style="color:'+c+';font-weight:600">'+val+(pct!==null?' <span style="color:#475569;font-weight:400">('+pct+')</span>':'')+'</span>'
-              +'</div>';
-            }
-            return'<div style="background:#0a1628;border-radius:8px;padding:14px;border-top:3px solid '+(s.name==="Mehringdamm"?"#ef4444":s.name==="Rosenthaler"?"#3b82f6":"#22c55e")+'">'
-              +'<div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:2px">'+s.emoji+' '+s.name+'</div>'
-              +'<div style="font-size:10px;color:#475569;margin-bottom:10px">'+s.t+' Tage mit Daten</div>'
-              +'<div style="font-size:20px;font-weight:700;color:#22c55e;margin-bottom:10px">'+fmt(s.u)+'</div>'
-              +row("Food Cost","- "+fmt(s.fc),fmtP(s.fcP),s.fcP<=ZIELE.fc)
-              +row("Ldo-Provision","- "+fmt(s.ldo),null,true)
-              +'<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #334155;font-size:11px"><span style="color:#f1f5f9;font-weight:600">Rohertrag</span><span style="color:#f1f5f9;font-weight:600">'+fmt(s.roh)+'</span></div>'
-              +row("Personal","- "+fmt(s.pa),fmtP(s.paP),s.paP<=ZIELE.pa)
-              +'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:2px solid #3b82f6;font-size:12px"><span style="color:#60a5fa;font-weight:700">CM</span><span style="color:#60a5fa;font-weight:700">'+fmt(s.cm)+' ('+fmtP(s.cmP)+')</span></div>'
-              +'<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11px;color:#475569"><span>Fixkosten</span><span>- '+fmt(s.name==="Gesamt"?fk.gesamt+smKosten:fkHalf.gesamt+(s.name==="Mehringdamm"?smMd:smRs))+'</span></div>'
-              +'<div style="display:flex;justify-content:space-between;padding:6px 0;margin-top:2px;border-top:2px solid #f97316;font-size:13px"><span style="color:#f1f5f9;font-weight:700">EBITDA</span><span style="color:'+(s.ebitda>=0?'#22c55e':'#ef4444')+';font-weight:700;font-size:15px">'+fmt(s.ebitda)+'</span></div>'
-              +'<div style="text-align:right;font-size:10px;color:#475569">Marge: '+fmtP(s.ebitdaP)+'</div>'
             +'</div>';
           }).join("");
         })()}
