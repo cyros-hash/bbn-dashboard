@@ -3747,8 +3747,8 @@ function renderFoodCost(){
         <div class="kpi-delta delta-neu">${fmtP(wareneinsatzQuote)} vom Umsatz</div>
         <div class="kpi-ai">Food Cost minus Waste · Ø ${fmt(wareneinsatz/tage)}/Tag</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Waste gesamt</div>
+      <div class="kpi-card" onclick="drill('d-waste-daily')" style="cursor:pointer">
+        <div class="kpi-label">Waste gesamt <span style="font-size:9px;color:#64748b;font-weight:400">▾ Details</span></div>
         <div class="kpi-val" style="color:${wasteQuote>0.02?'#ef4444':'#22c55e'}">${fmt(totalWaste)}</div>
         <div class="kpi-delta ${wasteQuote>0.02?'delta-dn':'delta-up'}">${fmtP(wasteQuote)} vom Umsatz · Ziel <2%</div>
         <div class="kpi-ai">${wasteG.length} Positionen · ${katList.length} Kategorien · Ø ${fmt(totalWaste/tage)}/Tag${hatStundenfilter()?' · ⏰ '+Math.round(wasteAnteil*100)+'% Tagesanteil':''}</div>
@@ -3759,6 +3759,10 @@ function renderFoodCost(){
         <div class="kpi-delta delta-neu">Waste-Anteil am Food Cost</div>
         <div class="kpi-ai">${totalFC>0&&totalWaste/totalFC>0.08?"⚠️ Über 8% — Waste-Kontrolle verstärken":"✓ Unter Kontrolle"}</div>
       </div>
+    </div>
+
+    <div id="d-waste-daily" class="drill-panel" style="margin-top:-4px;border-radius:0 0 10px 10px">
+      ${tagKeys.length>0?'<canvas id="c-waste-tag" style="max-height:180px"></canvas>':'<div style="color:#475569;font-size:12px;padding:12px">Keine Waste-Daten im Zeitraum.</div>'}
     </div>
 
     <div class="kpi-grid">
@@ -3851,16 +3855,6 @@ function renderFoodCost(){
             +'</div>'
           +'</div>';
         });
-        // Waste pro Tag Drill
-        var wasteDrillId='d-waste-daily-'+stKey;
-        html+='<div onclick="drill(\''+wasteDrillId+'\')" style="cursor:pointer;background:#1a253840;border:1px solid #1e3a5f;border-radius:6px;padding:6px 10px;margin-top:12px;font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;align-items:center">'
-          +'<span>📅 Waste-Kosten pro Erfassungstag</span>'
-          +'<span style="font-size:9px;color:#64748b">Details ▾</span>'
-        +'</div>';
-        html+='<div id="'+wasteDrillId+'" class="drill-panel" style="margin-top:0;border-radius:0 0 8px 8px;border:1px solid #1e3a5f;border-top:none;padding:12px">'
-          +'<canvas id="c-waste-tag-'+stKey+'" style="max-height:160px"></canvas>'
-        +'</div>';
-
         // FC-Warnung + Diagnose-Drill (nur bei Verdacht)
         if(fcSuspect){
           var stRows=alle.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.st===name;});
@@ -4102,25 +4096,27 @@ function renderFoodCost(){
   // Donut Chart FC Aufschlüsselung
 
 
-  // Waste pro Tag Charts — je Standort (in Drill-Panels)
-  [["c-waste-tag-md",tagWasteMd,"#f97316"],["c-waste-tag-rs",tagWasteRs,"#3b82f6"]].forEach(function(cfg){
-    var cId=cfg[0],wMap=cfg[1],col=cfg[2];
-    dc(cId);
-    var el=document.getElementById(cId);
-    if(el&&tagKeys.length>0){
-      charts[cId]=new Chart(el,{
+  // Waste pro Tag Chart (grouped: MD + RS)
+  dc("c-waste-tag");
+  if(tagKeys.length>0){
+    var el=document.getElementById("c-waste-tag");
+    if(el){
+      charts["c-waste-tag"]=new Chart(el,{
         type:"bar",
         data:{
           labels:tagKeys.map(function(d){return d.slice(8)+"."+d.slice(5,7);}),
-          datasets:[{label:"Waste €",data:tagKeys.map(function(d){return Math.round(wMap[d]||0);}),backgroundColor:col,borderRadius:3}]
+          datasets:[
+            {label:"Mehringdamm",data:tagKeys.map(function(d){return Math.round(tagWasteMd[d]||0);}),backgroundColor:"#f97316",borderRadius:3},
+            {label:"Rosenthaler Str.",data:tagKeys.map(function(d){return Math.round(tagWasteRs[d]||0);}),backgroundColor:"#3b82f6",borderRadius:3}
+          ]
         },
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:"#94a3b8",font:{size:10},boxWidth:12,padding:8}}},scales:{
           x:{ticks:{color:"#475569",font:{size:10}},grid:{color:"#1e2d40"}},
           y:{ticks:{color:"#475569",font:{size:10},callback:function(v){return fmt(v);}},grid:{color:"#1e2d40"}}
         }}
       });
     }
-  });
+  }
 }
 
 // ============================================================
