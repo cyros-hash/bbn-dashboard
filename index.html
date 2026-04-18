@@ -3581,10 +3581,13 @@ function renderFoodCost(){
   }
 
   var totalWaste=wasteG.reduce(function(s,r){return s+r.kosten;},0)*wasteAnteil;
-  var totalFC=k.f;
-  var wareneinsatz=totalFC-totalWaste; // Reiner Wareneinsatz ohne Waste
+  // Ist/Soll-Umschaltung: gleiche Logik wie Übersicht
+  var rfcFC=getRealFC(st);
+  var hatIstFC=istInBestandZeitraum(von,bis,rfcFC);
+  var totalFC=hatIstFC?rfcFC.quote*k.u:k.f;
+  var fcQuote=hatIstFC?rfcFC.quote:(k.u>0?k.f/k.u:0);
+  var wareneinsatz=totalFC-totalWaste;
   var wasteQuote=k.u>0?totalWaste/k.u:0;
-  var fcQuote=k.u>0?totalFC/k.u:0;
   var wareneinsatzQuote=k.u>0?wareneinsatz/k.u:0;
   var tage=new Set(gefiltert.map(function(r){return r.datum;})).size||1;
 
@@ -3655,7 +3658,10 @@ function renderFoodCost(){
     var stGefiltert = gefiltert.filter(function(r){return r.st===stName;});
     // Bei Stundenfilter: Umsatz aus Artikel-Daten
     var stU = hatStundenfilter()?getUmsatzGefiltert(von,bis,stName).u:stGefiltert.reduce(function(s,r){return s+r.u;},0);
-    var stFC = hatStundenfilter()?stU*getAvgFcQuote(stName):stGefiltert.reduce(function(s,r){return s+r.f;},0);
+    // FC: Ist (Bestandsbericht) wenn vorhanden, sonst Soll (Apicbase Rezeptur)
+    var stRfc = stName==="Mehringdamm"?rfcFC.md:rfcFC.rs;
+    var stHatIst = hatIstFC&&stRfc&&stRfc.n>0;
+    var stFC = hatStundenfilter()?stU*getAvgFcQuote(stName):(stHatIst?stRfc.quote*stU:stGefiltert.reduce(function(s,r){return s+r.f;},0));
     var stTotalWaste = stWaste.reduce(function(s,r){return s+r.kosten;},0)*stAnteil;
     var stWareneinsatz = stFC - stTotalWaste;
     // Waste nach Kategorie (anteilig)
@@ -3680,7 +3686,8 @@ function renderFoodCost(){
       u:stU, fc:stFC, waste:stTotalWaste, wareneinsatz:stWareneinsatz,
       fcPct:stU>0?stFC/stU:0, wastePct:stU>0?stTotalWaste/stU:0,
       wareneinsatzPct:stU>0?stWareneinsatz/stU:0,
-      katList:stKatList, topWaste:stTopWaste, maxWaste:stMaxWaste
+      katList:stKatList, topWaste:stTopWaste, maxWaste:stMaxWaste,
+      hatIst:stHatIst
     };
   }
   var stData = {
@@ -3736,10 +3743,10 @@ function renderFoodCost(){
   document.getElementById("t-foodcost").innerHTML=`
     <div class="kpi-grid">
       <div class="kpi-card">
-        <div class="kpi-label">Food Cost gesamt <span class="badge bb">Apicbase</span></div>
+        <div class="kpi-label">Food Cost gesamt ${hatIstFC?'<span style="font-size:9px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px;margin-left:4px">Ist (direkt)</span>':'<span class="badge bb">Apicbase Soll</span>'}</div>
         <div class="kpi-val" style="color:${fcQuote>0.25?'#ef4444':'#22c55e'}">${fmt(totalFC)}</div>
         <div class="kpi-delta ${fcQuote>0.25?'delta-dn':'delta-up'}">${fmtP(fcQuote)} vom Umsatz · Ziel 22%</div>
-        <div class="kpi-ai">Wareneinsatz: ${fmt(wareneinsatz)} · Waste: ${fmt(totalWaste)}</div>
+        <div class="kpi-ai">${hatIstFC?'Ist-Daten aus Bestandsbericht '+rfcFC.von+' → '+rfcFC.bis+' · Soll: '+fmtP(k.u>0?k.f/k.u:0):'Soll (Rezeptur) · Wareneinsatz: '+fmt(wareneinsatz)+' · Waste: '+fmt(totalWaste)}</div>
       </div>
       <div class="kpi-card" onclick="drill('d-fc-we')">
         <div class="kpi-label">Wareneinsatz (netto)</div>
@@ -3807,7 +3814,7 @@ function renderFoodCost(){
           +'<div style="font-size:10px;color:#475569">Food Cost & Waste Analyse</div></div></div>';
         html+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">'
           +'<div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center;border:1px solid '+(fcSuspect?'#92400e40':'#1e3a5f')+'">'
-            +'<div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px">Food Cost'+(fcSuspect?' ⚠️':'')+'</div>'
+            +'<div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px">Food Cost'+(sd.hatIst?' <span style="font-size:7px;background:#22c55e;color:#000;padding:0 3px;border-radius:2px">Ist</span>':'')+(fcSuspect?' ⚠️':'')+'</div>'
             +'<div style="font-size:16px;font-weight:700;color:'+fcCol+'">'+fmtP(sd.fcPct)+'</div>'
             +'<div style="font-size:10px;color:'+(fcSuspect?'#f97316':'#94a3b8')+';margin-top:2px">'+fmt(sd.fc)+'</div>'
           +'</div>'
