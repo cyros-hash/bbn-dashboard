@@ -737,6 +737,9 @@ function drill(id){
   var el=document.getElementById(id);
   if(!el)return;
   el.classList.toggle("open");
+  if(el.classList.contains("open")){
+    setTimeout(function(){el.scrollIntoView({behavior:"smooth",block:"start"});},50);
+  }
 }
 
 function badge(ok,label){
