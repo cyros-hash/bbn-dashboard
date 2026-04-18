@@ -755,7 +755,15 @@ function drill(id){
   if(!el)return;
   el.classList.toggle("open");
   if(el.classList.contains("open")){
-    setTimeout(function(){el.scrollIntoView({behavior:"smooth",block:"start"});},50);
+    setTimeout(function(){
+      el.scrollIntoView({behavior:"smooth",block:"start"});
+      // Chart.js braucht resize wenn Container von display:none aufgeht
+      var canvases=el.querySelectorAll("canvas");
+      canvases.forEach(function(c){
+        var key=c.id;
+        if(charts[key])charts[key].resize();
+      });
+    },50);
   }
 }
 
@@ -3843,6 +3851,16 @@ function renderFoodCost(){
             +'</div>'
           +'</div>';
         });
+        // Waste pro Tag Drill
+        var wasteDrillId='d-waste-daily-'+stKey;
+        html+='<div onclick="drill(\''+wasteDrillId+'\')" style="cursor:pointer;background:#1a253840;border:1px solid #1e3a5f;border-radius:6px;padding:6px 10px;margin-top:12px;font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;align-items:center">'
+          +'<span>📅 Waste-Kosten pro Erfassungstag</span>'
+          +'<span style="font-size:9px;color:#64748b">Details ▾</span>'
+        +'</div>';
+        html+='<div id="'+wasteDrillId+'" class="drill-panel" style="margin-top:0;border-radius:0 0 8px 8px;border:1px solid #1e3a5f;border-top:none;padding:12px">'
+          +'<canvas id="c-waste-tag-'+stKey+'" style="max-height:160px"></canvas>'
+        +'</div>';
+
         // FC-Warnung + Diagnose-Drill (nur bei Verdacht)
         if(fcSuspect){
           var stRows=alle.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.st===name;});
@@ -3890,13 +3908,7 @@ function renderFoodCost(){
       return'<div class="grid2">'+fcStBox(stData["Mehringdamm"],"Mehringdamm","🔴","#f97316","md")+fcStBox(stData["Rosenthaler Straße"],"Rosenthaler Straße","🔵","#3b82f6","rs")+'</div>';
     })()}
 
-    <!-- FC-Diagnose inline in Standort-Boxen integriert -->
-
-    <div class="box">
-      <div class="box-title">📅 Waste-Kosten pro Erfassungstag</div>
-      <div class="box-sub">${tagKeys.length} Tage mit Waste-Erfassung · pro Standort</div>
-      ${tagKeys.length>0?'<canvas id="c-waste-tag" style="max-height:180px"></canvas>':'<div style="color:#475569;font-size:12px;padding:12px">Keine Waste-Daten im Zeitraum.</div>'}
-    </div>
+    <!-- FC-Diagnose + Waste-Tages-Drill inline in Standort-Boxen integriert -->
 
     <div class="box">
       <div class="box-title">📦 Umsatz & Wareneinsatz pro Artikel</div>
@@ -3946,7 +3958,6 @@ function renderFoodCost(){
       :'<div style="color:#475569;font-size:12px;padding:12px">Keine Artikel-Daten für diesen Zeitraum.</div>'}
     </div>
 
-    <!-- Waste-Chart wurde nach oben verschoben (unter FC-Standort-Boxen) -->
 
     ${(function(){
       // === WARENWIRTSCHAFT BLOCK ===
@@ -4091,23 +4102,25 @@ function renderFoodCost(){
   // Donut Chart FC Aufschlüsselung
 
 
-  dc("c-waste-tag");
-  if(tagKeys.length>0){
-    charts["c-waste-tag"]=new Chart(document.getElementById("c-waste-tag"),{
-      type:"bar",
-      data:{
-        labels:tagKeys.map(function(d){return d.slice(8)+"."+d.slice(5,7);}),
-        datasets:[
-          {label:"Mehringdamm",data:tagKeys.map(function(d){return Math.round(tagWasteMd[d]||0);}),backgroundColor:"#f97316",borderRadius:3},
-          {label:"Rosenthaler Str.",data:tagKeys.map(function(d){return Math.round(tagWasteRs[d]||0);}),backgroundColor:"#3b82f6",borderRadius:3}
-        ]
-      },
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:"#94a3b8",font:{size:10},boxWidth:12,padding:8}}},scales:{
-        x:{ticks:{color:"#475569",font:{size:10}},grid:{color:"#1e2d40"}},
-        y:{ticks:{color:"#475569",font:{size:10},callback:function(v){return fmt(v);}},grid:{color:"#1e2d40"}}
-      }}
-    });
-  }
+  // Waste pro Tag Charts — je Standort (in Drill-Panels)
+  [["c-waste-tag-md",tagWasteMd,"#f97316"],["c-waste-tag-rs",tagWasteRs,"#3b82f6"]].forEach(function(cfg){
+    var cId=cfg[0],wMap=cfg[1],col=cfg[2];
+    dc(cId);
+    var el=document.getElementById(cId);
+    if(el&&tagKeys.length>0){
+      charts[cId]=new Chart(el,{
+        type:"bar",
+        data:{
+          labels:tagKeys.map(function(d){return d.slice(8)+"."+d.slice(5,7);}),
+          datasets:[{label:"Waste €",data:tagKeys.map(function(d){return Math.round(wMap[d]||0);}),backgroundColor:col,borderRadius:3}]
+        },
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+          x:{ticks:{color:"#475569",font:{size:10}},grid:{color:"#1e2d40"}},
+          y:{ticks:{color:"#475569",font:{size:10},callback:function(v){return fmt(v);}},grid:{color:"#1e2d40"}}
+        }}
+      });
+    }
+  });
 }
 
 // ============================================================
