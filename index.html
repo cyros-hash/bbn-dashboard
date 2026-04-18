@@ -1335,9 +1335,10 @@ function renderOverview(){
   var stornoMd=bonsAllOv.filter(function(r){return r.storniert===1&&r.standort==="Mehringdamm";}).length;
   var stornoRs=bonsAllOv.filter(function(r){return r.storniert===1&&r.standort==="Rosenthaler Straße";}).length;
   var stornoRate=bonsAllOv.length>0?stornoGes/bonsAllOv.length:0;
-  // EBITDA pro Standort (vereinfacht: proportional)
-  var ebitdaMdPct=cmpMd>0?cmpMd-0.13:0; // CM minus ~13% Fixkostenanteil als Schätzung
-  var ebitdaRsPct=cmpRs>0?cmpRs-0.13:0;
+  // EBITDA pro Standort (Fixkosten proportional nach Umsatzanteil)
+  var fkPct=k.u>0?(fkOv.gesamt+smKosten)/k.u:0;
+  var ebitdaMdPct=cmpMd-fkPct;
+  var ebitdaRsPct=cmpRs-fkPct;
 
   // Unified KPI Array für synchrone Darstellung
   var ovKpis=[
@@ -2929,72 +2930,7 @@ function renderGuV(){
       ${guvCard({name:"Gesamt",emoji:"🟢",color:"#22c55e",u:k.u,fc:uFcAmt,fcP:uFcPct,pa:pa,paP:paPct,ldo:ldoProv,ldoBrutto:ldoUmsatz,roh:rohertrag,cm:cm,cmP:cmPct,ebitda:ebitda,ebitdaP:ebitdaPct,t:k.t,stunden:pk.stunden,sm:smKosten,fkMul:1},"ges")}
     </div>
 
-    ${(function(){
-      // Waste für GuV
-      var guvWaste=waste.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
-      var guvTotalWaste=guvWaste.reduce(function(s,r){return s+r.kosten;},0);
-      var guvWasteQ=k.u>0?guvTotalWaste/k.u:0;
-      // Umsatz/Stunde
-      var uProStd=pk.stunden>0?k.u/pk.stunden:0;
-
-      var kpis=[
-        {n:"Food Cost "+uFcLabel,val:uFcPct,ziel:ZIELE.fc,wS:fmtP(uFcPct),zS:fmtP(ZIELE.fc),inv:true},
-        {n:"Personal-Quote"+(paReal?" (Live)":""),val:paPct,ziel:ZIELE.pa,wS:fmtP(paPct),zS:fmtP(ZIELE.pa),inv:true},
-        {n:"EBITDA-Marge",val:ebitdaPct,ziel:ZIELE.ebitda,wS:fmtP(ebitdaPct),zS:fmtP(ZIELE.ebitda),inv:false},
-        {n:"Ø Tagesumsatz",val:k.u/k.t,ziel:3200,wS:fmt(k.u/k.t),zS:"€ 3.200",inv:false},
-        {n:"Umsatz/Personalstunde",val:uProStd,ziel:ZIELE.umsatzStd,wS:fmt(uProStd),zS:"€ "+ZIELE.umsatzStd,inv:false},
-        {n:"Verschwendung/Schwund",val:guvWasteQ,ziel:0.02,wS:fmtP(guvWasteQ)+" ("+fmt(guvTotalWaste)+")",zS:"< 2%",inv:true}
-      ];
-
-      var bars=kpis.map(function(a){
-        var ok=a.inv?a.val<=a.ziel:a.val>=a.ziel;
-        var warn=a.inv?a.val<=a.ziel*1.15:a.val>=a.ziel*0.85;
-        var col=ok?"#22c55e":(warn?"#f97316":"#ef4444");
-        var barMax=Math.max(Math.abs(a.val),a.ziel)*1.15;
-        var valPct=Math.min(Math.round(Math.abs(a.val)/barMax*100),100);
-        var zielPos=Math.round(a.ziel/barMax*100);
-        return'<div style="padding:7px 0;border-bottom:1px solid #1e2d40">'
-          +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'
-            +'<span style="font-size:11px;color:#94a3b8">'+a.n+'</span>'
-            +'<span style="font-size:12px;color:#f1f5f9;font-weight:600">'+a.wS+'</span>'
-          +'</div>'
-          +'<div style="position:relative;height:14px;background:#1e2d40;border-radius:3px;overflow:visible">'
-            +'<div style="width:'+valPct+'%;height:100%;background:'+col+';border-radius:3px;opacity:0.85;transition:width 0.3s"></div>'
-            +'<div style="position:absolute;top:-1px;bottom:-1px;left:'+zielPos+'%;width:2px;background:#f1f5f9;border-radius:1px" title="Ziel '+a.zS+'"></div>'
-          +'</div>'
-          +'<div style="font-size:9px;color:#475569;margin-top:2px;text-align:right">Ziel '+a.zS+'</div>'
-        +'</div>';
-      }).join("");
-
-      // Bon-Wert Vergleich MD vs RS
-      var bwCol=function(v){return v>=ZIELE.bonWert?"#22c55e":(v>=ZIELE.bonWert*0.9?"#f97316":"#ef4444");};
-      var bonVergleich='<div style="padding:10px 0;border-bottom:1px solid #1e2d40">'
-        +'<div style="font-size:11px;color:#94a3b8;margin-bottom:6px">Ø Bon-Wert nach Standort <span style="float:right;color:#475569;font-size:9px">Ziel '+fmtD(ZIELE.bonWert)+'</span></div>'
-        +'<div class="bonwert-flex" style="display:flex;gap:12px">'
-          +'<div style="flex:1;background:#1e2d40;border-radius:6px;padding:8px 10px;text-align:center">'
-            +'<div style="font-size:10px;color:#94a3b8">🔴 Mehringdamm</div>'
-            +'<div style="font-size:18px;font-weight:700;color:'+bwCol(bonWertMd.avg)+'">'+fmtD(bonWertMd.avg)+'</div>'
-          +'</div>'
-          +'<div style="flex:1;background:#1e2d40;border-radius:6px;padding:8px 10px;text-align:center">'
-            +'<div style="font-size:10px;color:#94a3b8">🔵 Rosenthaler</div>'
-            +'<div style="font-size:18px;font-weight:700;color:'+bwCol(bonWertRs.avg)+'">'+fmtD(bonWertRs.avg)+'</div>'
-          +'</div>'
-          +'<div style="flex:1;background:#1e2d40;border-radius:6px;padding:8px 10px;text-align:center">'
-            +'<div style="font-size:10px;color:#94a3b8">🟢 Gesamt</div>'
-            +'<div style="font-size:18px;font-weight:700;color:'+bwCol(bonWertData.avg)+'">'+fmtD(bonWertData.avg)+'</div>'
-          +'</div>'
-        +'</div>'
-      +'</div>';
-
-      return'<div class="box" style="margin-top:14px">'
-        +'<div class="box-title">📊 KPI-Ampel</div>'
-        +'<div class="box-sub">Ist vs. Ziel</div>'
-        +'<div class="resp-3col" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0 24px">'
-          +bars
-        +'</div>'
-        +bonVergleich
-      +'</div>';
-    })()}
+    <!-- KPI-Ampel entfernt — jetzt in Übersicht integriert -->
 
     <div class="box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -3529,12 +3465,7 @@ function renderPersonal(){
       </div>
     </div>
 
-    <!-- PATTERN INSIGHTS -->
-    ${insights.length>0?'<div class="box" style="margin-bottom:14px"><div class="box-title">🧠 Erkannte Muster</div><div class="box-sub">Automatische Trends aus Aufbau/Abbau-Daten</div>'+
-      insights.map(function(ins){
-        return'<div style="padding:8px 10px;margin:6px 0;background:#1a2538;border-radius:8px;border-left:3px solid #f97316;font-size:12px;color:#e2e8f0;line-height:1.6">'+ins+'</div>';
-      }).join("")+
-    '</div>':''}
+    <!-- Erkannte Muster entfernt — durch KI-Bericht ersetzt -->
 
     <div class="box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
