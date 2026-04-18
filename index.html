@@ -3056,6 +3056,24 @@ function renderPersonal(){
   });
   var abbauTeamList=Object.entries(abbauTeamMap).filter(function(e){return e[1].count>=2;}).sort(function(a,b){return(a[1].totalNach/a[1].count)-(b[1].totalNach/b[1].count);});
 
+  // Team-Kombination Analyse für Aufbau
+  var aufbauByDate={};
+  aufbau.data.forEach(function(r){
+    var key=r.datum+"|"+r.standort;
+    if(!aufbauByDate[key])aufbauByDate[key]={datum:r.datum,standort:r.standort,members:[],totalVor:0,count:0};
+    aufbauByDate[key].members.push(r.mitarbeiter);
+    aufbauByDate[key].totalVor+=r.vorStd;
+    aufbauByDate[key].count++;
+  });
+  var aufbauTeamMap={};
+  Object.values(aufbauByDate).forEach(function(day){
+    var teamKey=day.members.sort().join(" + ");
+    if(!aufbauTeamMap[teamKey])aufbauTeamMap[teamKey]={count:0,totalVor:0,standort:day.standort};
+    aufbauTeamMap[teamKey].count++;
+    aufbauTeamMap[teamKey].totalVor+=day.totalVor/Math.max(day.count,1);
+  });
+  var aufbauTeamList=Object.entries(aufbauTeamMap).filter(function(e){return e[1].count>=2;}).sort(function(a,b){return(a[1].totalVor/a[1].count)-(b[1].totalVor/b[1].count);});
+
   // Insights generieren
   var insights=[];
   // 1. Aufbau-Kosten Einordnung
@@ -3063,6 +3081,38 @@ function renderPersonal(){
   var abbauPct=pk.total>0?abbau.kosten/pk.total:0;
   if(aufbau.kosten>0) insights.push("🌅 <strong>Aufbaukosten: "+fmt(aufbau.kosten)+"</strong> ("+fmtP(aufbauPct)+" der PA) — Ø "+(aufbau.count>0?(aufbau.stunden/aufbau.count).toFixed(1):"0")+"h vor Öffnung pro Schicht");
   if(abbau.kosten>0) insights.push("🌙 <strong>Abbaukosten: "+fmt(abbau.kosten)+"</strong> ("+fmtP(abbauPct)+" der PA) — Ø "+(abbau.count>0?(abbau.stunden/abbau.count).toFixed(1):"0")+"h nach Schluss pro Schicht");
+  // 1b. Schnellster/Längster Aufbau MA
+  if(aufbauMaList.length>0){
+    var aufFastest=aufbauMaList[0];
+    var aufSlowest=aufbauMaList[aufbauMaList.length-1];
+    if(aufFastest[1].count>=2)insights.push("⚡ Schnellster Aufbau: <strong>"+aufFastest[0]+"</strong> (Ø "+(aufFastest[1].stunden/aufFastest[1].count).toFixed(1)+"h vor Öffnung, "+aufFastest[1].count+"×)");
+    if(aufSlowest[1].count>=2&&aufbauMaList.length>1)insights.push("🐢 Längster Aufbau: <strong>"+aufSlowest[0]+"</strong> (Ø "+(aufSlowest[1].stunden/aufSlowest[1].count).toFixed(1)+"h vor Öffnung, "+aufSlowest[1].count+"×)");
+  }
+  // 1c. Standort-Unterschied Aufbau
+  var aufbauStNames=Object.keys(aufbauStMap);
+  if(aufbauStNames.length===2){
+    var auf1=aufbauStMap[aufbauStNames[0]],auf2=aufbauStMap[aufbauStNames[1]];
+    var aufAvg1=auf1.count>0?auf1.stunden/auf1.count:0,aufAvg2=auf2.count>0?auf2.stunden/auf2.count:0;
+    if(Math.abs(aufAvg1-aufAvg2)>0.2){
+      var aufFasterSt=aufAvg1<aufAvg2?aufbauStNames[0]:aufbauStNames[1];
+      var aufSlowerSt=aufAvg1<aufAvg2?aufbauStNames[1]:aufbauStNames[0];
+      insights.push("🏪 Aufbau <strong>"+aufFasterSt+"</strong> Ø "+Math.abs(aufAvg1-aufAvg2).toFixed(1)+"h schneller als "+aufSlowerSt);
+    }
+  }
+  // 1d. Bestes Aufbau-Team
+  if(aufbauTeamList.length>0){
+    var bestAufbauTeam=aufbauTeamList[0];
+    if(bestAufbauTeam[1].count>=2)insights.push("👥 Effizientestes Aufbau-Team: <strong>"+bestAufbauTeam[0]+"</strong> (Ø "+(bestAufbauTeam[1].totalVor/bestAufbauTeam[1].count).toFixed(1)+"h, "+bestAufbauTeam[1].count+"×)");
+  }
+  // 1e. Wochentag-Muster Aufbau
+  var aufWtEntries=Object.entries(aufbauWtMap).filter(function(e){return e[1].count>=2;});
+  if(aufWtEntries.length>=2){
+    aufWtEntries.sort(function(a,b){return(a[1].stunden/a[1].count)-(b[1].stunden/b[1].count);});
+    var aufFastDay=aufWtEntries[0],aufSlowDay=aufWtEntries[aufWtEntries.length-1];
+    if((aufSlowDay[1].stunden/aufSlowDay[1].count)-(aufFastDay[1].stunden/aufFastDay[1].count)>0.2){
+      insights.push("📅 Schnellster Aufbau: <strong>"+aufFastDay[0]+"</strong> (Ø "+(aufFastDay[1].stunden/aufFastDay[1].count).toFixed(1)+"h) · Längster: <strong>"+aufSlowDay[0]+"</strong> (Ø "+(aufSlowDay[1].stunden/aufSlowDay[1].count).toFixed(1)+"h)");
+    }
+  }
   // 2. Schnellster Abbauer
   if(abbauMaList.length>0){
     var fastest=abbauMaList[0];
@@ -5461,13 +5511,27 @@ function buildAiContext() {
       });
     }
 
-    // Top MA
+    // Top MA mit Aufbau/Abbau-Details
     var maMap = {};
     ordioOp.forEach(function(r){
-      if(!maMap[r.mitarbeiter])maMap[r.mitarbeiter]={stunden:0,kosten:0};
-      maMap[r.mitarbeiter].stunden+=r.stunden;maMap[r.mitarbeiter].kosten+=r.kosten;
+      if(!maMap[r.mitarbeiter])maMap[r.mitarbeiter]={stunden:0,kosten:0,aufStd:0,aufK:0,aufN:0,abStd:0,abK:0,abN:0,schichten:0};
+      maMap[r.mitarbeiter].stunden+=r.stunden;maMap[r.mitarbeiter].kosten+=r.kosten;maMap[r.mitarbeiter].schichten++;
+      var oh=getShiftOverhead(r);
+      if(oh.vorStd>0){maMap[r.mitarbeiter].aufStd+=oh.vorStd;maMap[r.mitarbeiter].aufK+=oh.vorKosten;maMap[r.mitarbeiter].aufN++;}
+      if(oh.nachStd>0){maMap[r.mitarbeiter].abStd+=oh.nachStd;maMap[r.mitarbeiter].abK+=oh.nachKosten;maMap[r.mitarbeiter].abN++;}
     });
-    ctx += "Top MA: " + Object.entries(maMap).sort(function(a,b){return b[1].stunden-a[1].stunden;}).slice(0,8).map(function(e){return e[0]+" "+Math.round(e[1].stunden)+"h/"+fmt(e[1].kosten);}).join(", ") + "\n\n";
+    var maSorted=Object.entries(maMap).sort(function(a,b){return b[1].stunden-a[1].stunden;});
+    ctx += "MITARBEITER-DETAILS (Top "+Math.min(maSorted.length,10)+"):\n";
+    maSorted.slice(0,10).forEach(function(e){
+      var m=e[1];
+      var line=e[0]+": "+Math.round(m.stunden)+"h / "+fmt(m.kosten)+" ("+m.schichten+" Schichten)";
+      if(m.aufN>0) line+=" | Aufbau: Ø "+(m.aufStd/m.aufN).toFixed(1)+"h ("+m.aufN+"×, "+fmt(m.aufK)+")";
+      if(m.abN>0) line+=" | Abbau: Ø "+(m.abStd/m.abN).toFixed(1)+"h ("+m.abN+"×, "+fmt(m.abK)+")";
+      var betriebStd=m.stunden-m.aufStd-m.abStd;
+      if(m.stunden>0) line+=" | Betrieb: "+fmtP(betriebStd/m.stunden)+" der Zeit";
+      ctx += line + "\n";
+    });
+    ctx += "\n";
   }
 
   // Waste
