@@ -223,7 +223,6 @@ canvas{max-height:220px}
 
   /* ALERT */
   .alert{font-size:11px;padding:8px 10px}
-}
 
   /* RESPONSIVE GRIDS (inline-style Overrides) */
   .resp-3col{grid-template-columns:1fr!important}
@@ -3125,6 +3124,28 @@ function renderPersonal(){
       </div>
     </div>
 
+    <div id="d-umsatz-std" class="drill-panel">
+      <div class="drill-title">⚡ Umsatz / Personalstunde — Tagesverlauf</div>
+      <canvas id="c-pa-tag" style="max-height:200px"></canvas>
+      <div class="resp-3col drill-3col" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px">
+        <div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:#64748b">Tage über Ziel</div>
+          <div style="font-size:18px;font-weight:700;color:#22c55e">${(function(){var over=0;Object.values(umsatzStdMap).forEach(function(s){if(s.stunden>0&&s.umsatz/s.stunden>=ZIELE.umsatzStd)over++;});return over;})()}</div>
+          <div style="font-size:10px;color:#475569">von ${Object.keys(umsatzStdMap).length} Tagen</div>
+        </div>
+        <div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:#64748b">Bester Tag</div>
+          <div style="font-size:18px;font-weight:700;color:#8b5cf6">${(function(){var best=0;Object.values(umsatzStdMap).forEach(function(s){if(s.stunden>0){var v=s.umsatz/s.stunden;if(v>best)best=v;}});return fmt(best);})()}</div>
+          <div style="font-size:10px;color:#475569">${(function(){var best=0,bd='';Object.entries(umsatzStdMap).forEach(function(e){if(e[1].stunden>0){var v=e[1].umsatz/e[1].stunden;if(v>best){best=v;bd=e[0];}}});return bd?bd.slice(8)+'.'+bd.slice(5,7):'–';})()}</div>
+        </div>
+        <div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:#64748b">Schwächster Tag</div>
+          <div style="font-size:18px;font-weight:700;color:#ef4444">${(function(){var worst=Infinity;Object.values(umsatzStdMap).forEach(function(s){if(s.stunden>0){var v=s.umsatz/s.stunden;if(v<worst)worst=v;}});return worst===Infinity?'–':fmt(worst);})()}</div>
+          <div style="font-size:10px;color:#475569">${(function(){var worst=Infinity,wd='';Object.entries(umsatzStdMap).forEach(function(e){if(e[1].stunden>0){var v=e[1].umsatz/e[1].stunden;if(v<worst){worst=v;wd=e[0];}}});return wd?wd.slice(8)+'.'+wd.slice(5,7):'–';})()}</div>
+        </div>
+      </div>
+    </div>
+
     <div class="grid2">
       <div class="box">
         <div class="box-title">🏪 Nach Standort</div>
@@ -3331,27 +3352,7 @@ function renderPersonal(){
       }).join("")+
     '</div>':''}
 
-    <div id="d-umsatz-std" class="drill-panel">
-      <div class="drill-title">⚡ Umsatz / Personalstunde — Tagesverlauf</div>
-      <canvas id="c-pa-tag" style="max-height:200px"></canvas>
-      <div class="resp-3col drill-3col" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px">
-        <div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center">
-          <div style="font-size:10px;color:#64748b">Tage über Ziel</div>
-          <div style="font-size:18px;font-weight:700;color:#22c55e">${(function(){var over=0;Object.values(umsatzStdMap).forEach(function(s){if(s.stunden>0&&s.umsatz/s.stunden>=ZIELE.umsatzStd)over++;});return over;})()}</div>
-          <div style="font-size:10px;color:#475569">von ${Object.keys(umsatzStdMap).length} Tagen</div>
-        </div>
-        <div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center">
-          <div style="font-size:10px;color:#64748b">Bester Tag</div>
-          <div style="font-size:18px;font-weight:700;color:#8b5cf6">${(function(){var best=0;Object.values(umsatzStdMap).forEach(function(s){if(s.stunden>0){var v=s.umsatz/s.stunden;if(v>best)best=v;}});return fmt(best);})()}</div>
-          <div style="font-size:10px;color:#475569">${(function(){var best=0,bd='';Object.entries(umsatzStdMap).forEach(function(e){if(e[1].stunden>0){var v=e[1].umsatz/e[1].stunden;if(v>best){best=v;bd=e[0];}}});return bd?bd.slice(8)+'.'+bd.slice(5,7):'–';})()}</div>
-        </div>
-        <div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center">
-          <div style="font-size:10px;color:#64748b">Schwächster Tag</div>
-          <div style="font-size:18px;font-weight:700;color:#ef4444">${(function(){var worst=Infinity;Object.values(umsatzStdMap).forEach(function(s){if(s.stunden>0){var v=s.umsatz/s.stunden;if(v<worst)worst=v;}});return worst===Infinity?'–':fmt(worst);})()}</div>
-          <div style="font-size:10px;color:#475569">${(function(){var worst=Infinity,wd='';Object.entries(umsatzStdMap).forEach(function(e){if(e[1].stunden>0){var v=e[1].umsatz/e[1].stunden;if(v<worst){worst=v;wd=e[0];}}});return wd?wd.slice(8)+'.'+wd.slice(5,7):'–';})()}</div>
-        </div>
-      </div>
-    </div>`;
+    `;
 
   dc("c-pa-tag");
   var stdKeys=Object.keys(umsatzStdMap).sort();
