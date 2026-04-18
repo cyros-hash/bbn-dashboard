@@ -5505,7 +5505,7 @@ var TAB_REPORT_CONFIG = {
   },
   personal: {
     title: "👥 Personal",
-    prompt: "Analysiere die Personaleffizienz im Detail. Fokus: PA-Quote vs. Ziel (22%), Umsatz/Personalstunde vs. Ziel (€75), Aufbau-/Abbauzeiten und -kosten, Standort-Unterschiede, Mitarbeiter-Effizienz-Ranking, Team-Kombinationen. Welche konkreten Maßnahmen können die Personaleffizienz verbessern?"
+    prompt: "Analysiere die Personaleffizienz im Detail. Fokus: PA-Quote vs. Ziel (22%), Umsatz/Personalstunde vs. Ziel (€75), Standort-Unterschiede, Mitarbeiter-Effizienz-Ranking, Team-Kombinationen. WICHTIG: Aufbau (Stunden VOR 12:00 Öffnung) und Abbau (Stunden NACH Ladenschluss) IMMER getrennt bewerten — niemals zusammenrechnen. Für jeden separat: Ø Stunden, Kosten, Standort-Vergleich, schnellste/langsamste MA. Welche konkreten Maßnahmen können die Personaleffizienz verbessern?"
   },
   foodcost: {
     title: "🥩 Food Cost",
@@ -5561,7 +5561,8 @@ async function generateTabReport(tabId) {
     "1. Deutsch, direkt, konkret. Keine Einleitungen.\n" +
     "2. IMMER konkrete Zahlen nennen mit Ist vs. Ziel.\n" +
     "3. Bei Abweichungen: € UND %, Ursache, Handlungsempfehlung.\n" +
-    "4. Fasse zusammen, interpretiere, empfehle — nicht einfach Zahlen auflisten.\n\n" +
+    "4. Fasse zusammen, interpretiere, empfehle — nicht einfach Zahlen auflisten.\n" +
+    "5. Aufbau (vor Öffnung) und Abbau (nach Ladenschluss) IMMER getrennt bewerten — niemals zusammenrechnen oder als eine Zahl darstellen.\n\n" +
     "AKTUELLE DASHBOARD-DATEN:\n" + buildAiContext();
 
   var userPrompt = "Zeitraum: " + toDE(von) + " bis " + toDE(bis) + " | Standort: " + st + "\n\n" +
