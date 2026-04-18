@@ -1149,6 +1149,9 @@ function renderOverview(){
   var txOvG=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);});
   var txOvAligned=txOvG.filter(function(r){return uDatumSet[r.datum];});
   var ldoProvOv=txOvAligned.reduce(function(s,r){return s+r.ldo;},0)*0.20;
+  // Per-Standort LDO-Provision
+  var ldoProvMd=txOvAligned.filter(function(r){return r.standort==="Mehringdamm";}).reduce(function(s,r){return s+r.ldo;},0)*0.20;
+  var ldoProvRs=txOvAligned.filter(function(r){return r.standort==="Rosenthaler Straße";}).reduce(function(s,r){return s+r.ldo;},0)*0.20;
 
   // Fixkosten: auf tatsächliche Datentage prorate
   var fkOvKal=getFixkostenTage(von,bis); // für Kalender-Anzeigen behalten
@@ -1205,9 +1208,7 @@ function renderOverview(){
   var kp=kpi(prev);
   var deltaU=kp.u>0?((k.u-kp.u)/kp.u*100):0;
 
-  // Standort split
-  var bonWertData=getBonWert(von,bis,st);
-  var smKosten=getSocialMediaKosten(von,bis,st); // Social Media → Personalgemeinkosten
+  // Standort split (bonWertData + smKosten bereits oben definiert)
   var md=gefiltert.filter(function(r){return r.st==="Mehringdamm";});
   var rs=gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";});
   var km=kpi(md),kr=kpi(rs);
@@ -1222,8 +1223,11 @@ function renderOverview(){
     km={u:uMdS.u,f:uMdS.u*avgFcMd,s:km.s,t:km.t,fp:avgFcMd,at:km.at};
     kr={u:uRsS.u,f:uRsS.u*avgFcRs,s:kr.s,t:kr.t,fp:avgFcRs,at:kr.at};
   }
-  var cmpMd=pkMd.total>0&&km.u>0?(km.u-km.f-pkMd.total)/km.u:0;
-  var cmpRs=pkRs.total>0&&kr.u>0?(kr.u-kr.f-pkRs.total)/kr.u:0;
+  // Per-Standort FC-Betrag: Ist wenn vorhanden, sonst Soll (gleiche Logik wie GuV)
+  var fcMdAmt=hatIstFC&&rfc.md&&rfc.md.n>0?rfc.md.quote*km.u:km.f;
+  var fcRsAmt=hatIstFC&&rfc.rs&&rfc.rs.n>0?rfc.rs.quote*kr.u:kr.f;
+  var cmpMd=pkMd.total>0&&km.u>0?(km.u-fcMdAmt-ldoProvMd-pkMd.total)/km.u:0;
+  var cmpRs=pkRs.total>0&&kr.u>0?(kr.u-fcRsAmt-ldoProvRs-pkRs.total)/kr.u:0;
   var diffMd=kVorMd.u>0?((km.u-kVorMd.u)/kVorMd.u*100):null;
   var diffRs=kVorRs.u>0?((kr.u-kVorRs.u)/kVorRs.u*100):null;
 
@@ -1282,14 +1286,15 @@ function renderOverview(){
   // VW FC-Diff jetzt berechnen (anzFcPct ist definiert)
   vwFcDiff=kVor.fp>0?((anzFcPct-kVor.fp)/kVor.fp*100):null;
   var donutFC=Math.max(fcAmt,0);
+  var donutLDO=Math.max(ldoProvOv,0);
   var donutOpa=Math.max(pa,0);
   var donutPG=Math.max(fkOv.personalGemein+fkOv.managementFee+smKosten,0);
   var donutRest=Math.max(fkOv.miete+fkOv.versicherung+fkOv.werbeReise+fkOv.sonstBetrieb+fkOv.verwaltung+fkOv.instandhaltung+fkOv.abschreibung,0);
-  var donutEBITDA=Math.max(k.u-donutFC-donutOpa-donutPG-donutRest,0);
+  var donutEBITDA=Math.max(k.u-donutFC-donutLDO-donutOpa-donutPG-donutRest,0);
   if(hatStundenfilter()&&k.u>0){
     var donutSumPre=donutFC+donutOpa;
     if(donutSumPre>k.u){donutFC=k.f/donutSumPre*k.u;donutOpa=pa/donutSumPre*k.u;}
-    donutPG=0; donutRest=0;
+    donutPG=0; donutRest=0; donutLDO=0;
     donutEBITDA=Math.max(k.u-donutFC-donutOpa,0);
   }
 
@@ -1613,13 +1618,13 @@ function renderOverview(){
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
                 <td style="color:#E84393;padding:6px 8px 6px 0">Mehringdamm</td>
-                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(km.u-km.f-pkMd.total)}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(km.u-fcMdAmt-ldoProvMd-pkMd.total)}</td>
                 <td style="text-align:right;color:${cmpMd>=ZIELE.cm?'#22c55e':'#FF8000'};padding:6px 8px">${fmtP(cmpMd)}</td>
                 <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.cm)}</td>
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
                 <td style="color:#00EEFC;padding:6px 8px 6px 0">Rosenthaler</td>
-                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(kr.u-kr.f-pkRs.total)}</td>
+                <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(kr.u-fcRsAmt-ldoProvRs-pkRs.total)}</td>
                 <td style="text-align:right;color:${cmpRs>=ZIELE.cm?'#22c55e':'#FF8000'};padding:6px 8px">${fmtP(cmpRs)}</td>
                 <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.cm)}</td>
               </tr>
@@ -1651,7 +1656,7 @@ function renderOverview(){
         <div style="display:flex;align-items:center;gap:16px">
           <div style="position:relative;width:110px;height:110px;flex-shrink:0"><canvas id="c-ov-donut"></canvas></div>
           <div style="font-size:11px;flex:1">
-            ${[{l:"Food Cost",v:donutFC,c:"#ef4444"},{l:"Operative Personal",v:donutOpa,c:"#E84393"},{l:"Personalgemeinkosten",v:donutPG,c:"#00EEFC"},{l:"Rest Gemeinkosten",v:donutRest,c:"#64748b"},{l:"EBITDA",v:donutEBITDA,c:"#22c55e"}].map(function(i){return'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #1e2d40"><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:'+i.c+';display:inline-block"></span><span style="color:#94a3b8">'+i.l+'</span></span><span style="color:#f1f5f9">'+fmtP(k.u>0?i.v/k.u:0)+'</span></div>';}).join("")}
+            ${[{l:"Food Cost",v:donutFC,c:"#ef4444"},{l:"LDO Provision",v:donutLDO,c:"#FF8000"},{l:"Operative Personal",v:donutOpa,c:"#E84393"},{l:"Personalgemeinkosten",v:donutPG,c:"#00EEFC"},{l:"Rest Gemeinkosten",v:donutRest,c:"#64748b"},{l:"EBITDA",v:donutEBITDA,c:"#22c55e"}].map(function(i){return'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #1e2d40"><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:'+i.c+';display:inline-block"></span><span style="color:#94a3b8">'+i.l+'</span></span><span style="color:#f1f5f9">'+fmtP(k.u>0?i.v/k.u:0)+'</span></div>';}).join("")}
           </div>
         </div>
       </div>
@@ -1746,7 +1751,7 @@ function renderOverview(){
 
   dc("c-ov-donut");
   // donutFC etc. bereits oben definiert
-  charts["c-ov-donut"]=new Chart(document.getElementById("c-ov-donut"),{type:"doughnut",data:{labels:["Food Cost","Operative Personal","Personalgemeinkosten","Rest Gemeinkosten","EBITDA"],datasets:[{data:[donutFC,donutOpa,donutPG,donutRest,donutEBITDA],backgroundColor:["#ef4444","#E84393","#00EEFC","#64748b","#22c55e"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:"72%"}});
+  charts["c-ov-donut"]=new Chart(document.getElementById("c-ov-donut"),{type:"doughnut",data:{labels:["Food Cost","LDO Provision","Operative Personal","Personalgemeinkosten","Rest Gemeinkosten","EBITDA"],datasets:[{data:[donutFC,donutLDO,donutOpa,donutPG,donutRest,donutEBITDA],backgroundColor:["#ef4444","#FF8000","#E84393","#00EEFC","#64748b","#22c55e"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:"72%"}});
 
   // --- Umsatz-Trend Liniendiagramm ---
   (function(){
@@ -1913,21 +1918,16 @@ function renderOverview(){
   (function(){
     var wfEl=document.getElementById("c-ov-cm-waterfall");
     if(!wfEl)return;
-    // Werte: Umsatz → -FC → -Personal → =CM → -Gemeinkosten → =EBITDA
-    var wfUmsatz=k.u, wfFC=donutFC, wfPA=donutOpa, wfPG=donutPG, wfRest=donutRest, wfEBITDA=donutEBITDA;
-    var wfCM=wfUmsatz-wfFC-wfPA;
-    var wfGK=wfPG+wfRest;
+    // Werte: Umsatz → -FC → -LDO → -Personal → =CM → -Gemeinkosten → =EBITDA
+    var wfUmsatz=k.u, wfFC=donutFC, wfLDO=ldoProvOv, wfPA=donutOpa;
+    var wfCM=cm; // CM aus KPI (inkl. LDO-Abzug)
+    var wfGK=fkOv.gesamt+smKosten;
+    var wfEBITDA=ebitda;
     // Wasserfall: transparente Basis + sichtbarer Balken
-    // Umsatz: Basis=0, Balken=Umsatz (grün)
-    // FC: Basis=Umsatz-FC, Balken=FC (rot)
-    // Personal: Basis=CM, Balken=PA (lila)
-    // CM: Basis=0, Balken=CM (grün)
-    // Gemeinkosten: Basis=EBITDA, Balken=GK (grau)
-    // EBITDA: Basis=0, Balken=EBITDA (grün/rot)
-    var labels=["Umsatz","Food Cost","Personal","= CM","Gemeinkosten","= EBITDA"];
-    var bases=[0, wfCM+wfPA, wfCM, 0, Math.max(wfEBITDA,0), 0];
-    var values=[wfUmsatz, wfFC, wfPA, wfCM, wfGK, Math.max(wfEBITDA,0)];
-    var colors=["#22c55e","#ef4444","#E84393","#22c55e","#64748b",wfEBITDA>=0?"#22c55e":"#ef4444"];
+    var labels=["Umsatz","Food Cost","LDO Prov.","Personal","= CM","Gemeinkosten","= EBITDA"];
+    var bases=[0, wfCM+wfPA+wfLDO, wfCM+wfPA, wfCM, 0, Math.max(wfEBITDA,0), 0];
+    var values=[wfUmsatz, wfFC, wfLDO, wfPA, wfCM, wfGK, Math.max(wfEBITDA,0)];
+    var colors=["#22c55e","#ef4444","#FF8000","#E84393","#22c55e","#64748b",wfEBITDA>=0?"#22c55e":"#ef4444"];
     dc("c-ov-cm-waterfall");
     charts["c-ov-cm-waterfall"]=new Chart(wfEl,{
       type:"bar",
@@ -6033,14 +6033,23 @@ function buildAiContext() {
   // GuV-Schnellrechnung
   var ldoProv = 0;
   var txFilt = lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);});
-  ldoProv = txFilt.reduce(function(s,r){return s+r.ldo;},0)*0.20;
-  var rohertrag = kFilt.u - kFilt.f - ldoProv;
+  // LDO nur für Tage mit Apicbase-Daten (aligned)
+  var briefDatumSet={};gefiltert.forEach(function(r){briefDatumSet[r.datum]=1;});
+  var txFiltAligned=txFilt.filter(function(r){return briefDatumSet[r.datum];});
+  ldoProv = txFiltAligned.reduce(function(s,r){return s+r.ldo;},0)*0.20;
+  // FC: Ist wenn verfügbar, sonst Soll (gleiche Logik wie alle anderen Tabs)
+  var briefRfc=getRealFC(st);
+  var briefHatIst=istInBestandZeitraum(von,bis,briefRfc);
+  var briefFcAmt=briefHatIst?briefRfc.quote*kFilt.u:kFilt.f;
+  var briefFcPct=briefHatIst?briefRfc.quote:kFilt.fp;
+  var briefFcLabel=briefHatIst?"Ist":"Soll";
+  var rohertrag = kFilt.u - briefFcAmt - ldoProv;
   var paK = ordioOp.length>0?ordioOp.reduce(function(s,r){return s+r.kosten;},0):kFilt.u*0.33;
   var cm = rohertrag - paK;
   var cmP = kFilt.u>0?cm/kFilt.u:0;
   ctx += "GuV-SCHNELLRECHNUNG:\n";
   ctx += "Nettoumsatz: " + fmt(kFilt.u) + "\n";
-  ctx += "– Food Cost: " + fmt(kFilt.f) + " (" + fmtP(kFilt.fp) + ")\n";
+  ctx += "– Food Cost ("+briefFcLabel+"): " + fmt(briefFcAmt) + " (" + fmtP(briefFcPct) + ")\n";
   ctx += "– Lieferando-Provision: " + fmt(ldoProv) + "\n";
   ctx += "= Rohertrag: " + fmt(rohertrag) + " (" + fmtP(kFilt.u>0?rohertrag/kFilt.u:0) + ")\n";
   ctx += "– Personal: " + fmt(paK) + " (" + fmtP(kFilt.u>0?paK/kFilt.u:0) + ")\n";
