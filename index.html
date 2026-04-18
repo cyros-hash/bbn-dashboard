@@ -4697,10 +4697,20 @@ function renderSimulator(){
   var fb=hatIstSim?(rfcSim.quote*100):(k.fp*100);
   var fcLabel=hatIstSim?'Ist':'Soll';
   var fkSim=getFixkostenTage(von,bis);
+  // Prorate Fixkosten auf Datentage — gleiche Logik wie Übersicht
+  var dataTageS=k.t;
+  var kalTageS=Math.round((new Date(bis+"T12:00:00")-new Date(von+"T12:00:00"))/86400000)+1;
+  if(dataTageS<kalTageS){
+    var fkFaktorS=dataTageS/kalTageS;
+    Object.keys(fkSim).forEach(function(key){if(key!=="tage")fkSim[key]=fkSim[key]*fkFaktorS;});
+    fkSim.tage=dataTageS;
+  }
 
-  // Basis LDO Provision
+  // Basis LDO Provision — nur Tage mit Umsatzdaten (wie Übersicht)
+  var uDatumSetSim={}; gefiltert.forEach(function(r){uDatumSetSim[r.datum]=1;});
   var txSim=lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
-  var ldoBaseProv=txSim.reduce(function(s,r){return s+r.ldo;},0)*0.20;
+  var txSimAligned=txSim.filter(function(r){return uDatumSetSim[r.datum];});
+  var ldoBaseProv=txSimAligned.reduce(function(s,r){return s+r.ldo;},0)*0.20;
 
   // IST-Werte (Vorher)
   var uA=k.u;
