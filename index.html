@@ -225,6 +225,40 @@ canvas{max-height:220px}
   .alert{font-size:11px;padding:8px 10px}
 }
 
+  /* RESPONSIVE GRIDS (inline-style Overrides) */
+  .resp-3col{grid-template-columns:1fr!important}
+  .resp-2col{grid-template-columns:1fr!important}
+  .resp-guv-cards{flex-direction:column!important}
+  .resp-guv-cards>div{min-width:100%!important;max-width:100%!important;width:100%!important}
+  .resp-flex-col{flex-direction:column!important}
+  .resp-flex-col>div{min-width:100%!important;flex:none!important;width:100%!important}
+
+  /* GuV Cards — untereinander */
+  .guv-card-wrap{flex-direction:column!important;gap:12px!important}
+  .guv-card-wrap>div{width:100%!important;min-width:100%!important;flex:none!important}
+
+  /* Aufbau/Abbau 3-Karten */
+  .aufbau-grid{grid-template-columns:1fr!important}
+
+  /* Wochentag-Karten: 3 pro Zeile statt 7 */
+  .wt-flex{flex-wrap:wrap!important}
+  .wt-flex>div{min-width:30%!important;flex:1 1 30%!important}
+
+  /* Bon-Wert Vergleich */
+  .bonwert-flex{flex-direction:column!important;gap:8px!important}
+  .bonwert-flex>div{flex:none!important;width:100%!important}
+
+  /* Charts Container — kein min-width auf Mobile */
+  .chart-flex{flex-direction:column!important}
+  .chart-flex>div{min-width:100%!important;width:100%!important;height:160px!important}
+
+  /* Übersicht Standort-Cards */
+  .st-cards{grid-template-columns:1fr!important}
+
+  /* Drill Umsatz/Std Grid */
+  .drill-3col{grid-template-columns:1fr!important}
+}
+
 /* Extra klein (max 400px) */
 @media(max-width:400px){
   .kpi-grid{grid-template-columns:1fr}
@@ -1237,7 +1271,7 @@ function renderOverview(){
 
     <div id="d-ov-umsatz" class="drill-panel">
       <div class="drill-title">Umsatz — Aufschlüsselung</div>
-      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+      <div class="chart-flex" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
         <div style="flex:0 0 auto">
           <table style="border-collapse:collapse;font-size:12px">
             <thead><tr style="border-bottom:2px solid #1e3a5f">
@@ -1281,7 +1315,7 @@ function renderOverview(){
 
     <div id="d-ov-pa" class="drill-panel">
       <div class="drill-title">Personal — Aufschlüsselung</div>
-      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+      <div class="chart-flex" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
         <div style="flex:0 0 auto">
           <table style="border-collapse:collapse;font-size:12px">
             <thead><tr style="border-bottom:2px solid #1e3a5f">
@@ -1326,7 +1360,7 @@ function renderOverview(){
 
     <div id="d-ov-fc" class="drill-panel">
       <div class="drill-title">Food Cost — Aufschlüsselung ${hatIstFC?'<span style="font-size:10px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px">Ist (direkt)</span>':'<span style="font-size:10px;background:#eab308;color:#000;padding:1px 5px;border-radius:3px">Soll</span>'}</div>
-      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+      <div class="chart-flex" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
       <div style="flex:0 0 auto">
       <table style="border-collapse:collapse;font-size:12px">
         <thead><tr style="border-bottom:2px solid #1e3a5f">
@@ -1371,7 +1405,7 @@ function renderOverview(){
       ${hatIstFC?(function(){
         var m=rfc.md, r=rfc.rs, mRev=m.rev||1, rRev=r.rev||1, mSc=km.u/mRev, rSc=kr.u/rRev;
         var mVerl=(m.verschwendet+m.unkontrolliert)*mSc, rVerl=(r.verschwendet+r.unkontrolliert)*rSc, gVerl=mVerl+rVerl;
-        return'<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-top:10px">'
+        return'<div class="chart-flex" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-top:10px">'
           +'<div style="flex:0 0 auto">'
           +'<table style="border-collapse:collapse;font-size:11px">'
           +'<thead><tr style="border-bottom:2px solid #1e3a5f"><th style="text-align:left;color:#64748b;padding:4px 8px 4px 0;font-weight:500">Traceability</th><th style="text-align:right;color:#f97316;padding:4px 8px;font-weight:500">Mehringdamm</th><th style="text-align:right;color:#3b82f6;padding:4px 8px;font-weight:500">Rosenthaler</th><th style="text-align:right;color:#e2e8f0;padding:4px 0 4px 8px;font-weight:500">Gesamt</th></tr></thead>'
@@ -1390,7 +1424,7 @@ function renderOverview(){
 
     <div id="d-ov-cm" class="drill-panel">
       <div class="drill-title">Contribution Margin — Aufschlüsselung</div>
-      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+      <div class="chart-flex" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
         <div style="flex:0 0 auto">
           <table style="border-collapse:collapse;font-size:12px">
             <thead><tr style="border-bottom:2px solid #1e3a5f">
@@ -1926,7 +1960,7 @@ function renderUmsatz(){
 
     <div id="d-ges" class="drill-panel">
       <div class="drill-title">Gesamtumsatz — Details</div>
-      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+      <div class="chart-flex" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
         <div style="flex:0 0 auto">
           <table style="border-collapse:collapse;font-size:12px">
             <thead><tr style="border-bottom:2px solid #1e3a5f">
@@ -1984,7 +2018,7 @@ function renderUmsatz(){
 
     <div id="d-md" class="drill-panel">
       <div class="drill-title">Mehringdamm — Details</div>
-      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+      <div class="chart-flex" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
         <div style="flex:0 0 auto">
           <table style="border-collapse:collapse;font-size:12px">
             <thead><tr style="border-bottom:2px solid #1e3a5f">
@@ -2041,7 +2075,7 @@ function renderUmsatz(){
     </div>
     <div id="d-rs" class="drill-panel">
       <div class="drill-title">Rosenthaler Straße — Details</div>
-      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+      <div class="chart-flex" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
         <div style="flex:0 0 auto">
           <table style="border-collapse:collapse;font-size:12px">
             <thead><tr style="border-bottom:2px solid #1e3a5f">
@@ -2442,7 +2476,7 @@ function renderArtikelProStunde(von, bis, st) {
       '<div id="ad-'+h+'" style="display:none;margin-top:8px;padding:10px;background:#0a1628;border:1px solid #1e3a5f;border-radius:6px">'+
         '<div style="font-size:11px;color:#60a5fa;font-weight:600;margin-bottom:6px">👥 Eingeplante Mitarbeiter (Tage mit Aktivität in dieser Stunde)</div>'+
         (maListe.length>0
-          ? '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+          ? '<div class="wt-flex" style="display:flex;gap:6px;flex-wrap:wrap">'+
               maListe.map(function(ma){
                 var zeit    = maZeiten[ma] || '';
                 var bereich = maBereiche[ma] || '';
@@ -2761,7 +2795,7 @@ function renderGuV(){
 
   document.getElementById("t-guv").innerHTML=`
     ${!paReal?'<div style="background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:8px 10px;font-size:11px;color:#f97316;margin-bottom:12px">⚠️ Operative Personalkosten sind Schätzwerte (33%). Für echte Zahlen Ordio-Daten laden.</div>':""}
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+    <div class="resp-3col guv-card-wrap" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
       ${guvCard({name:"Mehringdamm",emoji:"🔴",color:"#ef4444",u:km.u,fc:fcMdAmt,fcP:fcMdPct,pa:paMd,paP:paMdPct,ldo:ldoMd,ldoBrutto:ldoMdBrutto,roh:rohMd,cm:cmMd,cmP:cmMdPct,ebitda:ebitdaMd,ebitdaP:ebitdaMdPct,t:km.t,stunden:pkMd.stunden,sm:smMd,fkMul:0.5},"md")}
       ${guvCard({name:"Rosenthaler",emoji:"🔵",color:"#3b82f6",u:kr.u,fc:fcRsAmt,fcP:fcRsPct,pa:paRs,paP:paRsPct,ldo:ldoRs,ldoBrutto:ldoRsBrutto,roh:rohRs,cm:cmRs,cmP:cmRsPct,ebitda:ebitdaRs,ebitdaP:ebitdaRsPct,t:kr.t,stunden:pkRs.stunden,sm:smRs,fkMul:0.5},"rs")}
       ${guvCard({name:"Gesamt",emoji:"🟢",color:"#22c55e",u:k.u,fc:uFcAmt,fcP:uFcPct,pa:pa,paP:paPct,ldo:ldoProv,ldoBrutto:ldoUmsatz,roh:rohertrag,cm:cm,cmP:cmPct,ebitda:ebitda,ebitdaP:ebitdaPct,t:k.t,stunden:pk.stunden,sm:smKosten,fkMul:1},"ges")}
@@ -2808,7 +2842,7 @@ function renderGuV(){
       var bwCol=function(v){return v>=ZIELE.bonWert?"#22c55e":(v>=ZIELE.bonWert*0.9?"#f97316":"#ef4444");};
       var bonVergleich='<div style="padding:10px 0;border-bottom:1px solid #1e2d40">'
         +'<div style="font-size:11px;color:#94a3b8;margin-bottom:6px">Ø Bon-Wert nach Standort <span style="float:right;color:#475569;font-size:9px">Ziel '+fmtD(ZIELE.bonWert)+'</span></div>'
-        +'<div style="display:flex;gap:12px">'
+        +'<div class="bonwert-flex" style="display:flex;gap:12px">'
           +'<div style="flex:1;background:#1e2d40;border-radius:6px;padding:8px 10px;text-align:center">'
             +'<div style="font-size:10px;color:#94a3b8">🔴 Mehringdamm</div>'
             +'<div style="font-size:18px;font-weight:700;color:'+bwCol(bonWertMd.avg)+'">'+fmtD(bonWertMd.avg)+'</div>'
@@ -2827,7 +2861,7 @@ function renderGuV(){
       return'<div class="box" style="margin-top:14px">'
         +'<div class="box-title">📊 KPI-Ampel</div>'
         +'<div class="box-sub">Ist vs. Ziel</div>'
-        +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0 24px">'
+        +'<div class="resp-3col" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0 24px">'
           +bars
         +'</div>'
         +bonVergleich
@@ -2968,8 +3002,9 @@ function renderPersonal(){
   });
   var aufbauMaList=Object.entries(aufbauMaMap).filter(function(e){return e[1].count>=2;}).sort(function(a,b){return(a[1].stunden/a[1].count)-(b[1].stunden/b[1].count);});
 
-  // Abbau-Trend nach Wochentag
+  // Abbau-Trend nach Wochentag + Standort
   var abbauWtMap={};
+  var abbauWtStMap={}; // {wt: {standort: {stunden,kosten,count}}}
   abbau.data.forEach(function(r){
     var d=new Date(r.datum+"T12:00:00");var wt=d.getDay();
     var wtName=["So","Mo","Di","Mi","Do","Fr","Sa"][wt];
@@ -2977,6 +3012,28 @@ function renderPersonal(){
     abbauWtMap[wtName].stunden+=r.nachStd;
     abbauWtMap[wtName].kosten+=r.nachKosten;
     abbauWtMap[wtName].count++;
+    if(!abbauWtStMap[wtName])abbauWtStMap[wtName]={};
+    if(!abbauWtStMap[wtName][r.standort])abbauWtStMap[wtName][r.standort]={stunden:0,kosten:0,count:0};
+    abbauWtStMap[wtName][r.standort].stunden+=r.nachStd;
+    abbauWtStMap[wtName][r.standort].kosten+=r.nachKosten;
+    abbauWtStMap[wtName][r.standort].count++;
+  });
+
+  // Aufbau-Trend nach Wochentag + Standort
+  var aufbauWtMap={};
+  var aufbauWtStMap={};
+  aufbau.data.forEach(function(r){
+    var d=new Date(r.datum+"T12:00:00");var wt=d.getDay();
+    var wtName=["So","Mo","Di","Mi","Do","Fr","Sa"][wt];
+    if(!aufbauWtMap[wtName])aufbauWtMap[wtName]={stunden:0,kosten:0,count:0};
+    aufbauWtMap[wtName].stunden+=r.vorStd;
+    aufbauWtMap[wtName].kosten+=r.vorKosten;
+    aufbauWtMap[wtName].count++;
+    if(!aufbauWtStMap[wtName])aufbauWtStMap[wtName]={};
+    if(!aufbauWtStMap[wtName][r.standort])aufbauWtStMap[wtName][r.standort]={stunden:0,kosten:0,count:0};
+    aufbauWtStMap[wtName][r.standort].stunden+=r.vorStd;
+    aufbauWtStMap[wtName][r.standort].kosten+=r.vorKosten;
+    aufbauWtStMap[wtName][r.standort].count++;
   });
 
   // Team-Kombination Analyse für Abbau
@@ -3051,7 +3108,7 @@ function renderPersonal(){
         <div class="kpi-delta delta-neu">Ø ${(pk.stunden/Math.max(tagKeys.length,1)).toFixed(1)} h/Tag</div>
         <div class="kpi-ai">${pk.count} Schichten · ${maList.length} Mitarbeiter</div>
       </div>
-      <div class="kpi-card">
+      <div class="kpi-card" onclick="drill('d-umsatz-std')" style="cursor:pointer">
         <div class="kpi-label">Umsatz / Personalstunde</div>
         <div class="kpi-val" style="color:${umsatzStd>=ZIELE.umsatzStd?'#22c55e':'#ef4444'}">${fmt(umsatzStd)}</div>
         <div class="kpi-delta ${umsatzStd>=ZIELE.umsatzStd?'delta-up':'delta-dn'}">Ziel: ${fmt(ZIELE.umsatzStd)}/h</div>
@@ -3068,47 +3125,72 @@ function renderPersonal(){
     <div class="grid2">
       <div class="box">
         <div class="box-title">🏪 Nach Standort</div>
-        <div class="box-sub">Personalkosten und Effizienz</div>
-        ${Object.entries(stMap).map(function(e){
-          var name=e[0],d=e[1];
-          var stUmsatzGes=lokalGefiltert.filter(function(r){return r.st===name;}).reduce(function(s,r){return s+r.u;},0);
-          var pct=stUmsatzGes>0?d.kosten/stUmsatzGes:0;
-          // Umsatz/h: nur Tage mit BEIDEN Werten > 0 pro Standort
-          var aktivStTage=Object.values(umsatzStdMapSt).filter(function(x){return x.datum&&x.stunden>0&&x.umsatz>0&&(x.standort===name||(name==="Mehringdamm"&&x.datum&&Object.keys(umsatzStdMapSt).some(function(k){return k===x.datum+"|"+name;})));});
-          var stAktivEntries=Object.entries(umsatzStdMapSt).filter(function(e){return e[0].indexOf("|"+name)>-1&&e[1].umsatz>0&&e[1].stunden>0;});
-          var stAktivU=stAktivEntries.reduce(function(s,e){return s+e[1].umsatz;},0);
-          var stAktivStd=stAktivEntries.reduce(function(s,e){return s+e[1].stunden;},0);
-          var stU=stAktivStd>0?stAktivU/stAktivStd:d.stunden>0?stUmsatzGes/d.stunden:0;
-          return'<div style="padding:10px 0;border-bottom:1px solid #1e2d40;cursor:pointer" onclick="drill(\'d-pa-st-'+name.replace(/\s/g,'')+'\')" >'+
-            '<div style="display:flex;justify-content:space-between;margin-bottom:4px">'+
-              '<span style="color:#f1f5f9;font-weight:600;font-size:13px">'+name+'</span>'+
-              '<span style="color:#8b5cf6;font-weight:700">'+fmt(d.kosten)+'</span>'+
+        <div class="box-sub">Personalkosten und Effizienz · Klick für Details</div>
+        ${(function(){
+          var entries=Object.entries(stMap);
+          var maxKosten=entries.reduce(function(m,e){return Math.max(m,e[1].kosten);},0);
+          var colors={"Mehringdamm":"#ef4444","Rosenthaler Straße":"#3b82f6"};
+          return entries.map(function(e){
+            var name=e[0],d=e[1];
+            var col=colors[name]||"#8b5cf6";
+            var stUmsatzGes=lokalGefiltert.filter(function(r){return r.st===name;}).reduce(function(s,r){return s+r.u;},0);
+            var pct=stUmsatzGes>0?d.kosten/stUmsatzGes:0;
+            var stAktivEntries=Object.entries(umsatzStdMapSt).filter(function(e){return e[0].indexOf("|"+name)>-1&&e[1].umsatz>0&&e[1].stunden>0;});
+            var stAktivU=stAktivEntries.reduce(function(s,e){return s+e[1].umsatz;},0);
+            var stAktivStd=stAktivEntries.reduce(function(s,e){return s+e[1].stunden;},0);
+            var stU=stAktivStd>0?stAktivU/stAktivStd:d.stunden>0?stUmsatzGes/d.stunden:0;
+            var barW=maxKosten>0?d.kosten/maxKosten*100:0;
+            return'<div style="background:#0a1628;border-radius:10px;padding:14px;margin-bottom:10px;border:1px solid #1e2d40;cursor:pointer" onclick="drill(\'d-pa-st-'+name.replace(/\s/g,'')+'\')" >'+
+              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
+                '<div style="display:flex;align-items:center;gap:8px">'+
+                  '<span style="width:8px;height:8px;border-radius:50%;background:'+col+';display:inline-block"></span>'+
+                  '<span style="color:#f1f5f9;font-weight:700;font-size:14px">'+name+'</span>'+
+                '</div>'+
+                '<span style="color:'+col+';font-weight:700;font-size:18px">'+fmt(d.kosten)+'</span>'+
+              '</div>'+
+              '<div style="background:#1e2d40;border-radius:4px;height:6px;margin-bottom:12px">'+
+                '<div style="background:'+col+';height:100%;border-radius:4px;width:'+Math.round(barW)+'%;transition:width 0.3s"></div>'+
+              '</div>'+
+              '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+
+                '<div style="text-align:center">'+
+                  '<div style="font-size:10px;color:#64748b;margin-bottom:2px">PA-Quote</div>'+
+                  '<div style="font-size:15px;font-weight:700;color:'+(pct>ZIELE.pa?'#ef4444':'#22c55e')+'">'+fmtP(pct)+'</div>'+
+                  '<div style="font-size:9px;color:#475569">Ziel '+fmtP(ZIELE.pa)+'</div>'+
+                '</div>'+
+                '<div style="text-align:center">'+
+                  '<div style="font-size:10px;color:#64748b;margin-bottom:2px">Umsatz/h</div>'+
+                  '<div style="font-size:15px;font-weight:700;color:'+(stU>=ZIELE.umsatzStd?'#22c55e':'#ef4444')+'">'+fmt(stU)+'</div>'+
+                  '<div style="font-size:9px;color:#475569">Ziel €'+ZIELE.umsatzStd+'</div>'+
+                '</div>'+
+                '<div style="text-align:center">'+
+                  '<div style="font-size:10px;color:#64748b;margin-bottom:2px">Stunden</div>'+
+                  '<div style="font-size:15px;font-weight:700;color:#94a3b8">'+Math.round(d.stunden)+'h</div>'+
+                  '<div style="font-size:9px;color:#475569">'+d.count+' Schichten</div>'+
+                '</div>'+
+              '</div>'+
             '</div>'+
-            '<div style="display:flex;justify-content:space-between;font-size:11px;color:#475569">'+
-              '<span>'+Math.round(d.stunden)+' h · '+d.count+' Schichten</span>'+
-              '<span style="color:'+(pct>ZIELE.pa?'#ef4444':'#22c55e')+'">'+fmtP(pct)+' vom Umsatz</span>'+
-            '</div>'+
-            '<div style="font-size:11px;color:#475569;margin-top:3px">Umsatz/h: <span style="color:'+(stU>=ZIELE.umsatzStd?'#22c55e':'#ef4444')+'">'+fmt(stU)+'</span></div>'+
-          '</div>'+
-          '<div id="d-pa-st-'+name.replace(/\s/g,'')+'" class="drill-panel">'+
-            '<div class="drill-row"><span>Personalkosten</span><span>'+fmt(d.kosten)+'</span></div>'+
-            '<div class="drill-row"><span>Personal-Quote</span><span style="color:'+(pct>ZIELE.pa?'#ef4444':'#22c55e')+'">'+fmtP(pct)+'</span></div>'+
-            '<div class="drill-row"><span>Gesamtstunden</span><span>'+Math.round(d.stunden)+' h</span></div>'+
-            '<div class="drill-row"><span>Umsatz/Personalstunde</span><span style="color:'+(stU>=ZIELE.umsatzStd?'#22c55e':'#ef4444')+'">'+fmt(stU)+'/h</span></div>'+
-            '<div style="font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.5px;padding:8px 0 4px">Mitarbeiter</div>'+
-            d.ma.sort(function(a,b){return a.startZeit.localeCompare(b.startZeit);}).map(function(m){
-              var bereichCol=m.bereich==="Kitchen"?"#f97316":m.bereich==="Service"?"#22c55e":m.bereich==="Social Media"?"#8b5cf6":"#3b82f6";
-              return'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1e2d40">'+
-                '<span style="color:#e2e8f0;font-size:12px">'+m.mitarbeiter+'</span>'+
-                '<span style="display:flex;align-items:center;gap:8px">'+
-                  '<span style="font-size:11px;color:#64748b">'+m.startZeit+'–'+m.endeZeit+'</span>'+
-                  '<span style="font-size:10px;background:'+bereichCol+'20;color:'+bereichCol+';border-radius:4px;padding:1px 6px">'+m.bereich+'</span>'+
-                '</span>'+
-              '</div>';
-            }).join("")+
-            '<div class="ai-box" style="margin-top:8px">'+( pct>ZIELE.pa?name+' liegt '+fmtP(pct-ZIELE.pa)+' über Ziel-Personalquote.':name+' ist im Zielbereich.')+' Umsatz/h '+(stU>=ZIELE.umsatzStd?'✓ gut.':'unter Ziel.')+' </div>'+
-          '</div>';
-        }).join("")}
+            '<div id="d-pa-st-'+name.replace(/\s/g,'')+'" class="drill-panel">'+
+              '<div class="drill-title">'+name+' — Details</div>'+
+              '<div class="drill-row"><span>Personalkosten</span><span style="color:'+col+'">'+fmt(d.kosten)+'</span></div>'+
+              '<div class="drill-row"><span>Personal-Quote</span><span style="color:'+(pct>ZIELE.pa?'#ef4444':'#22c55e')+'">'+fmtP(pct)+'</span></div>'+
+              '<div class="drill-row"><span>Umsatz/Personalstunde</span><span style="color:'+(stU>=ZIELE.umsatzStd?'#22c55e':'#ef4444')+'">'+fmt(stU)+'/h</span></div>'+
+              '<div class="drill-row"><span>Gesamtstunden</span><span>'+Math.round(d.stunden)+' h</span></div>'+
+              '<div class="drill-row"><span>Schichten</span><span>'+d.count+'</span></div>'+
+              '<div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;padding:10px 0 6px;border-top:1px solid #1e2d40;margin-top:8px">Mitarbeiter</div>'+
+              d.ma.sort(function(a,b){return a.startZeit.localeCompare(b.startZeit);}).map(function(m){
+                var bereichCol=m.bereich==="Kitchen"?"#f97316":m.bereich==="Service"?"#22c55e":m.bereich==="Social Media"?"#8b5cf6":"#3b82f6";
+                return'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1e2d40">'+
+                  '<span style="color:#e2e8f0;font-size:12px">'+m.mitarbeiter+'</span>'+
+                  '<span style="display:flex;align-items:center;gap:8px">'+
+                    '<span style="font-size:11px;color:#64748b">'+m.startZeit+'–'+m.endeZeit+'</span>'+
+                    '<span style="font-size:10px;background:'+bereichCol+'20;color:'+bereichCol+';border-radius:4px;padding:1px 6px">'+m.bereich+'</span>'+
+                  '</span>'+
+                '</div>';
+              }).join("")+
+              '<div class="ai-box" style="margin-top:8px">'+(pct>ZIELE.pa?name+' liegt '+fmtP(pct-ZIELE.pa)+' über Ziel-Personalquote.':name+' ist im Zielbereich.')+' Umsatz/h '+(stU>=ZIELE.umsatzStd?'✓ gut.':'unter Ziel.')+'</div>'+
+            '</div>';
+          }).join("");
+        })()}
       </div>
 
       <div class="box">
@@ -3143,7 +3225,7 @@ function renderPersonal(){
     <div class="box" style="margin-bottom:14px">
       <div class="box-title">🌅 Aufbau & 🌙 Abbau — Kosten außerhalb der Öffnungszeiten</div>
       <div class="box-sub">Stunden & Kosten vor 12:00 (Aufbau) und nach Ladenschluss (Abbau)</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0">
+      <div class="resp-3col aufbau-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0">
         <div style="background:#1a2538;border-radius:10px;padding:14px;border-left:3px solid #f59e0b">
           <div style="font-size:10px;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">🌅 Aufbau (vor 12:00)</div>
           <div style="font-size:22px;font-weight:700;color:#f59e0b">${fmt(aufbau.kosten)}</div>
@@ -3166,58 +3248,60 @@ function renderPersonal(){
           <div style="font-size:11px;color:#475569">${fmtP(pk.total>0?abbau.kosten/pk.total:0)} der Personalkosten</div>
         </div>
       </div>
-      <!-- Standort-Vergleich -->
-      ${(Object.keys(aufbauStMap).length>0||Object.keys(abbauStMap).length>0)?
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">'+
-          Object.keys(aufbauStMap).concat(Object.keys(abbauStMap)).filter(function(v,i,a){return a.indexOf(v)===i;}).map(function(st){
-            var auf=aufbauStMap[st]||{stunden:0,kosten:0,count:0};
-            var ab=abbauStMap[st]||{stunden:0,kosten:0,count:0};
-            return'<div style="background:#111827;border-radius:8px;padding:10px;border:1px solid #1e2d40">'+
-              '<div style="font-size:12px;font-weight:600;color:#f1f5f9;margin-bottom:8px">'+st+'</div>'+
-              '<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid #1e2d40">'+
-                '<span style="color:#f59e0b">🌅 Aufbau</span>'+
-                '<span style="color:#f59e0b">'+auf.stunden.toFixed(1)+' h · '+fmt(auf.kosten)+' ('+auf.count+'×)</span>'+
-              '</div>'+
-              '<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0">'+
-                '<span style="color:#6366f1">🌙 Abbau</span>'+
-                '<span style="color:#6366f1">'+ab.stunden.toFixed(1)+' h · '+fmt(ab.kosten)+' ('+ab.count+'×)</span>'+
-              '</div>'+
-            '</div>';
-          }).join("")+
-        '</div>'+
-        (function(){
-          var stKeys=Object.keys(abbauStMap);
-          if(stKeys.length<2) return'';
-          var a=abbauStMap[stKeys[0]]||{stunden:0,count:0,kosten:0};
-          var b=abbauStMap[stKeys[1]]||{stunden:0,count:0,kosten:0};
-          var avgA=a.count>0?a.stunden/a.count:0, avgB=b.count>0?b.stunden/b.count:0;
-          var aufA=aufbauStMap[stKeys[0]]||{stunden:0,count:0};
-          var aufB=aufbauStMap[stKeys[1]]||{stunden:0,count:0};
-          var avgAufA=aufA.count>0?aufA.stunden/aufA.count:0, avgAufB=aufB.count>0?aufB.stunden/aufB.count:0;
-          var aufDiff=Math.abs(aufA.stunden-aufB.stunden);
-          var abDiff=Math.abs(a.stunden-b.stunden);
-          var abKostDiff=Math.abs(a.kosten-b.kosten);
-          var aufSimilar=aufDiff<5;
-          var abBigger=abDiff>10;
-          var slowSt=avgA>avgB?stKeys[0]:stKeys[1];
-          var fastSt=avgA>avgB?stKeys[1]:stKeys[0];
-          var slowAvg=Math.max(avgA,avgB);
-          var fastAvg=Math.min(avgA,avgB);
-          var txt='';
-          if(aufSimilar&&abBigger){
-            txt='Aufbau ist bei beiden Standorten nahezu identisch (Ø '+avgAufA.toFixed(1)+'h vs. '+avgAufB.toFixed(1)+'h), aber beim <strong>Abbau gibt es einen klaren Unterschied</strong>: '+slowSt+' braucht Ø '+slowAvg.toFixed(1)+'h pro Schicht vs. '+fastAvg.toFixed(1)+'h bei '+fastSt+'. Das sind <strong>'+fmt(abKostDiff)+' Mehrkosten</strong> im Zeitraum. Hier liegt Optimierungspotenzial — z.B. Closing-Prozesse von '+fastSt+' auf '+slowSt+' übertragen.';
-          } else if(abBigger){
-            txt=slowSt+' braucht beim Abbau Ø '+slowAvg.toFixed(1)+'h vs. '+fastAvg.toFixed(1)+'h bei '+fastSt+' — <strong>'+fmt(abKostDiff)+' Differenz</strong>. Closing-Abläufe vergleichen könnte sich lohnen.';
-          } else {
-            txt='Beide Standorte sind bei Aufbau und Abbau relativ ähnlich. Ø Abbau: '+avgA.toFixed(1)+'h ('+stKeys[0]+') vs. '+avgB.toFixed(1)+'h ('+stKeys[1]+').';
-          }
-          return'<div class="ai-box" style="margin-top:10px">'+txt+'</div>';
-        })()+
-      '':''}
     </div>
 
+    <!-- AUFBAU NACH WOCHENTAG (mit Standort) -->
+    ${Object.keys(aufbauWtMap).length>0?'<div class="box" style="margin-bottom:14px"><div class="box-title">🌅 Aufbau nach Wochentag</div><div class="box-sub">Ø Stunden & Kosten vor 12:00 · nach Standort</div>'+
+      '<div class="wt-flex" style="display:flex;gap:6px;flex-wrap:wrap">'+
+        ["Di","Mi","Do","Fr","Sa","So"].filter(function(wt){return aufbauWtMap[wt];}).map(function(wt){
+          var d=aufbauWtMap[wt];
+          var avg=d.count>0?d.stunden/d.count:0;
+          var avgK=d.count>0?d.kosten/d.count:0;
+          var col=avg<=0.5?"#22c55e":avg<=1?"#f59e0b":"#ef4444";
+          var stData=aufbauWtStMap[wt]||{};
+          var stLines=Object.entries(stData).map(function(e){
+            var sAvg=e[1].count>0?e[1].stunden/e[1].count:0;
+            var sCol=e[0]==="Mehringdamm"?"#ef4444":"#3b82f6";
+            return'<span style="color:'+sCol+';font-size:9px">'+e[0].substring(0,2)+': '+sAvg.toFixed(1)+'h</span>';
+          }).join(' · ');
+          return'<div style="flex:1;min-width:80px;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center;border-top:3px solid #f59e0b">'+
+            '<div style="font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:4px">'+wt+'</div>'+
+            '<div style="font-size:18px;font-weight:700;color:'+col+'">'+avg.toFixed(1)+'h</div>'+
+            '<div style="font-size:10px;color:#94a3b8;margin-top:3px">'+fmt(avgK)+'/Tag</div>'+
+            '<div style="font-size:9px;color:#475569;margin-top:2px">'+d.count+'× Aufbau</div>'+
+            (stLines?'<div style="margin-top:6px;padding-top:5px;border-top:1px solid #1e2d40">'+stLines+'</div>':'')+
+          '</div>';
+        }).join("")+
+      '</div>'+
+    '</div>':''}
+
+    <!-- ABBAU NACH WOCHENTAG (mit Standort) -->
+    ${Object.keys(abbauWtMap).length>0?'<div class="box" style="margin-bottom:14px"><div class="box-title">🌙 Abbau nach Wochentag</div><div class="box-sub">Ø Stunden & Kosten nach Ladenschluss · nach Standort</div>'+
+      '<div class="wt-flex" style="display:flex;gap:6px;flex-wrap:wrap">'+
+        ["Di","Mi","Do","Fr","Sa","So"].filter(function(wt){return abbauWtMap[wt];}).map(function(wt){
+          var d=abbauWtMap[wt];
+          var avg=d.count>0?d.stunden/d.count:0;
+          var avgK=d.count>0?d.kosten/d.count:0;
+          var col=avg<=0.5?"#22c55e":avg<=1?"#f59e0b":"#ef4444";
+          var stData=abbauWtStMap[wt]||{};
+          var stLines=Object.entries(stData).map(function(e){
+            var sAvg=e[1].count>0?e[1].stunden/e[1].count:0;
+            var sCol=e[0]==="Mehringdamm"?"#ef4444":"#3b82f6";
+            return'<span style="color:'+sCol+';font-size:9px">'+e[0].substring(0,2)+': '+sAvg.toFixed(1)+'h</span>';
+          }).join(' · ');
+          return'<div style="flex:1;min-width:80px;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center;border-top:3px solid #6366f1">'+
+            '<div style="font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:4px">'+wt+'</div>'+
+            '<div style="font-size:18px;font-weight:700;color:'+col+'">'+avg.toFixed(1)+'h</div>'+
+            '<div style="font-size:10px;color:#94a3b8;margin-top:3px">'+fmt(avgK)+'/Tag</div>'+
+            '<div style="font-size:9px;color:#475569;margin-top:2px">'+d.count+'× Abbau</div>'+
+            (stLines?'<div style="margin-top:6px;padding-top:5px;border-top:1px solid #1e2d40">'+stLines+'</div>':'')+
+          '</div>';
+        }).join("")+
+      '</div>'+
+    '</div>':''}
+
+    <!-- EFFIZIENZ RANKINGS -->
     <div class="grid2" style="margin-top:0">
-      <!-- ABBAU-EFFIZIENZ RANKING -->
       <div class="box">
         <div class="box-title">🌙 Abbau-Effizienz nach Mitarbeiter</div>
         <div class="box-sub">Ø Stunden nach Ladenschluss (min. 2 Schichten)</div>
@@ -3239,10 +3323,8 @@ function renderPersonal(){
               (Object.keys(d.standorte).length>1?' · '+Object.entries(d.standorte).map(function(s){return s[0].substring(0,2)+': Ø '+(s[1].stunden/s[1].count).toFixed(1)+'h';}).join(', '):'')+
             '</div>'+
           '</div>';
-        }).join(""):'<div style="color:#475569;font-size:12px;padding:12px 0">Nicht genügend Abbau-Daten (min. 2 Schichten pro MA).</div>'}
+        }).join(""):'<div style="color:#475569;font-size:12px;padding:12px 0">Nicht genügend Abbau-Daten.</div>'}
       </div>
-
-      <!-- AUFBAU-EFFIZIENZ RANKING -->
       <div class="box">
         <div class="box-title">🌅 Aufbau-Effizienz nach Mitarbeiter</div>
         <div class="box-sub">Ø Stunden vor Öffnung (min. 2 Schichten)</div>
@@ -3262,7 +3344,7 @@ function renderPersonal(){
             '</div>'+
             '<div style="font-size:10px;color:#475569;margin-top:2px">'+d.count+' Aufbau-Schichten</div>'+
           '</div>';
-        }).join(""):'<div style="color:#475569;font-size:12px;padding:12px 0">Nicht genügend Aufbau-Daten (min. 2 Schichten pro MA).</div>'}
+        }).join(""):'<div style="color:#475569;font-size:12px;padding:12px 0">Nicht genügend Aufbau-Daten.</div>'}
       </div>
     </div>
 
@@ -3273,28 +3355,26 @@ function renderPersonal(){
       }).join("")+
     '</div>':''}
 
-    <!-- ABBAU NACH WOCHENTAG -->
-    ${Object.keys(abbauWtMap).length>0?'<div class="box" style="margin-bottom:14px"><div class="box-title">📅 Abbau nach Wochentag</div><div class="box-sub">Ø Stunden & Kosten nach Ladenschluss</div>'+
-      '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
-        ["Di","Mi","Do","Fr","Sa","So"].filter(function(wt){return abbauWtMap[wt];}).map(function(wt){
-          var d=abbauWtMap[wt];
-          var avg=d.count>0?d.stunden/d.count:0;
-          var avgK=d.count>0?d.kosten/d.count:0;
-          var col=avg<=0.5?"#22c55e":avg<=1?"#f59e0b":"#ef4444";
-          return'<div style="flex:1;min-width:70px;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center">'+
-            '<div style="font-size:10px;color:#64748b;margin-bottom:4px">'+wt+'</div>'+
-            '<div style="font-size:16px;font-weight:700;color:'+col+'">'+avg.toFixed(1)+'h</div>'+
-            '<div style="font-size:10px;color:#94a3b8;margin-top:2px">'+fmt(avgK)+'/Tag</div>'+
-            '<div style="font-size:9px;color:#475569;margin-top:2px">'+d.count+'× Abbau</div>'+
-          '</div>';
-        }).join("")+
-      '</div>'+
-    '</div>':''}
-
-    <div class="box">
-      <div class="box-title">⚡ Umsatz / Personalstunde</div>
-      <div class="box-sub">Ziel: €${ZIELE.umsatzStd}/h — gestrichelte Linie</div>
-      <canvas id="c-pa-tag" style="max-height:160px"></canvas>
+    <div id="d-umsatz-std" class="drill-panel">
+      <div class="drill-title">⚡ Umsatz / Personalstunde — Tagesverlauf</div>
+      <canvas id="c-pa-tag" style="max-height:200px"></canvas>
+      <div class="resp-3col drill-3col" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px">
+        <div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:#64748b">Tage über Ziel</div>
+          <div style="font-size:18px;font-weight:700;color:#22c55e">${(function(){var over=0;Object.values(umsatzStdMap).forEach(function(s){if(s.stunden>0&&s.umsatz/s.stunden>=ZIELE.umsatzStd)over++;});return over;})()}</div>
+          <div style="font-size:10px;color:#475569">von ${Object.keys(umsatzStdMap).length} Tagen</div>
+        </div>
+        <div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:#64748b">Bester Tag</div>
+          <div style="font-size:18px;font-weight:700;color:#8b5cf6">${(function(){var best=0;Object.values(umsatzStdMap).forEach(function(s){if(s.stunden>0){var v=s.umsatz/s.stunden;if(v>best)best=v;}});return fmt(best);})()}</div>
+          <div style="font-size:10px;color:#475569">${(function(){var best=0,bd='';Object.entries(umsatzStdMap).forEach(function(e){if(e[1].stunden>0){var v=e[1].umsatz/e[1].stunden;if(v>best){best=v;bd=e[0];}}});return bd?bd.slice(8)+'.'+bd.slice(5,7):'–';})()}</div>
+        </div>
+        <div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:#64748b">Schwächster Tag</div>
+          <div style="font-size:18px;font-weight:700;color:#ef4444">${(function(){var worst=Infinity;Object.values(umsatzStdMap).forEach(function(s){if(s.stunden>0){var v=s.umsatz/s.stunden;if(v<worst)worst=v;}});return worst===Infinity?'–':fmt(worst);})()}</div>
+          <div style="font-size:10px;color:#475569">${(function(){var worst=Infinity,wd='';Object.entries(umsatzStdMap).forEach(function(e){if(e[1].stunden>0){var v=e[1].umsatz/e[1].stunden;if(v<worst){worst=v;wd=e[0];}}});return wd?wd.slice(8)+'.'+wd.slice(5,7):'–';})()}</div>
+        </div>
+      </div>
     </div>`;
 
   dc("c-pa-tag");
@@ -3776,7 +3856,7 @@ function renderFoodCost(){
         var realFC = kpi.offen + kpi.waren - kpi.schluss;
         return '<div style="padding:12px;background:#0a1628;border-radius:8px;border-left:3px solid #8b5cf6;margin-bottom:10px">' +
           '<div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:8px">' + emoji + ' ' + stName + ' — ' + (kpi.von||'') + ' → ' + (kpi.bis||'') + '</div>' +
-          '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">' +
+          '<div class="resp-3col" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">' +
             '<div><div style="font-size:10px;color:#475569">Anfangsbestand</div><div style="font-weight:700;color:#f1f5f9">' + fmt(kpi.offen) + '</div></div>' +
             '<div><div style="font-size:10px;color:#475569">+ Einkäufe</div><div style="font-weight:700;color:#22c55e">' + fmt(kpi.waren) + '</div></div>' +
             '<div><div style="font-size:10px;color:#475569">Endbestand</div><div style="font-weight:700;color:#f1f5f9">' + fmt(kpi.schluss) + '</div></div>' +
@@ -5335,98 +5415,115 @@ function generiereKIBericht() {
 
 
 function buildAiContext() {
-  // Verwende die aktuell im Dashboard gefilterten Daten
   var von = document.getElementById("von").value;
   var bis = document.getElementById("bis").value;
   var st = document.getElementById("standort").value;
+  function status(val,ziel,inv){var ok=inv?val<=ziel:val>=ziel;var warn=inv?val<=ziel*1.1:val>=ziel*0.9;return ok?"✅":warn?"⚠️":"🔴";}
 
-  var ctx = "=== BANG BANG NOODLES — Dashboard Daten ===\n\n";
-  ctx += "Aktueller Filter: " + von + " bis " + bis + " | Standort: " + st + "\n";
-  ctx += "Tage im Zeitraum: " + gefiltert.length + "\n\n";
+  var ctx = "FILTER: " + von + " bis " + bis + " | Standort: " + st + "\n\n";
 
-  // KPIs für gefilterten Zeitraum
+  // KPIs
   var kFilt = kpi(gefiltert);
   var tage = kFilt.t || 1;
-  ctx += "=== KPIs (gefilterter Zeitraum) ===\n";
-  ctx += "Umsatz Netto: " + fmt(kFilt.u) + " (" + fmt(kFilt.u/tage) + "/Tag)\n";
-  ctx += "Food Cost: " + fmt(kFilt.f) + " (" + fmtP(kFilt.fp) + " vom Umsatz, Ziel: " + fmtP(ZIELE.fc) + ")\n";
-  ctx += "Ø Bon-Wert: " + fmtD(kFilt.at) + " (Ziel: €" + ZIELE.bonWert + ")\n";
-  ctx += "Verkäufe: " + kFilt.s.toLocaleString("de-DE") + "\n\n";
-
-  // Nach Standort aufschlüsseln
   var mdFilt = gefiltert.filter(function(r){return r.st==="Mehringdamm";});
   var rsFilt = gefiltert.filter(function(r){return r.st==="Rosenthaler Straße";});
   var kMD = kpi(mdFilt), kRS = kpi(rsFilt);
-  ctx += "=== NACH STANDORT ===\n";
-  ctx += "Mehringdamm: " + fmt(kMD.u) + " Umsatz | FC: " + fmtP(kMD.fp) + " | Ø Bon: " + fmtD(kMD.at) + " | " + kMD.t + " Tage\n";
-  ctx += "Rosenthaler Straße: " + fmt(kRS.u) + " Umsatz | FC: " + fmtP(kRS.fp) + " | Ø Bon: " + fmtD(kRS.at) + " | " + kRS.t + " Tage\n\n";
 
-  // Personal (Ordio) — nach Zeitraum filtern
-  var ordioFilt = ordio.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
-  if(ordioFilt.length > 0) {
-    var totalKosten = ordioFilt.reduce(function(s,r){return s+r.kosten;},0);
-    var totalStunden = ordioFilt.reduce(function(s,r){return s+r.stunden;},0);
-    var paQuote = kFilt.u > 0 ? totalKosten/kFilt.u : 0;
-    ctx += "=== PERSONAL ===\n";
-    ctx += "Personalkosten: " + fmt(totalKosten) + " (" + fmtP(paQuote) + " vom Umsatz, Ziel: " + fmtP(ZIELE.pa) + ")\n";
-    ctx += "Stunden: " + Math.round(totalStunden) + "h\n";
-    ctx += "Ø Umsatz/Personalstunde: " + fmt(kFilt.u / Math.max(totalStunden,1)) + " (Ziel: €" + ZIELE.umsatzStd + ")\n";
+  ctx += "UMSATZ:\n";
+  ctx += "Gesamt Netto: " + fmt(kFilt.u) + " | Ø " + fmt(kFilt.u/tage) + "/Tag | " + tage + " Tage\n";
+  ctx += "MD: " + fmt(kMD.u) + " (" + fmtP(kFilt.u>0?kMD.u/kFilt.u:0) + ") | RS: " + fmt(kRS.u) + " (" + fmtP(kFilt.u>0?kRS.u/kFilt.u:0) + ")\n";
+  ctx += "Verkäufe: " + kFilt.s + " | Ø Bon-Wert: " + fmtD(kFilt.at) + " " + status(kFilt.at,ZIELE.bonWert,false) + " (Ziel ≥€" + ZIELE.bonWert + ")\n";
+  ctx += "MD Ø Bon: " + fmtD(kMD.at) + " | RS Ø Bon: " + fmtD(kRS.at) + "\n\n";
 
-    var maMap = {};
-    ordioFilt.forEach(function(r){
-      if(!maMap[r.mitarbeiter])maMap[r.mitarbeiter]={stunden:0,kosten:0};
-      maMap[r.mitarbeiter].stunden+=r.stunden;
-      maMap[r.mitarbeiter].kosten+=r.kosten;
+  ctx += "FOOD COST:\n";
+  ctx += "Gesamt: " + fmt(kFilt.f) + " (" + fmtP(kFilt.fp) + ") " + status(kFilt.fp,ZIELE.fc,true) + " (Ziel ≤25%)\n";
+  ctx += "MD: " + fmtP(kMD.fp) + " " + status(kMD.fp,ZIELE.fc,true) + " | RS: " + fmtP(kRS.fp) + " " + status(kRS.fp,ZIELE.fc,true) + "\n";
+  try {
+    var rfc = getRealFC(st);
+    if(rfc && rfc.md) {
+      ctx += "Bestandsbericht (Ist-FC): MD " + fmtP(rfc.md.quote) + " (" + fmt(rfc.md.fc) + ") | RS " + fmtP(rfc.rs.quote) + " (" + fmt(rfc.rs.fc) + ")\n";
+      ctx += "Verschwendung: MD " + fmt(rfc.md.verschwendet) + " | RS " + fmt(rfc.rs.verschwendet) + "\n";
+      ctx += "Unkontrollierter Schwund: MD " + fmt(rfc.md.unkontrolliert) + " | RS " + fmt(rfc.rs.unkontrolliert) + "\n";
+    }
+  } catch(e){}
+  ctx += "\n";
+
+  // Personal
+  var ordioOp = ordio.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&MGMT_MITARBEITER.indexOf(r.mitarbeiter)===-1&&r.bereich!=="Social Media";});
+  if(ordioOp.length > 0) {
+    var paTotal = ordioOp.reduce(function(s,r){return s+r.kosten;},0);
+    var paStd = ordioOp.reduce(function(s,r){return s+r.stunden;},0);
+    var paQ = kFilt.u>0?paTotal/kFilt.u:0;
+    var uStd = paStd>0?kFilt.u/paStd:0;
+    ctx += "PERSONAL (operativ, ohne Mgmt):\n";
+    ctx += "Kosten: " + fmt(paTotal) + " (" + fmtP(paQ) + ") " + status(paQ,ZIELE.pa,true) + " (Ziel ≤22%)\n";
+    ctx += "Stunden: " + Math.round(paStd) + "h | Ø " + fmtD(paStd>0?paTotal/paStd:0) + "/h Stundenlohn (all-in)\n";
+    ctx += "Umsatz/Personalstunde: " + fmt(uStd) + " " + status(uStd,ZIELE.umsatzStd,false) + " (Ziel ≥€75)\n";
+
+    // Aufbau/Abbau
+    var aufStd=0,aufK=0,aufN=0,abStd=0,abK=0,abN=0;
+    ordioOp.forEach(function(r){
+      var oh=getShiftOverhead(r);
+      if(oh.vorStd>0){aufStd+=oh.vorStd;aufK+=oh.vorKosten;aufN++;}
+      if(oh.nachStd>0){abStd+=oh.nachStd;abK+=oh.nachKosten;abN++;}
     });
-    var maList = Object.entries(maMap).sort(function(a,b){return b[1].stunden-a[1].stunden;}).slice(0,10);
-    ctx += "Top Mitarbeiter: " + maList.map(function(e){return e[0]+" ("+Math.round(e[1].stunden)+"h, "+fmt(e[1].kosten)+")";}).join(", ") + "\n\n";
+    if(aufN>0||abN>0){
+      ctx += "Aufbau (vor 12:00): " + aufStd.toFixed(1) + "h / " + fmt(aufK) + " (" + aufN + " Schichten, Ø " + (aufN>0?(aufStd/aufN).toFixed(1):"0") + "h)\n";
+      ctx += "Abbau (nach Schluss): " + abStd.toFixed(1) + "h / " + fmt(abK) + " (" + abN + " Schichten, Ø " + (abN>0?(abStd/abN).toFixed(1):"0") + "h)\n";
+      ctx += "Nicht-umsatzgenerierende Stunden: " + fmtP(paStd>0?(aufStd+abStd)/paStd:0) + " der Gesamtstunden\n";
+      // Aufbau/Abbau pro Standort
+      var abStMap={};
+      ordioOp.forEach(function(r){
+        var oh=getShiftOverhead(r);
+        if(!abStMap[r.standort])abStMap[r.standort]={aufStd:0,aufK:0,abStd:0,abK:0,aufN:0,abN:0};
+        if(oh.vorStd>0){abStMap[r.standort].aufStd+=oh.vorStd;abStMap[r.standort].aufK+=oh.vorKosten;abStMap[r.standort].aufN++;}
+        if(oh.nachStd>0){abStMap[r.standort].abStd+=oh.nachStd;abStMap[r.standort].abK+=oh.nachKosten;abStMap[r.standort].abN++;}
+      });
+      Object.entries(abStMap).forEach(function(e){
+        ctx += e[0] + ": Aufbau " + e[1].aufStd.toFixed(1) + "h/" + fmt(e[1].aufK) + " | Abbau " + e[1].abStd.toFixed(1) + "h/" + fmt(e[1].abK) + "\n";
+      });
+    }
+
+    // Top MA
+    var maMap = {};
+    ordioOp.forEach(function(r){
+      if(!maMap[r.mitarbeiter])maMap[r.mitarbeiter]={stunden:0,kosten:0};
+      maMap[r.mitarbeiter].stunden+=r.stunden;maMap[r.mitarbeiter].kosten+=r.kosten;
+    });
+    ctx += "Top MA: " + Object.entries(maMap).sort(function(a,b){return b[1].stunden-a[1].stunden;}).slice(0,8).map(function(e){return e[0]+" "+Math.round(e[1].stunden)+"h/"+fmt(e[1].kosten);}).join(", ") + "\n\n";
   }
 
-  // Waste — nach Zeitraum filtern
+  // Waste
   var wasteFilt = waste.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
   if(wasteFilt.length > 0) {
     var totalWaste = wasteFilt.reduce(function(s,r){return s+r.kosten;},0);
-    var wasteQuote = kFilt.u > 0 ? totalWaste/kFilt.u : 0;
-    ctx += "=== WASTE / VERLUSTE ===\n";
-    ctx += "Waste gesamt: " + fmt(totalWaste) + " (" + fmtP(wasteQuote) + " vom Umsatz)\n";
-
+    var wasteQ = kFilt.u>0?totalWaste/kFilt.u:0;
+    ctx += "WASTE/VERLUSTE:\n";
+    ctx += "Gesamt: " + fmt(totalWaste) + " (" + fmtP(wasteQ) + " vom Umsatz) " + status(wasteQ,0.02,true) + " (Ziel <2%)\n";
     var artWasteMap = {};
     wasteFilt.forEach(function(r){
       if(!artWasteMap[r.artikel])artWasteMap[r.artikel]={kosten:0,kategorie:r.kategorie};
       artWasteMap[r.artikel].kosten+=r.kosten;
     });
-    var topWaste = Object.entries(artWasteMap).sort(function(a,b){return b[1].kosten-a[1].kosten;}).slice(0,5);
-    ctx += "Top Waste-Artikel: " + topWaste.map(function(e){return e[0]+" ("+fmt(e[1].kosten)+", "+e[1].kategorie+")";}).join(", ") + "\n\n";
+    ctx += "Top Waste: " + Object.entries(artWasteMap).sort(function(a,b){return b[1].kosten-a[1].kosten;}).slice(0,5).map(function(e){return e[0]+" "+fmt(e[1].kosten)+" ("+e[1].kategorie+")";}).join(", ") + "\n\n";
   }
 
-  // Artikel — nach Zeitraum filtern
+  // Top Artikel
   var artFilt = artikel.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===0&&r.preisN>0;});
   if(artFilt.length > 0) {
     var artMap = {};
     artFilt.forEach(function(r){
       if(!artMap[r.name])artMap[r.name]={umsatz:0,menge:0,gruppe:r.gruppe};
-      artMap[r.name].umsatz+=r.preisN;
-      artMap[r.name].menge+=r.menge;
+      artMap[r.name].umsatz+=r.preisN;artMap[r.name].menge+=r.menge;
     });
-    var topArt = Object.entries(artMap).sort(function(a,b){return b[1].umsatz-a[1].umsatz;}).slice(0,10);
-    ctx += "=== TOP 10 ARTIKEL ===\n";
-    topArt.forEach(function(e){
+    ctx += "TOP ARTIKEL:\n";
+    Object.entries(artMap).sort(function(a,b){return b[1].umsatz-a[1].umsatz;}).slice(0,10).forEach(function(e){
       ctx += e[0] + ": " + fmt(e[1].umsatz) + " | " + Math.round(e[1].menge) + "x | Ø " + fmtD(e[1].umsatz/Math.max(e[1].menge,1)) + "\n";
     });
     ctx += "\n";
   }
 
-  // Trinkgeld — nach Zeitraum filtern
-  var bonsFilt = bons.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
-  if(bonsFilt.length > 0) {
-    var bonsOhneLdo = bonsFilt.filter(function(r){return r.kanal!=="Lieferando";});
-    var tkGesamt = bonsOhneLdo.reduce(function(s,r){return s+r.trinkgeld;},0);
-    var totalOhneLdo = bonsOhneLdo.reduce(function(s,r){return s+r.total;},0);
-    ctx += "=== TRINKGELD ===\n";
-    ctx += "Trinkgeld (ohne Lieferando): " + fmt(tkGesamt) + " (" + fmtP(totalOhneLdo>0?tkGesamt/totalOhneLdo:0) + " Quote)\n\n";
-  }
-
-  // Zahlungsarten (Lightspeed Payments)
+  // Zahlungsarten
   var payFilt = lsPay.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
   if(payFilt.length > 0) {
     var pBar = payFilt.reduce(function(s,r){return s+r.bar;},0);
@@ -5435,45 +5532,50 @@ function buildAiContext() {
     var pLdo = payFilt.reduce(function(s,r){return s+r.ldo;},0);
     var pOnline = payFilt.reduce(function(s,r){return s+(r.onlineOrder||0);},0);
     var pTotal = pBar+pMan+pKarte+pLdo+pOnline;
-    ctx += "=== ZAHLUNGSARTEN (Lightspeed) ===\n";
-    ctx += "Karte: " + fmt(pKarte) + " (" + fmtP(pTotal>0?pKarte/pTotal:0) + ")\n";
-    ctx += "Bar (Bargeld): " + fmt(pBar) + " (" + fmtP(pTotal>0?pBar/pTotal:0) + ")\n";
-    ctx += "Manuell: " + fmt(pMan) + " (" + fmtP(pTotal>0?pMan/pTotal:0) + ")\n";
-    ctx += "Lieferando: " + fmt(pLdo) + " (" + fmtP(pTotal>0?pLdo/pTotal:0) + ")\n";
-    ctx += "Online Order: " + fmt(pOnline) + " (" + fmtP(pTotal>0?pOnline/pTotal:0) + ")\n";
-    ctx += "Gesamt: " + fmt(pTotal) + "\n\n";
+    ctx += "ZAHLUNGSARTEN:\n";
+    ctx += "Karte: " + fmt(pKarte) + " (" + fmtP(pTotal>0?pKarte/pTotal:0) + ") | Bar (Bargeld): " + fmt(pBar) + " (" + fmtP(pTotal>0?pBar/pTotal:0) + ") | Manuell: " + fmt(pMan) + " | Lieferando: " + fmt(pLdo) + " | Online: " + fmt(pOnline) + "\n\n";
   }
 
-  // Umsatz nach Kanal (Inhouse/Takeaway/Lieferando)
+  // Kanäle
   var bFilt = bons.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===0;});
   if(bFilt.length > 0) {
     var kanalMap = {};
     bFilt.forEach(function(r){
       var k = r.kanal || "Sonstige";
       if(!kanalMap[k]) kanalMap[k] = {umsatz:0, bons:0};
-      kanalMap[k].umsatz += r.total;
-      kanalMap[k].bons += 1;
+      kanalMap[k].umsatz += r.total;kanalMap[k].bons += 1;
     });
-    ctx += "=== UMSATZ NACH KANAL ===\n";
+    ctx += "KANÄLE:\n";
     Object.entries(kanalMap).sort(function(a,b){return b[1].umsatz-a[1].umsatz;}).forEach(function(e){
       ctx += e[0] + ": " + fmt(e[1].umsatz) + " (" + e[1].bons + " Bons, Ø " + fmtD(e[1].umsatz/Math.max(e[1].bons,1)) + "/Bon)\n";
     });
     ctx += "\n";
   }
 
-  // FC aus Bestandsbericht (wenn verfügbar)
-  try {
-    var rfc = getRealFC(st);
-    if(rfc && rfc.md) {
-      ctx += "=== FOOD COST (Bestandsbericht) ===\n";
-      ctx += "Mehringdamm: FC " + fmt(rfc.md.fc) + " (" + fmtP(rfc.md.quote) + ") | Verkauft: " + fmt(rfc.md.verkauft) + " | Verschwendet: " + fmt(rfc.md.verschwendet) + " | Schwund: " + fmt(rfc.md.unkontrolliert) + "\n";
-      ctx += "Rosenthaler: FC " + fmt(rfc.rs.fc) + " (" + fmtP(rfc.rs.quote) + ") | Verkauft: " + fmt(rfc.rs.verkauft) + " | Verschwendet: " + fmt(rfc.rs.verschwendet) + " | Schwund: " + fmt(rfc.rs.unkontrolliert) + "\n\n";
-    }
-  } catch(e){}
+  // Trinkgeld
+  var bonsFiltAll = bons.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  if(bonsFiltAll.length > 0) {
+    var bonsOhneLdo = bonsFiltAll.filter(function(r){return r.kanal!=="Lieferando";});
+    var tkGesamt = bonsOhneLdo.reduce(function(s,r){return s+r.trinkgeld;},0);
+    var totalOhneLdo = bonsOhneLdo.reduce(function(s,r){return s+r.total;},0);
+    ctx += "TRINKGELD (ohne Lieferando): " + fmt(tkGesamt) + " (" + fmtP(totalOhneLdo>0?tkGesamt/totalOhneLdo:0) + ")\n\n";
+  }
 
-  // Zielwerte (aus ZIELE-Konstante)
-  ctx += "=== ZIELWERTE ===\n";
-  ctx += "Food Cost: " + fmtP(ZIELE.fc) + " | Personal: " + fmtP(ZIELE.pa) + " | Contribution Margin: " + fmtP(ZIELE.cm) + " | EBITDA: " + fmtP(ZIELE.ebitda) + " | Ø Bon-Wert: €" + ZIELE.bonWert + " | Umsatz/Personalstunde: €" + ZIELE.umsatzStd + "\n";
+  // GuV-Schnellrechnung
+  var ldoProv = 0;
+  var txFilt = lsTx.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  ldoProv = txFilt.reduce(function(s,r){return s+r.ldo;},0)*0.20;
+  var rohertrag = kFilt.u - kFilt.f - ldoProv;
+  var paK = ordioOp.length>0?ordioOp.reduce(function(s,r){return s+r.kosten;},0):kFilt.u*0.33;
+  var cm = rohertrag - paK;
+  var cmP = kFilt.u>0?cm/kFilt.u:0;
+  ctx += "GuV-SCHNELLRECHNUNG:\n";
+  ctx += "Nettoumsatz: " + fmt(kFilt.u) + "\n";
+  ctx += "– Food Cost: " + fmt(kFilt.f) + " (" + fmtP(kFilt.fp) + ")\n";
+  ctx += "– Lieferando-Provision: " + fmt(ldoProv) + "\n";
+  ctx += "= Rohertrag: " + fmt(rohertrag) + " (" + fmtP(kFilt.u>0?rohertrag/kFilt.u:0) + ")\n";
+  ctx += "– Personal: " + fmt(paK) + " (" + fmtP(kFilt.u>0?paK/kFilt.u:0) + ")\n";
+  ctx += "= CM: " + fmt(cm) + " (" + fmtP(cmP) + ") " + status(cmP,ZIELE.cm,false) + " (Ziel ≥40%)\n";
 
   return ctx;
 }
@@ -5553,17 +5655,38 @@ async function sendAiMessage() {
   var thinkingEl = addAiMessage("assistant thinking", "⏳ Analysiere deine Daten...");
 
   try {
+    // Konversations-History kappen (max 10 Nachrichten = 5 Hin-und-Her)
+    if(aiHistory.length > 10) aiHistory = aiHistory.slice(-10);
+
     // System prompt mit allen Daten
-    var systemPrompt = "Du bist ein erfahrener Restaurant-Betriebsanalyst für Bang Bang Noodles (BBN) Berlin. " +
-      "BBN ist ein asiatisches Nudelrestaurant mit 2 Standorten: Mehringdamm (MD) und Rosenthaler Straße (RS). " +
-      "Kanäle: Inhouse (vor Ort), Takeaway, Lieferando. Kassensystem: Lightspeed (LS). Personalsystem: Ordio. Warenwirtschaft: Apicbase. " +
-      "Zahlungsarten: Karte, Bar (=Bargeld), Manuell, Lieferando, Online Order. 'Bar' bedeutet IMMER Barzahlung/Bargeld, NIEMALS eine Getränkebar. " +
-      "Management: Kevin Weber, Jan Haring, Buted Deleg. " +
-      "Du sprichst Deutsch, bist direkt, konkret und datenbasiert. " +
-      "Keine langen Einleitungen — komm direkt zum Punkt. " +
-      "Nenne immer konkrete Zahlen aus den Daten. " +
-      "Wenn du Handlungsempfehlungen gibst, mach sie spezifisch und umsetzbar. " +
-      "Erfinde keine Daten — wenn du etwas nicht in den Daten siehst, sag das klar.\n\n" +
+    var systemPrompt = "Du bist der BI-Analyst von Bang Bang Noodles (BBN) Berlin — ein asiatisches Nudelrestaurant mit 2 Standorten.\n\n" +
+      "STANDORTE:\n" +
+      "• Mehringdamm (MD) — Kreuzberg\n" +
+      "• Rosenthaler Straße (RS) — Mitte\n\n" +
+      "GESCHÄFTSMODELL:\n" +
+      "• Kanäle: Inhouse (vor Ort), Takeaway, Lieferando (20% Provision)\n" +
+      "• Kassensystem: Lightspeed (LS). Personalsystem: Ordio. Warenwirtschaft: Apicbase.\n" +
+      "• Zahlungsarten: Karte, Bar (=Bargeld/Cash), Manuell, Lieferando, Online Order\n" +
+      "• WICHTIG: 'Bar' = Barzahlung/Bargeld. NIEMALS Getränkebar.\n" +
+      "• Management (nicht in PA-Quote): Kevin Weber, Jan Haring, Buted Deleg\n" +
+      "• Öffnungszeiten: Di–Do 12–21, Fr–Sa 12–22, So 12–21, Mo geschlossen\n\n" +
+      "ZIELWERTE (monatlich):\n" +
+      "• Food Cost: ≤25% vom Umsatz (gut <23%, kritisch >28%)\n" +
+      "• Personal-Quote: ≤22% vom Umsatz (gut <20%, kritisch >25%)\n" +
+      "• Contribution Margin: ≥40%\n" +
+      "• EBITDA-Marge: ≥10%\n" +
+      "• Ø Bon-Wert: ≥€22 (gut >€24)\n" +
+      "• Umsatz/Personalstunde: ≥€75 (gut >€85, kritisch <€65)\n" +
+      "• Waste/Schwund: <2% vom Umsatz\n\n" +
+      "ANALYSE-REGELN:\n" +
+      "1. Antworte auf Deutsch, direkt und konkret. Keine Einleitungen wie 'Gerne analysiere ich...'.\n" +
+      "2. Nenne IMMER konkrete Zahlen. Statt 'die FC-Quote ist hoch' sage 'FC liegt bei 27,3% — 2,3 Prozentpunkte über Ziel (25%)'.\n" +
+      "3. Vergleiche IMMER: Ist vs. Ziel, MD vs. RS, aktuell vs. Benchmark.\n" +
+      "4. Bei Abweichungen: Nenne die Abweichung in € UND %, dann mögliche Ursache, dann konkrete Handlungsempfehlung.\n" +
+      "5. Wenn Daten fehlen oder unklar sind, sag das klar statt zu raten.\n" +
+      "6. Formatiere mit **fett** für Schlüsselzahlen und Markdown-Listen für Übersichtlichkeit.\n" +
+      "7. GuV-Logik: Umsatz – Food Cost – Lieferando-Provision = Rohertrag. Rohertrag – Personal = CM. CM – Fixkosten = EBITDA.\n\n" +
+      "AKTUELLE DASHBOARD-DATEN:\n" +
       buildAiContext();
 
     var apiKey = localStorage.getItem("bbn_ai_key") || "";
@@ -5586,12 +5709,16 @@ async function sendAiMessage() {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
+        max_tokens: 2000,
         system: systemPrompt,
         messages: aiHistory
       })
     });
 
+    if(!response.ok) {
+      var errData = await response.json().catch(function(){return{};});
+      throw new Error((errData.error&&errData.error.message)||"HTTP "+response.status);
+    }
     var data = await response.json();
 
     if(data.error) throw new Error(data.error.message);
