@@ -3623,11 +3623,19 @@ function renderFoodCost(){
   var artUmsatzList=Object.entries(artUmsatzMap).sort(function(a,b){return b[1].umsatz-a[1].umsatz;}).slice(0,15);
   var maxArtUmsatz=artUmsatzList.length>0?artUmsatzList[0][1].umsatz:1;
 
-  // Waste nach Tag für Chart
+  // Waste nach Tag für Chart — pro Standort
   var tagWasteMap={};
+  var tagWasteMd={}, tagWasteRs={};
   wasteG.forEach(function(r){
     if(!tagWasteMap[r.datum])tagWasteMap[r.datum]=0;
     tagWasteMap[r.datum]+=r.kosten;
+    if(r.standort==='Mehringdamm'){
+      if(!tagWasteMd[r.datum])tagWasteMd[r.datum]=0;
+      tagWasteMd[r.datum]+=r.kosten;
+    } else {
+      if(!tagWasteRs[r.datum])tagWasteRs[r.datum]=0;
+      tagWasteRs[r.datum]+=r.kosten;
+    }
   });
   var tagKeys=Object.keys(tagWasteMap).sort();
 
@@ -3885,6 +3893,12 @@ function renderFoodCost(){
     <!-- FC-Diagnose inline in Standort-Boxen integriert -->
 
     <div class="box">
+      <div class="box-title">📅 Waste-Kosten pro Erfassungstag</div>
+      <div class="box-sub">${tagKeys.length} Tage mit Waste-Erfassung · pro Standort</div>
+      ${tagKeys.length>0?'<canvas id="c-waste-tag" style="max-height:180px"></canvas>':'<div style="color:#475569;font-size:12px;padding:12px">Keine Waste-Daten im Zeitraum.</div>'}
+    </div>
+
+    <div class="box">
       <div class="box-title">📦 Umsatz & Wareneinsatz pro Artikel</div>
       <div class="box-sub">Sortiert nach Umsatz — Preise und Margen im Überblick</div>
       ${artUmsatzList.length>0?`
@@ -3932,11 +3946,7 @@ function renderFoodCost(){
       :'<div style="color:#475569;font-size:12px;padding:12px">Keine Artikel-Daten für diesen Zeitraum.</div>'}
     </div>
 
-    <div class="box">
-      <div class="box-title">📅 Waste-Kosten pro Erfassungstag</div>
-      <div class="box-sub">${tagKeys.length} Tage mit Waste-Erfassung</div>
-      ${tagKeys.length>0?'<canvas id="c-waste-tag" style="max-height:160px"></canvas>':'<div style="color:#475569;font-size:12px;padding:12px">Keine Waste-Daten im Zeitraum.</div>'}
-    </div>
+    <!-- Waste-Chart wurde nach oben verschoben (unter FC-Standort-Boxen) -->
 
     ${(function(){
       // === WARENWIRTSCHAFT BLOCK ===
@@ -4087,9 +4097,12 @@ function renderFoodCost(){
       type:"bar",
       data:{
         labels:tagKeys.map(function(d){return d.slice(8)+"."+d.slice(5,7);}),
-        datasets:[{label:"Waste €",data:tagKeys.map(function(d){return Math.round(tagWasteMap[d]);}),backgroundColor:"#ef4444",borderRadius:3}]
+        datasets:[
+          {label:"Mehringdamm",data:tagKeys.map(function(d){return Math.round(tagWasteMd[d]||0);}),backgroundColor:"#f97316",borderRadius:3},
+          {label:"Rosenthaler Str.",data:tagKeys.map(function(d){return Math.round(tagWasteRs[d]||0);}),backgroundColor:"#3b82f6",borderRadius:3}
+        ]
       },
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:"#94a3b8",font:{size:10},boxWidth:12,padding:8}}},scales:{
         x:{ticks:{color:"#475569",font:{size:10}},grid:{color:"#1e2d40"}},
         y:{ticks:{color:"#475569",font:{size:10},callback:function(v){return fmt(v);}},grid:{color:"#1e2d40"}}
       }}
