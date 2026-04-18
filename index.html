@@ -750,6 +750,17 @@ function getSocialMediaKosten(von,bis,st){
   return d.reduce(function(s,r){return s+r.kosten;},0);
 }
 
+function toggleSchwund(st){
+  var top=document.getElementById('schwund-top-'+st);
+  var all=document.getElementById('schwund-all-'+st);
+  var arrow=document.getElementById('schwund-arrow-'+st);
+  if(!top||!all)return;
+  var expanded=all.style.display!=='none';
+  top.style.display=expanded?'':'none';
+  all.style.display=expanded?'none':'';
+  if(arrow)arrow.style.transform=expanded?'':'rotate(90deg)';
+}
+
 function drill(id){
   var el=document.getElementById(id);
   if(!el)return;
@@ -3695,6 +3706,19 @@ function renderFoodCost(){
     'Rosenthaler Straße': calcStandort('Rosenthaler Straße')
   };
 
+  // Kategorien spiegeln: beide Standorte zeigen dieselben Kategorien (fehlende mit 0)
+  (function(){
+    var mdMap={},rsMap={},allKats=new Set();
+    stData['Mehringdamm'].katList.forEach(function(e){mdMap[e[0]]=e[1];allKats.add(e[0]);});
+    stData['Rosenthaler Straße'].katList.forEach(function(e){rsMap[e[0]]=e[1];allKats.add(e[0]);});
+    // Sortierung: nach Gesamtkosten beider Standorte
+    var sorted=Array.from(allKats).sort(function(a,b){
+      return ((rsMap[b]?rsMap[b].kosten:0)+(mdMap[b]?mdMap[b].kosten:0))-((rsMap[a]?rsMap[a].kosten:0)+(mdMap[a]?mdMap[a].kosten:0));
+    });
+    stData['Mehringdamm'].katList=sorted.map(function(k){return [k,mdMap[k]||{kosten:0,count:0}];});
+    stData['Rosenthaler Straße'].katList=sorted.map(function(k){return [k,rsMap[k]||{kosten:0,count:0}];});
+  })();
+
   // Farben für Kategorien
   var katColors={'Kitchen error':'#ef4444','Date expired':'#f97316','Used for marketing':'#3b82f6',
     'Staff':'#8b5cf6','Expired because of mistake':'#ec4899','':'#64748b'};
@@ -3992,6 +4016,14 @@ function renderFoodCost(){
       var schwundMd = getTopSchwund('Mehringdamm', 5);
       var schwundRs = getTopSchwund('Rosenthaler Straße', 5);
 
+      function getAllSchwund(st, minAbs) {
+        var bis = getNeuesteBis(st);
+        var rows = bestandDaten.filter(function(r){ return r.standort===st && r.bis===bis && Math.abs(r.unkontrolliert)>=minAbs; });
+        return rows.slice().sort(function(a,b){ return a.unkontrolliert-b.unkontrolliert; });
+      }
+      var schwundAllMd = getAllSchwund('Mehringdamm', 5);
+      var schwundAllRs = getAllSchwund('Rosenthaler Straße', 5);
+
       function stCard(emoji, stName, kpi, color) {
         var realFC = kpi.offen + kpi.waren - kpi.schluss;
         var schwundPct = realFC>0?Math.abs(kpi.schwund)/realFC:0;
@@ -4044,12 +4076,16 @@ function renderFoodCost(){
         '</div>' +
         '<div class="grid2" style="margin-top:14px;align-items:start">' +
           '<div style="background:#0a1628;border-radius:10px;padding:14px;border:1px solid #1e3a5f">' +
-            '<div style="font-size:10px;font-weight:600;color:#f97316;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #1e3a5f">🟠 MD — Top Schwund</div>' +
-            schwundListe(schwundMd) +
+            '<div onclick="toggleSchwund(\'md\')" style="font-size:10px;font-weight:600;color:#f97316;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #1e3a5f;cursor:pointer;display:flex;justify-content:space-between;align-items:center">' +
+              '<span>🟠 MD — Top Schwund-Artikel</span><span id="schwund-arrow-md" style="font-size:8px;transition:transform .2s">▶</span></div>' +
+            '<div id="schwund-top-md">' + schwundListe(schwundMd) + '</div>' +
+            '<div id="schwund-all-md" style="display:none">' + schwundListe(schwundAllMd) + '</div>' +
           '</div>' +
           '<div style="background:#0a1628;border-radius:10px;padding:14px;border:1px solid #1e3a5f">' +
-            '<div style="font-size:10px;font-weight:600;color:#3b82f6;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #1e3a5f">🔵 RS — Top Schwund</div>' +
-            schwundListe(schwundRs) +
+            '<div onclick="toggleSchwund(\'rs\')" style="font-size:10px;font-weight:600;color:#3b82f6;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #1e3a5f;cursor:pointer;display:flex;justify-content:space-between;align-items:center">' +
+              '<span>🔵 RS — Top Schwund-Artikel</span><span id="schwund-arrow-rs" style="font-size:8px;transition:transform .2s">▶</span></div>' +
+            '<div id="schwund-top-rs">' + schwundListe(schwundRs) + '</div>' +
+            '<div id="schwund-all-rs" style="display:none">' + schwundListe(schwundAllRs) + '</div>' +
           '</div>' +
         '</div>' +
       '</div>';
