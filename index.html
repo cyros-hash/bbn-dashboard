@@ -410,6 +410,7 @@ var CSV = {
   artikel: "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=1631404254",
   bons:    "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=412324913",
   waste:   "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=1076995386",
+  itemSales: "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=904654095",
   fcReal:  "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=PLACEHOLDER_FC_REAL",
   bestand: "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=1296587739"
 };
@@ -418,6 +419,7 @@ var CSV = {
 // STATE
 // ============================================================
 var alle=[],lsTx=[],lsStd=[],lsQ=[],lsPay=[],ordio=[],artikel=[],bons=[],waste=[];
+var itemSales=[]; // FC pro Artikel (Apicbase Item Sales)
 var gefiltert=[];
 var fcReal=[]; // Reale FC: Inventuren + Bestellungen
 var bestandDaten=[]; // Bestandsbericht (Sheet 18)
@@ -960,6 +962,26 @@ async function ladeDaten(){
       };
     }).filter(function(r){return r.datum&&r.artikel;});
 
+    // ITEM SALES (FC pro Artikel — Apicbase)
+    try {
+      var r16=await fetch(CSV.itemSales);var t16=await r16.text();
+      itemSales=t16.trim().split("\n").slice(1).map(function(l){
+        var v=pCSV(l);
+        return{
+          datum:     pDat(v[0]),
+          standort:  v[1]||"",
+          artikel:   v[2]||"",
+          kategorie: v[3]||"",
+          menge:     pStd(v[4]),
+          umsatz:    pDE(v[5]),
+          fc:        pDE(v[6]),
+          profit:    pDE(v[7]),
+          marginPct: pStd(v[8]),
+          rezept:    v[9]||""
+        };
+      }).filter(function(r){return r.datum&&r.artikel;});
+    } catch(e) { console.warn('Item Sales nicht geladen: '+e.message); itemSales=[]; }
+
     // SET FILTER
     var daten=alle.map(function(r){return r.datum;}).sort();
     var maxD=daten[daten.length-1]||new Date().toISOString().split("T")[0];
@@ -969,7 +991,7 @@ async function ladeDaten(){
     // Standard: Gestern (Daten kommen immer einen Tag später)
     setQuick("gestern");
     applyFilter();
-    document.getElementById("status").textContent="● Live · "+alle.length+" Tage (LS-Umsatz) · "+apicData.length+" Apicbase (FC) · "+ordio.length+" Ordio · "+artikel.length+" Artikel · "+bons.length+" Bons · "+waste.length+" Waste";
+    document.getElementById("status").textContent="● Live · "+alle.length+" Tage (LS-Umsatz) · "+apicData.length+" Apicbase (FC) · "+itemSales.length+" Item-FC · "+ordio.length+" Ordio · "+artikel.length+" Artikel · "+bons.length+" Bons · "+waste.length+" Waste";
     document.getElementById("status").style.color="#22c55e";
   }catch(e){
     document.getElementById("status").textContent="⚠️ "+e.message;
@@ -3638,9 +3660,17 @@ function renderFoodCost(){
     });
   var artUmsatzMap={};
   artG.forEach(function(r){
-    if(!artUmsatzMap[r.name])artUmsatzMap[r.name]={umsatz:0,menge:0,gruppe:r.gruppe};
+    if(!artUmsatzMap[r.name])artUmsatzMap[r.name]={umsatz:0,menge:0,gruppe:r.gruppe,fc:0,profit:0};
     artUmsatzMap[r.name].umsatz+=r.preisN;
     artUmsatzMap[r.name].menge+=r.menge;
+  });
+  // Item Sales (FC pro Artikel) einmergen
+  var isG=itemSales.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st);});
+  isG.forEach(function(r){
+    if(artUmsatzMap[r.artikel]){
+      artUmsatzMap[r.artikel].fc+=r.fc;
+      artUmsatzMap[r.artikel].profit+=r.profit;
+    }
   });
   var artUmsatzList=Object.entries(artUmsatzMap).sort(function(a,b){return b[1].umsatz-a[1].umsatz;}).slice(0,15);
   var maxArtUmsatz=artUmsatzList.length>0?artUmsatzList[0][1].umsatz:1;
@@ -4103,17 +4133,23 @@ function renderFoodCost(){
             <th style="text-align:right">Verkäufe</th>
             <th style="text-align:right">Umsatz Netto</th>
             <th style="text-align:right">Ø Preis</th>
-            <th style="text-align:right">Anteil</th>
             <th style="text-align:right">Umsatz/Tag</th>
+            <th style="text-align:right">Food Cost</th>
+            <th style="text-align:right">FC%</th>
+            <th style="text-align:right">Marge%</th>
+            <th style="text-align:right">Profit</th>
           </tr></thead>
           <tbody>
           ${artUmsatzList.map(function(e){
             var name=e[0],d=e[1];
-            var totalArtUmsatz=artUmsatzList.reduce(function(s,x){return s+x[1].umsatz;},0);
-            var anteil=totalArtUmsatz>0?(d.umsatz/totalArtUmsatz*100).toFixed(1):0;
             var avgPreis=d.menge>0?d.umsatz/d.menge:0;
             var umsatzTag=d.umsatz/tage;
+            var fcPct=d.umsatz>0?d.fc/d.umsatz*100:0;
+            var margePct=d.umsatz>0?(1-d.fc/d.umsatz)*100:0;
+            var profit=d.umsatz-d.fc;
             var barW=maxArtUmsatz>0?Math.round(d.umsatz/maxArtUmsatz*100):0;
+            var fcCol=fcPct>30?'#ef4444':fcPct>25?'#f97316':'#22c55e';
+            var hatFC=d.fc>0;
             return'<tr>'+
               '<td style="padding:8px 6px;font-size:12px">'+
                 '<div style="font-weight:600;color:#f1f5f9">'+name+'</div>'+
@@ -4125,16 +4161,19 @@ function renderFoodCost(){
               '<td style="padding:8px 6px;text-align:right;color:#f97316;font-size:12px;font-weight:600">'+Math.round(d.menge)+'x</td>'+
               '<td style="padding:8px 6px;text-align:right;color:#22c55e;font-size:12px;font-weight:600">'+fmt(d.umsatz)+'</td>'+
               '<td style="padding:8px 6px;text-align:right;color:#f1f5f9;font-size:12px">'+fmtD(avgPreis)+'</td>'+
-              '<td style="padding:8px 6px;text-align:right;color:#64748b;font-size:12px">'+anteil+'%</td>'+
-              '<td style="padding:8px 6px;text-align:right;color:#64748b;font-size:12px">'+fmt(umsatzTag)+'</td>'+
+              '<td style="padding:8px 6px;text-align:right;color:#94a3b8;font-size:12px">'+fmt(umsatzTag)+'</td>'+
+              '<td style="padding:8px 6px;text-align:right;color:'+(hatFC?fcCol:'#475569')+';font-size:12px;font-weight:600">'+(hatFC?fmt(d.fc):'—')+'</td>'+
+              '<td style="padding:8px 6px;text-align:right;color:'+(hatFC?fcCol:'#475569')+';font-size:11px">'+(hatFC?fcPct.toFixed(1)+'%':'—')+'</td>'+
+              '<td style="padding:8px 6px;text-align:right;color:'+(hatFC?'#22c55e':'#475569')+';font-size:11px">'+(hatFC?margePct.toFixed(1)+'%':'—')+'</td>'+
+              '<td style="padding:8px 6px;text-align:right;color:'+(hatFC?(profit>=0?'#22c55e':'#ef4444'):'#475569')+';font-size:12px;font-weight:600">'+(hatFC?fmt(profit):'—')+'</td>'+
             '</tr>';
           }).join("")}
           </tbody>
         </table>
       </div>
       <div class="ai-box" style="margin-top:12px">
-        Top-Artikel nach Umsatz: ${artUmsatzList.slice(0,3).map(function(e){return e[0]+' ('+fmt(e[1].umsatz)+')';}).join(', ')}.
-        ${artUmsatzList.length>0?"Ø Preis Top-Artikel: "+fmtD(artUmsatzList[0][1].umsatz/Math.max(artUmsatzList[0][1].menge,1))+". Preise für häufig bestellte Artikel mit niedrigem Ø Preis prüfen.":""}
+        Top-Artikel nach Umsatz: ${artUmsatzList.slice(0,3).map(function(e){var d=e[1];return e[0]+' ('+fmt(d.umsatz)+(d.fc>0?', FC '+fmtP(d.fc/d.umsatz):'')+')'}).join(', ')}.
+        ${isG.length>0?'FC-Daten aus Apicbase Rezepturen ('+isG.length+' Positionen). Artikel ohne Rezeptverknüpfung zeigen "—".':'⚠️ Keine Item-Sales-Daten für diesen Zeitraum — FC pro Artikel nicht verfügbar.'}
       </div>`
       :'<div style="color:#475569;font-size:12px;padding:12px">Keine Artikel-Daten für diesen Zeitraum.</div>'}
     </div>
