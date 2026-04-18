@@ -56,6 +56,7 @@ select{background:#1a2538;color:#e2e8f0;border:1px solid #2d3f54;border-radius:6
 .box-sub{font-size:11px;color:#475569;margin-bottom:12px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.kpi-sync-grid{display:grid;grid-template-columns:1fr 1fr}
 /* ROWS */
 .r{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1e2d40;font-size:12px;cursor:pointer}
 .r:last-child{border-bottom:none}
@@ -176,6 +177,7 @@ canvas{max-height:220px}
   /* GRID 2/3 — untereinander */
   .grid2{grid-template-columns:1fr}
   .grid3{grid-template-columns:1fr}
+  .kpi-sync-grid{grid-template-columns:1fr}
 
   /* BOX */
   .box{padding:12px;border-radius:8px}
@@ -1342,17 +1344,17 @@ function renderOverview(){
     {l:"Ø Tagesumsatz",mdV:km.u/Math.max(km.t,1),rsV:kr.u/Math.max(kr.t,1),mdS:fmt(km.u/Math.max(km.t,1)),rsS:fmt(kr.u/Math.max(kr.t,1)),gV:k.u/Math.max(k.t,1),gS:fmt(k.u/Math.max(k.t,1)),ziel:null,zS:"",inv:false,higher:"more"},
     {l:"Umsatz/Stunde",mdV:uStdMd,rsV:uStdRs,mdS:fmt(uStdMd),rsS:fmt(uStdRs),gV:umsatzStd,gS:fmt(umsatzStd),ziel:ZIELE.umsatzStd,zS:"€"+ZIELE.umsatzStd,inv:false,higher:"more"},
     {l:"Ø Bon-Wert",mdV:bonWertMd.avg,rsV:bonWertRs.avg,mdS:fmtD(bonWertMd.avg),rsS:fmtD(bonWertRs.avg),gV:bonWertData.avg,gS:fmtD(bonWertData.avg),ziel:ZIELE.bonWert,zS:"€"+ZIELE.bonWert,inv:false,higher:"more"},
-    {l:"Food Cost %",mdV:anzFcMdPct*100,rsV:anzFcRsPct*100,mdS:fmtP(anzFcMdPct),rsS:fmtP(anzFcRsPct),gV:anzFcPct*100,gS:fmtP(anzFcPct),ziel:ZIELE.fc*100,zS:fmtP(ZIELE.fc),inv:true,higher:"less"},
+    {l:"Food Cost %",mdV:anzFcMdPct*100,rsV:anzFcRsPct*100,mdS:fmtP(anzFcMdPct)+" ("+fmt(anzFcMdPct*km.u)+")",rsS:fmtP(anzFcRsPct)+" ("+fmt(anzFcRsPct*kr.u)+")",gV:anzFcPct*100,gS:fmtP(anzFcPct)+" ("+fmt(fcAmt)+")",ziel:ZIELE.fc*100,zS:fmtP(ZIELE.fc),inv:true,higher:"less"},
     {l:"FC Ist vs. Soll",mdV:fcSollIstMd*100,rsV:fcSollIstRs*100,mdS:(fcSollIstMd>=0?"+":"")+fmtP(fcSollIstMd),rsS:(fcSollIstRs>=0?"+":"")+fmtP(fcSollIstRs),gV:fcSollIstDiff*100,gS:(fcSollIstDiff>=0?"+":"")+fmtP(fcSollIstDiff),ziel:0,zS:"0%",inv:true,higher:"less",noBar:!hatIstFC,noBarText:"Kein Ist-FC"},
-    {l:"Waste/Schwund",mdV:wastePctMd*100,rsV:wastePctRs*100,mdS:fmtP(wastePctMd),rsS:fmtP(wastePctRs),gV:wastePctGes*100,gS:fmtP(wastePctGes),ziel:2,zS:"2%",inv:true,higher:"less"},
-    {l:"Waste-Erfassung",mdV:wasteKonsMd*100,rsV:wasteKonsRs*100,mdS:fmtP(wasteKonsMd),rsS:fmtP(wasteKonsRs),gV:wasteKonsGes*100,gS:fmtP(wasteKonsGes),ziel:90,zS:"90%",inv:false,higher:"more"},
-    {l:"Inventur-Erfassung",mdV:invKonsMd*100,rsV:invKonsRs*100,mdS:fmtP(invKonsMd),rsS:fmtP(invKonsRs),gV:invKonsGes*100,gS:fmtP(invKonsGes),ziel:100,zS:"100%",inv:false,higher:"more"},
-    {l:"Personal-Quote",mdV:(km.u>0?pkMd.total/km.u:0)*100,rsV:(kr.u>0?pkRs.total/kr.u:0)*100,mdS:fmtP(km.u>0?pkMd.total/km.u:0),rsS:fmtP(kr.u>0?pkRs.total/kr.u:0),gV:paPct*100,gS:fmtP(paPct),ziel:ZIELE.pa*100,zS:fmtP(ZIELE.pa),inv:true,higher:"less"},
+    {l:"Waste/Schwund",mdV:wastePctMd*100,rsV:wastePctRs*100,mdS:fmtP(wastePctMd)+" ("+fmt(wasteMdT)+")",rsS:fmtP(wastePctRs)+" ("+fmt(wasteRsT)+")",gV:wastePctGes*100,gS:fmtP(wastePctGes)+" ("+fmt(wasteGes)+")",ziel:2,zS:"2%",inv:true,higher:"less"},
+    {l:"Waste-Erfassung",mdV:wasteKonsMd*100,rsV:wasteKonsRs*100,mdS:fmtP(wasteKonsMd)+" ("+wasteMdDays+"/"+bizDays+"d)",rsS:fmtP(wasteKonsRs)+" ("+wasteRsDays+"/"+bizDays+"d)",gV:wasteKonsGes*100,gS:fmtP(wasteKonsGes)+" ("+(wasteMdDays+wasteRsDays)+"/"+(bizDays*2)+"d)",ziel:90,zS:"90%",inv:false,higher:"more"},
+    {l:"Inventur-Erfassung",mdV:invKonsMd*100,rsV:invKonsRs*100,mdS:fmtP(invKonsMd)+" ("+invMdDays+"/"+totalSonntage+"So)",rsS:fmtP(invKonsRs)+" ("+invRsDays+"/"+totalSonntage+"So)",gV:invKonsGes*100,gS:fmtP(invKonsGes)+" ("+(invMdDays+invRsDays)+"/"+(totalSonntage*2)+"So)",ziel:100,zS:"100%",inv:false,higher:"more"},
+    {l:"Personal-Quote",mdV:(km.u>0?pkMd.total/km.u:0)*100,rsV:(kr.u>0?pkRs.total/kr.u:0)*100,mdS:fmtP(km.u>0?pkMd.total/km.u:0)+" ("+fmt(pkMd.total)+")",rsS:fmtP(kr.u>0?pkRs.total/kr.u:0)+" ("+fmt(pkRs.total)+")",gV:paPct*100,gS:fmtP(paPct)+" ("+fmt(pa)+")",ziel:ZIELE.pa*100,zS:fmtP(ZIELE.pa),inv:true,higher:"less"},
     {l:"Aufbaukosten",mdV:aufMdPct*100,rsV:aufRsPct*100,mdS:fmtP(aufMdPct)+" ("+fmt(aufMdK)+")",rsS:fmtP(aufRsPct)+" ("+fmt(aufRsK)+")",gV:aufGesPct*100,gS:fmtP(aufGesPct)+" ("+fmt(aufGesK)+")",ziel:5,zS:"5%",inv:true,higher:"less"},
     {l:"Abbaukosten",mdV:abMdPct*100,rsV:abRsPct*100,mdS:fmtP(abMdPct)+" ("+fmt(abMdK)+")",rsS:fmtP(abRsPct)+" ("+fmt(abRsK)+")",gV:abGesPct*100,gS:fmtP(abGesPct)+" ("+fmt(abGesK)+")",ziel:8,zS:"8%",inv:true,higher:"less"},
-    {l:"Trinkgeld-Quote",mdV:tkQMd*100,rsV:tkQRs*100,mdS:fmtP(tkQMd),rsS:fmtP(tkQRs),gV:tkQGes*100,gS:fmtP(tkQGes),ziel:5,zS:"5%",inv:false,higher:"more"},
+    {l:"Trinkgeld-Quote",mdV:tkQMd*100,rsV:tkQRs*100,mdS:fmtP(tkQMd)+" ("+fmt(tkMdOv)+")",rsS:fmtP(tkQRs)+" ("+fmt(tkRsOv)+")",gV:tkQGes*100,gS:fmtP(tkQGes)+" ("+fmt(tkGesOv)+")",ziel:5,zS:"5%",inv:false,higher:"more"},
     {l:"Stornierungen",mdV:stornoMd,rsV:stornoRs,mdS:stornoMd+"×",rsS:stornoRs+"×",gV:stornoGes,gS:stornoGes+"× ("+(stornoRate*100).toFixed(1)+"%)",ziel:null,zS:"",inv:true,higher:"less"},
-    {l:"EBITDA-Marge",mdV:ebitdaMdPct*100,rsV:ebitdaRsPct*100,mdS:fmtP(ebitdaMdPct),rsS:fmtP(ebitdaRsPct),gV:ebitdaPct*100,gS:fmtP(ebitdaPct),ziel:ZIELE.ebitda*100,zS:fmtP(ZIELE.ebitda),inv:false,higher:"more"}
+    {l:"EBITDA-Marge",mdV:ebitdaMdPct*100,rsV:ebitdaRsPct*100,mdS:fmtP(ebitdaMdPct)+" ("+fmt(ebitdaMdPct*km.u)+")",rsS:fmtP(ebitdaRsPct)+" ("+fmt(ebitdaRsPct*kr.u)+")",gV:ebitdaPct*100,gS:fmtP(ebitdaPct)+" ("+fmt(ebitda)+")",ziel:ZIELE.ebitda*100,zS:fmtP(ZIELE.ebitda),inv:false,higher:"more"}
   ];
 
   document.getElementById("t-overview").innerHTML=`
@@ -1611,60 +1613,72 @@ function renderOverview(){
       </div>
     </div>
 
-    <div class="grid2">
-      <div class="box">
-        <div class="box-title">🏪 Standortvergleich</div>
-        <div class="box-sub">MD vs. RS — alle KPIs im direkten Vergleich</div>
+    <div class="box" style="padding:0;overflow:hidden">
+      <div class="kpi-sync-grid">
+        <div style="padding:12px 14px 6px;border-right:1px solid #1e2d40;border-bottom:1px solid #1e2d40">
+          <div class="box-title">🏪 Standortvergleich</div>
+          <div class="box-sub">MD vs. RS — alle KPIs im direkten Vergleich</div>
+        </div>
+        <div style="padding:12px 14px 6px;border-bottom:1px solid #1e2d40">
+          <div class="box-title">🎯 KPI-Ampel</div>
+          <div class="box-sub">Unternehmensebene vs. Zielwerte</div>
+        </div>
         ${ovKpis.map(function(r){
-          if(r.noBar)return'<div style="padding:6px 0;border-bottom:1px solid #1e2d40"><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">'+r.l+'</div><div style="font-size:10px;color:#475569;font-style:italic">'+r.noBarText+'</div></div>';
-          var maxV=Math.max(Math.abs(r.mdV),Math.abs(r.rsV),0.01);
-          var mdPct=Math.round(Math.abs(r.mdV)/maxV*100);
-          var rsPct=Math.round(Math.abs(r.rsV)/maxV*100);
-          var mdWin=r.higher==="more"?r.mdV>=r.rsV:r.mdV<=r.rsV;
-          var rsWin=!mdWin;
-          return'<div style="padding:6px 0;border-bottom:1px solid #1e2d40">'
-            +'<div style="font-size:11px;color:#94a3b8;margin-bottom:4px">'+r.l+'</div>'
-            +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">'
-              +'<span style="font-size:9px;color:#f97316;width:20px;flex-shrink:0">MD</span>'
-              +'<div style="flex:1;height:14px;background:#1e2d40;border-radius:3px;overflow:hidden">'
-                +'<div style="width:'+mdPct+'%;height:100%;background:'+(mdWin?"#f97316":"rgba(249,115,22,0.4)")+';border-radius:3px"></div>'
+          // --- Linke Seite: Standortvergleich ---
+          var leftCell='';
+          if(r.noBar){
+            leftCell='<div style="padding:8px 14px;border-right:1px solid #1e2d40;border-bottom:1px solid #1e2d40;display:flex;flex-direction:column;justify-content:center"><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">'+r.l+'</div><div style="font-size:10px;color:#475569;font-style:italic">'+r.noBarText+'</div></div>';
+          } else {
+            var maxV=Math.max(Math.abs(r.mdV),Math.abs(r.rsV),0.01);
+            var mdPct=Math.round(Math.abs(r.mdV)/maxV*100);
+            var rsPct=Math.round(Math.abs(r.rsV)/maxV*100);
+            var mdWin=r.higher==="more"?r.mdV>=r.rsV:r.mdV<=r.rsV;
+            var rsWin=!mdWin;
+            leftCell='<div style="padding:8px 14px;border-right:1px solid #1e2d40;border-bottom:1px solid #1e2d40;display:flex;flex-direction:column;justify-content:center">'
+              +'<div style="font-size:11px;color:#94a3b8;margin-bottom:4px">'+r.l+'</div>'
+              +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">'
+                +'<span style="font-size:9px;color:#f97316;width:20px;flex-shrink:0">MD</span>'
+                +'<div style="flex:1;height:14px;background:#1e2d40;border-radius:3px;overflow:hidden">'
+                  +'<div style="width:'+mdPct+'%;height:100%;background:'+(mdWin?"#f97316":"rgba(249,115,22,0.4)")+';border-radius:3px"></div>'
+                +'</div>'
+                +'<span style="font-size:10px;color:'+(mdWin?"#f1f5f9":"#64748b")+';font-weight:'+(mdWin?"600":"400")+';min-width:90px;text-align:right">'+r.mdS+'</span>'
               +'</div>'
-              +'<span style="font-size:10px;color:'+(mdWin?"#f1f5f9":"#64748b")+';font-weight:'+(mdWin?"600":"400")+';min-width:70px;text-align:right">'+r.mdS+'</span>'
-            +'</div>'
-            +'<div style="display:flex;align-items:center;gap:6px">'
-              +'<span style="font-size:9px;color:#3b82f6;width:20px;flex-shrink:0">RS</span>'
-              +'<div style="flex:1;height:14px;background:#1e2d40;border-radius:3px;overflow:hidden">'
-                +'<div style="width:'+rsPct+'%;height:100%;background:'+(rsWin?"#3b82f6":"rgba(59,130,246,0.4)")+';border-radius:3px"></div>'
+              +'<div style="display:flex;align-items:center;gap:6px">'
+                +'<span style="font-size:9px;color:#3b82f6;width:20px;flex-shrink:0">RS</span>'
+                +'<div style="flex:1;height:14px;background:#1e2d40;border-radius:3px;overflow:hidden">'
+                  +'<div style="width:'+rsPct+'%;height:100%;background:'+(rsWin?"#3b82f6":"rgba(59,130,246,0.4)")+';border-radius:3px"></div>'
+                +'</div>'
+                +'<span style="font-size:10px;color:'+(rsWin?"#f1f5f9":"#64748b")+';font-weight:'+(rsWin?"600":"400")+';min-width:90px;text-align:right">'+r.rsS+'</span>'
               +'</div>'
-              +'<span style="font-size:10px;color:'+(rsWin?"#f1f5f9":"#64748b")+';font-weight:'+(rsWin?"600":"400")+';min-width:70px;text-align:right">'+r.rsS+'</span>'
-            +'</div>'
-          +'</div>';
-        }).join("")}
-      </div>
-      <div class="box">
-        <div class="box-title">🎯 KPI-Ampel</div>
-        <div class="box-sub">Unternehmensebene vs. Zielwerte</div>
-        ${ovKpis.map(function(r){
-          if(r.noBar)return'<div style="padding:6px 0;border-bottom:1px solid #1e2d40"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;color:#94a3b8">'+r.l+'</span><span style="font-size:10px;color:#475569;font-style:italic">'+r.noBarText+'</span></div></div>';
-          if(!r.ziel&&r.ziel!==0)return'<div style="padding:6px 0;border-bottom:1px solid #1e2d40"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;color:#94a3b8">'+r.l+'</span><span style="font-size:12px;color:#f1f5f9;font-weight:600">'+r.gS+'</span></div></div>';
-          var val=r.gV;var ziel=r.ziel;
-          var ok=r.inv?val<=ziel:val>=ziel;
-          var warn=r.inv?val<=ziel*1.15:val>=ziel*0.85;
-          var col=ok?"#22c55e":(warn?"#f97316":"#ef4444");
-          var barMax=Math.max(Math.abs(val),ziel,0.01)*1.15;
-          var valPct=Math.min(Math.round(Math.abs(val)/barMax*100),100);
-          var zielPos=Math.min(Math.round(ziel/barMax*100),100);
-          return'<div style="padding:6px 0;border-bottom:1px solid #1e2d40">'
-            +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">'
-              +'<span style="font-size:11px;color:#94a3b8">'+r.l+'</span>'
-              +'<span style="font-size:12px;color:#f1f5f9;font-weight:600">'+r.gS+'</span>'
-            +'</div>'
-            +'<div style="position:relative;height:12px;background:#1e2d40;border-radius:3px;overflow:visible">'
-              +'<div style="width:'+valPct+'%;height:100%;background:'+col+';border-radius:3px;opacity:0.85"></div>'
-              +'<div style="position:absolute;top:-1px;bottom:-1px;left:'+zielPos+'%;width:2px;background:#f1f5f9;border-radius:1px" title="Ziel '+r.zS+'"></div>'
-            +'</div>'
-            +'<div style="font-size:8px;color:#475569;margin-top:1px;text-align:right">Ziel '+r.zS+'</div>'
-          +'</div>';
+            +'</div>';
+          }
+          // --- Rechte Seite: KPI-Ampel ---
+          var rightCell='';
+          if(r.noBar){
+            rightCell='<div style="padding:8px 14px;border-bottom:1px solid #1e2d40;display:flex;flex-direction:column;justify-content:center"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;color:#94a3b8">'+r.l+'</span><span style="font-size:10px;color:#475569;font-style:italic">'+r.noBarText+'</span></div></div>';
+          } else if(!r.ziel&&r.ziel!==0){
+            rightCell='<div style="padding:8px 14px;border-bottom:1px solid #1e2d40;display:flex;flex-direction:column;justify-content:center"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;color:#94a3b8">'+r.l+'</span><span style="font-size:12px;color:#f1f5f9;font-weight:600">'+r.gS+'</span></div></div>';
+          } else {
+            var val=r.gV;var ziel=r.ziel;
+            var ok=r.inv?val<=ziel:val>=ziel;
+            var warn=r.inv?val<=ziel*1.15:val>=ziel*0.85;
+            var col=ok?"#22c55e":(warn?"#f97316":"#ef4444");
+            var barMax=Math.max(Math.abs(val),ziel,0.01)*1.15;
+            var valPct=Math.min(Math.round(Math.abs(val)/barMax*100),100);
+            var zielPos=Math.min(Math.round(ziel/barMax*100),100);
+            rightCell='<div style="padding:8px 14px;border-bottom:1px solid #1e2d40;display:flex;flex-direction:column;justify-content:center">'
+              +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">'
+                +'<span style="font-size:11px;color:#94a3b8">'+r.l+'</span>'
+                +'<span style="font-size:12px;color:#f1f5f9;font-weight:600">'+r.gS+'</span>'
+              +'</div>'
+              +'<div style="position:relative;height:12px;background:#1e2d40;border-radius:3px;overflow:visible">'
+                +'<div style="width:'+valPct+'%;height:100%;background:'+col+';border-radius:3px;opacity:0.85"></div>'
+                +'<div style="position:absolute;top:-1px;bottom:-1px;left:'+zielPos+'%;width:2px;background:#f1f5f9;border-radius:1px" title="Ziel '+r.zS+'"></div>'
+              +'</div>'
+              +'<div style="font-size:8px;color:#475569;margin-top:1px;text-align:right">Ziel '+r.zS+'</div>'
+            +'</div>';
+          }
+          return leftCell+rightCell;
         }).join("")}
       </div>
     </div>
