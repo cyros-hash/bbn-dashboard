@@ -3694,12 +3694,32 @@ function renderFoodCost(){
   }
   var wkMd = wasteKonsistenz('Mehringdamm');
   var wkRs = wasteKonsistenz('Rosenthaler Straße');
+  // Inventur-Konsistenz (Sonntage mit Bestandsbericht)
+  function invKonsistenz(stName){
+    var totalSo=0,soMitInv=0;
+    var _d=new Date(von),_e=new Date(bis);
+    while(_d<=_e){
+      if(_d.getDay()===0){
+        totalSo++;
+        var iso=_d.toISOString().slice(0,10);
+        if(bestandDaten.length>0){
+          var hat=false;
+          bestandDaten.forEach(function(b){if(!hat&&bestandDatISO(b.bis)===iso&&b.standort===stName){hat=true;}});
+          if(hat)soMitInv++;
+        }
+      }
+      _d.setDate(_d.getDate()+1);
+    }
+    return{soMitInv:soMitInv,totalSo:totalSo,quote:totalSo>0?soMitInv/totalSo:0};
+  }
+  var ikMd=invKonsistenz('Mehringdamm');
+  var ikRs=invKonsistenz('Rosenthaler Straße');
   // Anteil-Info für Anzeige
   var wasteAnteilInfo = hatStundenfilter()?' ('+Math.round(wasteAnteil*100)+'% der Tagesmengen im Zeitfenster)':'';
 
   document.getElementById("t-foodcost").innerHTML=`
     <div class="kpi-grid">
-      <div class="kpi-card" onclick="drill('d-fc-fc')">
+      <div class="kpi-card">
         <div class="kpi-label">Food Cost gesamt <span class="badge bb">Apicbase</span></div>
         <div class="kpi-val" style="color:${fcQuote>0.25?'#ef4444':'#22c55e'}">${fmt(totalFC)}</div>
         <div class="kpi-delta ${fcQuote>0.25?'delta-dn':'delta-up'}">${fmtP(fcQuote)} vom Umsatz · Ziel 22%</div>
@@ -3711,7 +3731,7 @@ function renderFoodCost(){
         <div class="kpi-delta delta-neu">${fmtP(wareneinsatzQuote)} vom Umsatz</div>
         <div class="kpi-ai">Food Cost minus Waste · Ø ${fmt(wareneinsatz/tage)}/Tag</div>
       </div>
-      <div class="kpi-card" onclick="drill('d-fc-waste')">
+      <div class="kpi-card">
         <div class="kpi-label">Waste gesamt</div>
         <div class="kpi-val" style="color:${wasteQuote>0.02?'#ef4444':'#22c55e'}">${fmt(totalWaste)}</div>
         <div class="kpi-delta ${wasteQuote>0.02?'delta-dn':'delta-up'}">${fmtP(wasteQuote)} vom Umsatz · Ziel <2%</div>
@@ -3725,101 +3745,100 @@ function renderFoodCost(){
       </div>
     </div>
 
-    <div class="grid2" style="margin-bottom:14px">
+    <div class="kpi-grid">
       <div class="kpi-card" style="border-color:${wkMd.quote>=0.8?'#22c55e40':wkMd.quote>=0.5?'#f9731640':'#ef444440'}">
-        <div class="kpi-label">🟠 Mehringdamm — Waste-Konsistenz</div>
+        <div class="kpi-label">🟠 MD — Waste-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">täglich</span></div>
         <div class="kpi-val" style="color:${wkMd.quote>=0.8?'#22c55e':wkMd.quote>=0.5?'#f97316':'#ef4444'}">${Math.round(wkMd.quote*100)}%</div>
-        <div class="kpi-delta" style="color:${wkMd.quote>=0.8?'#22c55e':wkMd.quote>=0.5?'#f97316':'#ef4444'}">${wkMd.tageMitWaste} von ${wkMd.betriebsTage} Tagen erfasst</div>
-        <div class="kpi-ai">Ø ${fmt(wkMd.avgProWasteTag)}/Waste-Tag · ${wkMd.quote>=0.8?'✓ Regelmäßig erfasst':wkMd.quote>=0.5?'⚠️ Lückenhaft — Erfassung verbessern':'🔴 Kaum Erfassung — sofort handeln'}</div>
+        <div class="kpi-delta" style="color:${wkMd.quote>=0.8?'#22c55e':wkMd.quote>=0.5?'#f97316':'#ef4444'}">${wkMd.tageMitWaste} von ${wkMd.betriebsTage} Tagen</div>
+        <div class="kpi-ai">Ø ${fmt(wkMd.avgProWasteTag)}/Tag · ${wkMd.quote>=0.8?'✓ Regelmäßig':wkMd.quote>=0.5?'⚠️ Lückenhaft':'🔴 Sofort handeln'}</div>
       </div>
       <div class="kpi-card" style="border-color:${wkRs.quote>=0.8?'#22c55e40':wkRs.quote>=0.5?'#f9731640':'#ef444440'}">
-        <div class="kpi-label">🔵 Rosenthaler Straße — Waste-Konsistenz</div>
+        <div class="kpi-label">🔵 RS — Waste-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">täglich</span></div>
         <div class="kpi-val" style="color:${wkRs.quote>=0.8?'#22c55e':wkRs.quote>=0.5?'#f97316':'#ef4444'}">${Math.round(wkRs.quote*100)}%</div>
-        <div class="kpi-delta" style="color:${wkRs.quote>=0.8?'#22c55e':wkRs.quote>=0.5?'#f97316':'#ef4444'}">${wkRs.tageMitWaste} von ${wkRs.betriebsTage} Tagen erfasst</div>
-        <div class="kpi-ai">Ø ${fmt(wkRs.avgProWasteTag)}/Waste-Tag · ${wkRs.quote>=0.8?'✓ Regelmäßig erfasst':wkRs.quote>=0.5?'⚠️ Lückenhaft — Erfassung verbessern':'🔴 Kaum Erfassung — sofort handeln'}</div>
+        <div class="kpi-delta" style="color:${wkRs.quote>=0.8?'#22c55e':wkRs.quote>=0.5?'#f97316':'#ef4444'}">${wkRs.tageMitWaste} von ${wkRs.betriebsTage} Tagen</div>
+        <div class="kpi-ai">Ø ${fmt(wkRs.avgProWasteTag)}/Tag · ${wkRs.quote>=0.8?'✓ Regelmäßig':wkRs.quote>=0.5?'⚠️ Lückenhaft':'🔴 Sofort handeln'}</div>
+      </div>
+      <div class="kpi-card" style="border-color:${ikMd.quote>=0.9?'#22c55e40':ikMd.quote>=0.5?'#f9731640':'#ef444440'}">
+        <div class="kpi-label">🟠 MD — Inventur-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">sonntags</span></div>
+        <div class="kpi-val" style="color:${ikMd.quote>=0.9?'#22c55e':ikMd.quote>=0.5?'#f97316':'#ef4444'}">${ikMd.totalSo>0?Math.round(ikMd.quote*100)+'%':'—'}</div>
+        <div class="kpi-delta" style="color:${ikMd.quote>=0.9?'#22c55e':ikMd.quote>=0.5?'#f97316':'#ef4444'}">${ikMd.soMitInv} von ${ikMd.totalSo} Sonntagen</div>
+        <div class="kpi-ai">${ikMd.totalSo===0?'Kein Sonntag im Zeitraum':ikMd.quote>=0.9?'✓ Vollständig':ikMd.quote>=0.5?'⚠️ Lücken — jeden So. zählen':'🔴 Inventur fehlt'}</div>
+      </div>
+      <div class="kpi-card" style="border-color:${ikRs.quote>=0.9?'#22c55e40':ikRs.quote>=0.5?'#f9731640':'#ef444440'}">
+        <div class="kpi-label">🔵 RS — Inventur-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">sonntags</span></div>
+        <div class="kpi-val" style="color:${ikRs.quote>=0.9?'#22c55e':ikRs.quote>=0.5?'#f97316':'#ef4444'}">${ikRs.totalSo>0?Math.round(ikRs.quote*100)+'%':'—'}</div>
+        <div class="kpi-delta" style="color:${ikRs.quote>=0.9?'#22c55e':ikRs.quote>=0.5?'#f97316':'#ef4444'}">${ikRs.soMitInv} von ${ikRs.totalSo} Sonntagen</div>
+        <div class="kpi-ai">${ikRs.totalSo===0?'Kein Sonntag im Zeitraum':ikRs.quote>=0.9?'✓ Vollständig':ikRs.quote>=0.5?'⚠️ Lücken — jeden So. zählen':'🔴 Inventur fehlt'}</div>
       </div>
     </div>
 
-    <div id="d-fc-fc" class="drill-panel">
-      <div class="drill-title">Food Cost — Aufschlüsselung</div>
-      <div class="drill-row"><span>Wareneinsatz (Zutaten)</span><span>${fmt(wareneinsatz)} (${fmtP(wareneinsatzQuote)})</span></div>
-      <div class="drill-row"><span>Waste (Verluste)</span><span style="color:#ef4444">${fmt(totalWaste)} (${fmtP(wasteQuote)})</span></div>
-      <div class="drill-row"><span>Food Cost gesamt</span><span style="color:${fcQuote>0.25?'#ef4444':'#22c55e'}">${fmt(totalFC)} (${fmtP(fcQuote)})</span></div>
-      <div class="ai-box">${wasteQuote>0.02?"Waste macht "+fmtP(wasteQuote)+" des Umsatzes aus — über dem Ziel von 2%. Hauptkategorie: "+(katList.length>0?katList[0][0]:"—")+". Sofortmaßnahme: Waste-Erfassung täglich statt wöchentlich.":"Waste-Quote unter 2% — gut kontrolliert."}</div>
-    </div>
+    <!-- FC-Aufschlüsselung & Waste-Details Drills entfernt — redundant mit Standort-Boxen -->
 
-    <div id="d-fc-waste" class="drill-panel">
-      <div class="drill-title">Waste — Details</div>
-      ${Object.entries(stWasteMap).map(function(e){
-        var name=e[0],d=e[1];
-        var stU=gefiltert.filter(function(r){return r.st===name;}).reduce(function(s,r){return s+r.u;},0);
-        return'<div class="drill-row"><span>'+name+'</span><span>'+fmt(d.kosten)+' · '+(stU>0?(d.kosten/stU*100).toFixed(1):0)+'% vom Umsatz · '+d.count+' Pos.</span></div>';
-      }).join("")}
-      <div class="ai-box">${Object.entries(stWasteMap).length>1&&Object.values(stWasteMap)[0]&&Object.values(stWasteMap)[1]?
-        "Standort-Vergleich: "+Object.entries(stWasteMap).map(function(e){return e[0]+' '+fmt(e[1].kosten);}).join(' vs. ')+".":
-        "Waste-Daten für den gewählten Zeitraum."}</div>
-    </div>
-
-    <div class="grid2">
-      <div class="box">
-        <div class="box-title" style="color:#f97316">🟠 Mehringdamm</div>
-        <div class="box-sub">FC Aufschlüsselung & Waste</div>
-        ${(function(){
-          var sd=stData['Mehringdamm'];
-          var html='';
-          html+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1e2d40;font-size:12px"><span style="color:#94a3b8">Food Cost</span><span style="color:'+(sd.fcPct>ZIELE.fc?'#ef4444':'#22c55e')+';font-weight:600">'+fmt(sd.fc)+' ('+fmtP(sd.fcPct)+')</span></div>';
-          html+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1e2d40;font-size:12px"><span style="color:#94a3b8">Wareneinsatz</span><span style="color:#f97316;font-weight:600">'+fmt(sd.wareneinsatz)+'</span></div>';
-          html+='<div style="display:flex;justify-content:space-between;padding:5px 0;margin-bottom:12px;font-size:12px"><span style="color:#94a3b8">Waste</span><span style="color:#ef4444;font-weight:600">'+fmt(sd.waste)+' ('+fmtP(sd.wastePct)+')</span></div>';
-          html+='<div style="font-size:11px;font-weight:600;color:#60a5fa;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px">Waste nach Kategorie</div>';
-          if(sd.katList.length===0){html+='<div style="color:#475569;font-size:12px">Keine Waste-Daten.</div>';}
-          sd.katList.forEach(function(e){
-            var n=e[0]||'Keine Kategorie',d=e[1];
-            var pct=sd.waste>0?Math.round(d.kosten/sd.waste*100):0;
-            var col=katColor(n);
-            html+='<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span style="display:flex;align-items:center;gap:5px"><span style="width:7px;height:7px;border-radius:2px;background:'+col+';display:inline-block"></span><span style="color:#e2e8f0">'+n+'</span></span><span style="color:'+col+';font-weight:600">'+fmt(d.kosten)+' ('+pct+'%)</span></div><div style="height:3px;background:#1e2d40;border-radius:2px"><div style="height:100%;background:'+col+';border-radius:2px;width:'+pct+'%"></div></div></div>';
-          });
-          html+='<div style="font-size:11px;font-weight:600;color:#60a5fa;text-transform:uppercase;letter-spacing:0.4px;margin:12px 0 8px">Top 5 Waste-Artikel</div>';
-          if(sd.topWaste.length===0){html+='<div style="color:#475569;font-size:12px">Keine Artikel-Daten.</div>';}
-          sd.topWaste.forEach(function(e){
-            var n=e[0],d=e[1];
-            var pct=sd.maxWaste>0?Math.round(d.kosten/sd.maxWaste*100):0;
-            var col=katColor(d.kategorie);
-            html+='<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span style="color:#f1f5f9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">'+n+'</span><span style="color:#ef4444;font-weight:600">'+fmt(d.kosten)+'</span></div><div style="font-size:10px;color:'+col+';margin-bottom:2px">'+(d.kategorie||'—')+'</div><div style="height:3px;background:#1e2d40;border-radius:2px"><div style="height:100%;background:#ef4444;border-radius:2px;width:'+pct+'%"></div></div></div>';
-          });
-          return html;
-        })()}
-      </div>
-
-      <div class="box">
-        <div class="box-title" style="color:#3b82f6">🔵 Rosenthaler Straße</div>
-        <div class="box-sub">FC Aufschlüsselung & Waste</div>
-        ${(function(){
-          var sd=stData['Rosenthaler Straße'];
-          var html='';
-          html+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1e2d40;font-size:12px"><span style="color:#94a3b8">Food Cost</span><span style="color:'+(sd.fcPct>ZIELE.fc?'#ef4444':'#22c55e')+';font-weight:600">'+fmt(sd.fc)+' ('+fmtP(sd.fcPct)+')</span></div>';
-          html+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1e2d40;font-size:12px"><span style="color:#94a3b8">Wareneinsatz</span><span style="color:#f97316;font-weight:600">'+fmt(sd.wareneinsatz)+'</span></div>';
-          html+='<div style="display:flex;justify-content:space-between;padding:5px 0;margin-bottom:12px;font-size:12px"><span style="color:#94a3b8">Waste</span><span style="color:#ef4444;font-weight:600">'+fmt(sd.waste)+' ('+fmtP(sd.wastePct)+')</span></div>';
-          html+='<div style="font-size:11px;font-weight:600;color:#60a5fa;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px">Waste nach Kategorie</div>';
-          if(sd.katList.length===0){html+='<div style="color:#475569;font-size:12px">Keine Waste-Daten.</div>';}
-          sd.katList.forEach(function(e){
-            var n=e[0]||'Keine Kategorie',d=e[1];
-            var pct=sd.waste>0?Math.round(d.kosten/sd.waste*100):0;
-            var col=katColor(n);
-            html+='<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span style="display:flex;align-items:center;gap:5px"><span style="width:7px;height:7px;border-radius:2px;background:'+col+';display:inline-block"></span><span style="color:#e2e8f0">'+n+'</span></span><span style="color:'+col+';font-weight:600">'+fmt(d.kosten)+' ('+pct+'%)</span></div><div style="height:3px;background:#1e2d40;border-radius:2px"><div style="height:100%;background:'+col+';border-radius:2px;width:'+pct+'%"></div></div></div>';
-          });
-          html+='<div style="font-size:11px;font-weight:600;color:#60a5fa;text-transform:uppercase;letter-spacing:0.4px;margin:12px 0 8px">Top 5 Waste-Artikel</div>';
-          if(sd.topWaste.length===0){html+='<div style="color:#475569;font-size:12px">Keine Artikel-Daten.</div>';}
-          sd.topWaste.forEach(function(e){
-            var n=e[0],d=e[1];
-            var pct=sd.maxWaste>0?Math.round(d.kosten/sd.maxWaste*100):0;
-            var col=katColor(d.kategorie);
-            html+='<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span style="color:#f1f5f9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">'+n+'</span><span style="color:#ef4444;font-weight:600">'+fmt(d.kosten)+'</span></div><div style="font-size:10px;color:'+col+';margin-bottom:2px">'+(d.kategorie||'—')+'</div><div style="height:3px;background:#1e2d40;border-radius:2px"><div style="height:100%;background:#ef4444;border-radius:2px;width:'+pct+'%"></div></div></div>';
-          });
-          return html;
-        })()}
-      </div>
-
-    </div>
+    ${(function(){
+      function fcStBox(sd,name,emoji,color){
+        var fcCol=sd.fcPct>ZIELE.fc?'#ef4444':'#22c55e';
+        var wasteCol=sd.wastePct>0.02?'#ef4444':'#22c55e';
+        var html='<div class="box">';
+        // Header mit großen Zahlen
+        html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
+          +'<span style="font-size:14px">'+emoji+'</span>'
+          +'<div><div style="font-size:14px;font-weight:700;color:'+color+'">'+name+'</div>'
+          +'<div style="font-size:10px;color:#475569">Food Cost & Waste Analyse</div></div></div>';
+        // KPI Mini-Cards
+        html+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">'
+          +'<div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center;border:1px solid #1e3a5f">'
+            +'<div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px">Food Cost</div>'
+            +'<div style="font-size:16px;font-weight:700;color:'+fcCol+'">'+fmtP(sd.fcPct)+'</div>'
+            +'<div style="font-size:10px;color:#94a3b8;margin-top:2px">'+fmt(sd.fc)+'</div>'
+          +'</div>'
+          +'<div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center;border:1px solid #1e3a5f">'
+            +'<div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px">Wareneinsatz</div>'
+            +'<div style="font-size:16px;font-weight:700;color:#f97316">'+fmt(sd.wareneinsatz)+'</div>'
+            +'<div style="font-size:10px;color:#94a3b8;margin-top:2px">netto</div>'
+          +'</div>'
+          +'<div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center;border:1px solid '+(sd.wastePct>0.02?'#ef444440':'#1e3a5f')+'">'
+            +'<div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px">Waste</div>'
+            +'<div style="font-size:16px;font-weight:700;color:'+wasteCol+'">'+fmt(sd.waste)+'</div>'
+            +'<div style="font-size:10px;color:#94a3b8;margin-top:2px">'+fmtP(sd.wastePct)+' vom Umsatz</div>'
+          +'</div>'
+        +'</div>';
+        // Waste nach Kategorie
+        html+='<div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #1e3a5f">🗑️ Waste nach Kategorie</div>';
+        if(sd.katList.length===0){html+='<div style="color:#475569;font-size:12px;padding:8px 0">Keine Waste-Daten.</div>';}
+        sd.katList.forEach(function(e){
+          var n=e[0]||'Keine Kategorie',d=e[1];
+          var pct=sd.waste>0?Math.round(d.kosten/sd.waste*100):0;
+          var col=katColor(n);
+          html+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #0f172a">'
+            +'<span style="width:8px;height:8px;border-radius:2px;background:'+col+';flex-shrink:0"></span>'
+            +'<span style="flex:1;font-size:11px;color:#e2e8f0">'+n+'</span>'
+            +'<div style="width:60px;height:6px;background:#1e2d40;border-radius:3px;flex-shrink:0;overflow:hidden"><div style="height:100%;background:'+col+';border-radius:3px;width:'+pct+'%"></div></div>'
+            +'<span style="font-size:11px;color:'+col+';font-weight:600;min-width:75px;text-align:right">'+fmt(d.kosten)+' <span style="color:#64748b;font-weight:400">('+pct+'%)</span></span>'
+          +'</div>';
+        });
+        // Top 5 Waste-Artikel
+        html+='<div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 10px;padding-bottom:6px;border-bottom:1px solid #1e3a5f">📦 Top 5 Waste-Artikel</div>';
+        if(sd.topWaste.length===0){html+='<div style="color:#475569;font-size:12px;padding:8px 0">Keine Artikel-Daten.</div>';}
+        sd.topWaste.forEach(function(e,i){
+          var n=e[0],d=e[1];
+          var pct=sd.maxWaste>0?Math.round(d.kosten/sd.maxWaste*100):0;
+          var col=katColor(d.kategorie);
+          html+='<div style="background:#0f172a;border-radius:6px;padding:8px 10px;margin-bottom:6px">'
+            +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+              +'<span style="font-size:11px;color:#f1f5f9;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">'+(i+1)+'. '+n+'</span>'
+              +'<span style="font-size:12px;color:#ef4444;font-weight:700">'+fmt(d.kosten)+'</span>'
+            +'</div>'
+            +'<div style="display:flex;align-items:center;gap:6px">'
+              +'<span style="font-size:9px;color:'+col+';background:'+col+'15;padding:1px 6px;border-radius:3px">'+(d.kategorie||'—')+'</span>'
+              +'<div style="flex:1;height:3px;background:#1e2d40;border-radius:2px"><div style="height:100%;background:#ef4444;border-radius:2px;width:'+pct+'%;opacity:0.7"></div></div>'
+            +'</div>'
+          +'</div>';
+        });
+        html+='</div>';
+        return html;
+      }
+      return'<div class="grid2">'+fcStBox(stData["Mehringdamm"],"Mehringdamm","🔴","#f97316")+fcStBox(stData["Rosenthaler Straße"],"Rosenthaler Straße","🔵","#3b82f6")+'</div>';
+    })()}
 
     <div class="box">
       <div class="box-title">📦 Umsatz & Wareneinsatz pro Artikel</div>
