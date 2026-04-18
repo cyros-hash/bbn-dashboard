@@ -315,6 +315,22 @@ if(sessionStorage.getItem("bbn_unlocked")==="1"){document.getElementById("lock-s
       <option>Rosenthaler Straße</option>
     </select>
     <button class="reload-btn" onclick="ladeDaten()">🔄 Neu laden</button>
+    <button class="reload-btn" onclick="toggleApiKeyModal()" id="ai-key-btn" style="background:#7c3aed30;color:#7c3aed;border-color:#7c3aed40">🤖 API Key</button>
+  </div>
+</div>
+
+<!-- API Key Modal -->
+<div id="ai-key-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#00000080;z-index:9999;display:none;align-items:center;justify-content:center">
+  <div style="background:#111827;border:1px solid #2d3f54;border-radius:12px;padding:24px;max-width:400px;width:90%">
+    <div style="font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:4px">🤖 KI-Berichte konfigurieren</div>
+    <div style="font-size:11px;color:#475569;margin-bottom:16px">Anthropic API Key für KI-Analysen in allen Tabs</div>
+    <input id="ai-key-input" type="password" placeholder="sk-ant-..."
+      style="width:100%;box-sizing:border-box;background:#1a2538;border:1px solid #2d3f54;border-radius:8px;padding:10px 12px;color:#e2e8f0;font-size:12px;font-family:monospace;margin-bottom:12px"
+      onkeydown="if(event.key==='Enter')saveApiKey()">
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="toggleApiKeyModal()" style="background:#1a2538;border:1px solid #2d3f54;border-radius:8px;padding:8px 16px;color:#94a3b8;font-size:12px;cursor:pointer">Abbrechen</button>
+      <button onclick="saveApiKey()" style="background:#7c3aed;border:none;border-radius:8px;padding:8px 16px;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Speichern</button>
+    </div>
   </div>
 </div>
 
@@ -2192,7 +2208,15 @@ function renderUmsatz(){
       <canvas id="c-um-kanal" style="max-height:200px"></canvas>
     </div>
 
-    ${renderArtikelProStunde(von, bis, st)}`;
+    ${renderArtikelProStunde(von, bis, st)}
+
+    <div class="box" style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div class="box-title">🤖 KI-Analyse: Umsatz</div><div class="box-sub">Automatische Bewertung der Umsatzdaten</div></div>
+        <button id="btn-report-umsatz" onclick="generateTabReport('umsatz')" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+      </div>
+      <div id="tab-report-umsatz" style="display:none;margin-top:12px;border-top:1px solid #1e3a5f;padding-top:12px"></div>
+    </div>`;
 
   // --- MD Tagestrend ---
   (function(){
@@ -2868,7 +2892,15 @@ function renderGuV(){
         +'</div>'
         +bonVergleich
       +'</div>';
-    })()}`;
+    })()}
+
+    <div class="box" style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div class="box-title">🤖 KI-Analyse: GuV</div><div class="box-sub">Automatische Bewertung der Ergebnisrechnung</div></div>
+        <button id="btn-report-guv" onclick="generateTabReport('guv')" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+      </div>
+      <div id="tab-report-guv" style="display:none;margin-top:12px;border-top:1px solid #1e3a5f;padding-top:12px"></div>
+    </div>`;
 }
 
 // ============================================================
@@ -3402,7 +3434,13 @@ function renderPersonal(){
       }).join("")+
     '</div>':''}
 
-    `;
+    <div class="box" style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div class="box-title">🤖 KI-Analyse: Personal</div><div class="box-sub">Automatische Bewertung der Personaleffizienz</div></div>
+        <button id="btn-report-personal" onclick="generateTabReport('personal')" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+      </div>
+      <div id="tab-report-personal" style="display:none;margin-top:12px;border-top:1px solid #1e3a5f;padding-top:12px"></div>
+    </div>`;
 
   dc("c-pa-tag");
   var stdKeys=Object.keys(umsatzStdMap).sort();
@@ -3935,7 +3973,14 @@ function renderFoodCost(){
         '</div>' +
       '</div>';
     })()}
-    `;
+
+    <div class="box" style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div class="box-title">🤖 KI-Analyse: Food Cost</div><div class="box-sub">Automatische Bewertung von Food Cost & Waste</div></div>
+        <button id="btn-report-foodcost" onclick="generateTabReport('foodcost')" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+      </div>
+      <div id="tab-report-foodcost" style="display:none;margin-top:12px;border-top:1px solid #1e3a5f;padding-top:12px"></div>
+    </div>`;
 
   // Donut Chart FC Aufschlüsselung
 
@@ -4150,6 +4195,14 @@ function renderSpeisekarte(){
         }).join(""):'<div style="color:#475569;font-size:12px;padding:12px 0">Keine Stornierungen im Zeitraum ✓</div>'}
         ${totalStornos>0?'<div class="ai-box" style="margin-top:10px">'+totalStornos+' Stornierungen im Zeitraum. Storno-Rate '+( totalMenge>0?(totalStornos/totalMenge*100).toFixed(1):0)+'%. Häufige Stornos können auf Qualitätsprobleme, Lieferzeiten oder Kommunikationsfehler hinweisen.</div>':""}
       </div>
+    </div>
+
+    <div class="box" style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div class="box-title">🤖 KI-Analyse: Speisekarte</div><div class="box-sub">Automatische Bewertung der Artikel-Performance</div></div>
+        <button id="btn-report-speisekarte" onclick="generateTabReport('speisekarte')" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+      </div>
+      <div id="tab-report-speisekarte" style="display:none;margin-top:12px;border-top:1px solid #1e3a5f;padding-top:12px"></div>
     </div>`;
 }
 
@@ -4342,6 +4395,14 @@ function renderTrinkgeld(){
       ${Object.keys(stornoStd).length>0?
         '<canvas id="c-storno-std" style="max-height:120px"></canvas>':
         '<div style="color:#475569;font-size:12px;padding:12px">Keine Stornierungen im Zeitraum ✓</div>'}
+    </div>
+
+    <div class="box" style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div class="box-title">🤖 KI-Analyse: Trinkgeld & Stornos</div><div class="box-sub">Automatische Bewertung der Servicequalität</div></div>
+        <button id="btn-report-trinkgeld" onclick="generateTabReport('trinkgeld')" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+      </div>
+      <div id="tab-report-trinkgeld" style="display:none;margin-top:12px;border-top:1px solid #1e3a5f;padding-top:12px"></div>
     </div>`;
 
   // Charts
@@ -4536,6 +4597,14 @@ function renderSimulator(){
             "Schieberegler bewegen um Szenarien zu simulieren. Fixkosten (Gemeinkosten, Miete) bleiben konstant."}
         </div>
       </div>
+    </div>
+
+    <div class="box" style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div class="box-title">🤖 KI-Analyse: Simulator</div><div class="box-sub">KI-gestützte Szenario-Bewertung</div></div>
+        <button id="btn-report-simulator" onclick="generateTabReport('simulator')" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+      </div>
+      <div id="tab-report-simulator" style="display:none;margin-top:12px;border-top:1px solid #1e3a5f;padding-top:12px"></div>
     </div>`;
 }
 
@@ -4793,6 +4862,14 @@ function renderLieferando(){
         }).join(""):'<div style="color:#475569;font-size:12px;padding:12px 0">Nicht genug Daten für Kombinationsanalyse.</div>'}
         <div class="ai-box" style="margin-top:10px">Häufige Kombinationen zeigen natürliche Bundles — ideal für Menü-Optimierung und Aktionsangebote.</div>
       </div>
+    </div>
+
+    <div class="box" style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div class="box-title">🤖 KI-Analyse: Lieferando</div><div class="box-sub">Automatische Bewertung des Lieferando-Geschäfts</div></div>
+        <button id="btn-report-lieferando" onclick="generateTabReport('lieferando')" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+      </div>
+      <div id="tab-report-lieferando" style="display:none;margin-top:12px;border-top:1px solid #1e3a5f;padding-top:12px"></div>
     </div>`;
 
   // Chart
@@ -4846,41 +4923,7 @@ ladeDaten();
 <!-- ============================================================
      KI ASSISTENT
      ============================================================ -->
-<button id="ai-fab" onclick="toggleAiPanel()" title="KI Assistent">
-  🤖<span class="ai-badge" id="ai-badge"></span>
-</button>
-
-<div id="ai-panel">
-  <div id="ai-panel-header">
-    <div>
-      <div class="ai-title">🤖 BBN Intelligence</div>
-      <div class="ai-subtitle" id="ai-subtitle">KI-Assistent · Alle Daten verfügbar</div>
-    </div>
-    <button id="ai-close" onclick="toggleAiPanel()">✕</button>
-  </div>
-  <div id="ai-key-bar" style="padding:10px 14px;background:#0a1628;border-bottom:1px solid #1e3a5f;display:flex;gap:8px;align-items:center">
-    <input id="ai-key-input" type="password" placeholder="Anthropic API Key eingeben (sk-ant-...)" 
-      style="flex:1;background:#1a2538;border:1px solid #2d3f54;border-radius:6px;padding:6px 10px;color:#e2e8f0;font-size:11px;font-family:monospace"
-      onkeydown="if(event.key==='Enter')saveApiKey()">
-    <button onclick="saveApiKey()" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 12px;color:#fff;font-size:11px;cursor:pointer;white-space:nowrap">Speichern</button>
-  </div>
-  <div id="ai-messages">
-    <div class="ai-msg assistant">
-      Hallo! Ich bin dein BBN KI-Assistent. Ich habe Zugriff auf alle deine Daten — Umsatz, Food Cost, Personal, Waste und Artikel. Was möchtest du wissen?
-    </div>
-  </div>
-  <div id="ai-suggestions">
-    <button onclick="sendTagesbericht()" style="width:100%;background:#1a2538;border:1px solid #f9731640;border-radius:8px;padding:9px 12px;font-size:12px;color:#f97316;cursor:pointer;text-align:left;font-weight:600;margin-bottom:4px">📋 Tagesbericht generieren</button>
-    <button class="ai-suggestion" onclick="askSuggestion(this)">📊 Wie war die Performance letzte Woche?</button>
-    <button class="ai-suggestion" onclick="askSuggestion(this)">🥩 Wo verlieren wir am meisten durch Waste?</button>
-    <button class="ai-suggestion" onclick="askSuggestion(this)">👥 Welcher Standort ist effizienter?</button>
-    <button class="ai-suggestion" onclick="askSuggestion(this)">💡 Was sind die 3 wichtigsten Hebel für mehr EBITDA?</button>
-  </div>
-  <div id="ai-input-row">
-    <textarea id="ai-input" placeholder="Frage stellen..." onkeydown="aiInputKeydown(event)"></textarea>
-    <button id="ai-send" onclick="sendAiMessage()">Senden</button>
-  </div>
-</div>
+<!-- KI-Chat entfernt — Berichte sind jetzt direkt in den Tabs -->
 
 <script>
 // ============================================================
@@ -4890,6 +4933,13 @@ var aiOpen = false;
 var aiHistory = [];
 var aiThinking = false;
 
+function toggleApiKeyModal() {
+  var modal = document.getElementById("ai-key-modal");
+  var isOpen = modal.style.display === "flex";
+  modal.style.display = isOpen ? "none" : "flex";
+  if(!isOpen) document.getElementById("ai-key-input").focus();
+}
+
 function saveApiKey() {
   var key = document.getElementById("ai-key-input").value.trim();
   if(!key || !key.startsWith("sk-ant-")) {
@@ -4897,25 +4947,22 @@ function saveApiKey() {
     return;
   }
   localStorage.setItem("bbn_ai_key", key);
-  document.getElementById("ai-key-bar").style.display = "none";
-  document.getElementById("ai-subtitle").textContent = "KI-Assistent · Verbunden ✓";
   document.getElementById("ai-key-input").value = "";
+  toggleApiKeyModal();
+  var btn = document.getElementById("ai-key-btn");
+  if(btn) btn.textContent = "🤖 Verbunden ✓";
 }
 
 function initAiKeyBar() {
   var key = localStorage.getItem("bbn_ai_key");
   if(key) {
-    document.getElementById("ai-key-bar").style.display = "none";
-    document.getElementById("ai-subtitle").textContent = "KI-Assistent · Verbunden ✓";
+    var btn = document.getElementById("ai-key-btn");
+    if(btn) btn.textContent = "🤖 Verbunden ✓";
   }
 }
 
 function toggleAiPanel() {
-  initAiKeyBar();
-  aiOpen = !aiOpen;
-  var panel = document.getElementById("ai-panel");
-  panel.classList.toggle("open", aiOpen);
-  document.getElementById("ai-badge").classList.remove("show");
+  // Chat entfernt — Berichte sind jetzt direkt in den Tabs
 }
 
 
@@ -5440,6 +5487,126 @@ function generiereKIBericht() {
   });
 }
 
+// ============================================================
+// TAB-BERICHTE — Fertiger KI-Bericht pro Tab
+// ============================================================
+var TAB_REPORT_CONFIG = {
+  overview: {
+    title: "📊 Übersicht",
+    prompt: "Erstelle einen Gesamtüberblick über den Betrieb. Fokus: Umsatzentwicklung, Standort-Vergleich, Contribution Margin, EBITDA. Hebe die 3 wichtigsten Erkenntnisse und die dringendste Handlungsempfehlung hervor."
+  },
+  umsatz: {
+    title: "💰 Umsatz",
+    prompt: "Analysiere den Umsatz im Detail. Fokus: Gesamt vs. Ziel, Standort-Vergleich (MD vs RS), Kanäle (Inhouse/Lieferando/Takeaway), Bon-Wert-Entwicklung, Tagesverlauf, Vorperioden-Vergleich. Identifiziere Muster und gib konkrete Empfehlungen zur Umsatzsteigerung."
+  },
+  guv: {
+    title: "🧾 GuV",
+    prompt: "Analysiere die Gewinn- und Verlustrechnung. Fokus: Kostenstruktur (Food Cost, Personal, Lieferando-Provision, Fixkosten), Margen (Contribution Margin, EBITDA), Vergleich MD vs RS. Wo sind die größten Hebel zur Ergebnisverbesserung?"
+  },
+  personal: {
+    title: "👥 Personal",
+    prompt: "Analysiere die Personaleffizienz im Detail. Fokus: PA-Quote vs. Ziel (22%), Umsatz/Personalstunde vs. Ziel (€75), Aufbau-/Abbauzeiten und -kosten, Standort-Unterschiede, Mitarbeiter-Effizienz-Ranking, Team-Kombinationen. Welche konkreten Maßnahmen können die Personaleffizienz verbessern?"
+  },
+  foodcost: {
+    title: "🥩 Food Cost",
+    prompt: "Analysiere Food Cost und Waste im Detail. Fokus: FC-Quote vs. Ziel (25%), Ist- vs. Soll-FC, Standort-Vergleich, Waste-Positionen und -Kategorien, unkontrollierter Schwund. Wo sind die größten Verluste und was kann sofort verbessert werden?"
+  },
+  speisekarte: {
+    title: "🍽️ Speisekarte",
+    prompt: "Analysiere die Speisekarten-Performance. Fokus: Top-Seller nach Umsatz und Menge, Renner/Penner-Analyse, Durchschnittspreis, Produktgruppen-Verteilung, Standort-Unterschiede bei den Bestsellern. Welche Gerichte performen gut, welche sollten überarbeitet oder gestrichen werden?"
+  },
+  trinkgeld: {
+    title: "💝 Trinkgeld & Stornos",
+    prompt: "Analysiere Trinkgeld und Stornierungen. Fokus: TK-Quote vs. Ziel (5%), beste/schlechteste MA bei Trinkgeld, Standort-Vergleich, Storno-Häufigkeit und -Muster. Was verraten Trinkgeld-Quoten über Servicequalität? Gibt es auffällige Storno-Muster?"
+  },
+  simulator: {
+    title: "🧮 Simulator",
+    prompt: "Basierend auf den aktuellen Zahlen: Berechne Szenarien für Ergebnisverbesserung. Was passiert wenn FC um 1% sinkt? Was bringt 1h weniger Abbau pro Tag? Was bedeutet €2 mehr Bon-Wert? Zeige die Top-3-Hebel mit dem größten Impact auf den Gewinn."
+  },
+  lieferando: {
+    title: "🛵 Lieferando",
+    prompt: "Analysiere das Lieferando-Geschäft. Fokus: Umsatz-Anteil, Provision (20%), effektiver Netto-Umsatz nach Provision, Standort-Vergleich, Trend. Ist der Lieferando-Anteil gesund oder zu hoch? Lohnt sich der Kanal nach Abzug aller Kosten?"
+  }
+};
+
+async function generateTabReport(tabId) {
+  var config = TAB_REPORT_CONFIG[tabId];
+  if(!config) return;
+
+  var apiKey = localStorage.getItem("bbn_ai_key") || "";
+  var panelId = "tab-report-" + tabId;
+  var panel = document.getElementById(panelId);
+  if(!panel) return;
+
+  if(!apiKey) {
+    panel.innerHTML = '<div style="color:#f97316;padding:12px">⚠️ Bitte zuerst den Anthropic API Key im KI-Chat eingeben.</div>';
+    panel.style.display = "block";
+    return;
+  }
+
+  var btn = document.getElementById("btn-report-" + tabId);
+  if(btn) { btn.disabled = true; btn.innerHTML = "⏳ Bericht wird generiert..."; }
+  panel.style.display = "block";
+  panel.innerHTML = '<div style="padding:16px;color:#475569;font-style:italic">🤖 KI analysiert die ' + config.title + '-Daten...</div>';
+
+  var von = document.getElementById("von").value;
+  var bis = document.getElementById("bis").value;
+  var st = document.getElementById("standort").value;
+  function toDE(s){return s?s.split("-").reverse().join("."):"";}
+
+  var systemPrompt = "Du bist der BI-Analyst von Bang Bang Noodles (BBN) Berlin — ein asiatisches Nudelrestaurant mit 2 Standorten (Mehringdamm, Rosenthaler Straße).\n" +
+    "Öffnungszeiten: Di–Do 12–21, Fr–Sa 12–22, So 12–21, Mo geschlossen.\n" +
+    "Zielwerte: FC ≤25%, PA ≤22%, CM ≥40%, EBITDA ≥10%, Bon-Wert ≥€22, Umsatz/Std ≥€75, Waste <2%.\n\n" +
+    "REGELN:\n" +
+    "1. Deutsch, direkt, konkret. Keine Einleitungen.\n" +
+    "2. IMMER konkrete Zahlen nennen mit Ist vs. Ziel.\n" +
+    "3. Bei Abweichungen: € UND %, Ursache, Handlungsempfehlung.\n" +
+    "4. Fasse zusammen, interpretiere, empfehle — nicht einfach Zahlen auflisten.\n\n" +
+    "AKTUELLE DASHBOARD-DATEN:\n" + buildAiContext();
+
+  var userPrompt = "Zeitraum: " + toDE(von) + " bis " + toDE(bis) + " | Standort: " + st + "\n\n" +
+    config.prompt + "\n\n" +
+    "Formatiere den Bericht als HTML. Verwende diese Struktur für jeden Abschnitt:\n" +
+    '<div style="margin-bottom:16px"><div style="font-weight:700;color:#f1f5f9;font-size:13px;margin-bottom:6px">EMOJI Titel</div>' +
+    '<ul style="margin:0;padding-left:16px;color:#94a3b8;font-size:12px;line-height:1.8"><li>Punkt</li></ul></div>\n\n' +
+    "Maximal 4 Abschnitte, je 2-3 Bulletpoints. Schließe mit einem Abschnitt '🎯 Handlungsempfehlungen' mit den Top-3 Maßnahmen ab. Fange direkt mit dem ersten div an.";
+
+  try {
+    var response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1200,
+        messages: [{role: "user", content: userPrompt}],
+        system: systemPrompt
+      })
+    });
+    if(!response.ok) {
+      var errData = await response.json().catch(function(){return{};});
+      throw new Error((errData.error&&errData.error.message)||"HTTP "+response.status);
+    }
+    var data = await response.json();
+    if(data.content && data.content[0]) {
+      panel.innerHTML = '<div style="padding:16px">' +
+        '<div style="font-size:10px;color:#475569;margin-bottom:10px">🤖 KI-Bericht · ' + toDE(von) + ' – ' + toDE(bis) + ' · ' + st + '</div>' +
+        data.content[0].text +
+        '</div>';
+    } else {
+      panel.innerHTML = '<div style="color:#ef4444;padding:12px">Fehler: ' + JSON.stringify(data.error||data) + '</div>';
+    }
+  } catch(e) {
+    var msg = e.message || "";
+    if(msg === "Failed to fetch") msg = "Verbindung zur API fehlgeschlagen. API-Key prüfen.";
+    panel.innerHTML = '<div style="color:#ef4444;padding:12px">⚠️ ' + msg + '</div>';
+  }
+  if(btn) { btn.disabled = false; btn.innerHTML = "🤖 Bericht generieren"; }
+}
 
 function buildAiContext() {
   var von = document.getElementById("von").value;
@@ -5521,7 +5688,7 @@ function buildAiContext() {
       if(oh.nachStd>0){maMap[r.mitarbeiter].abStd+=oh.nachStd;maMap[r.mitarbeiter].abK+=oh.nachKosten;maMap[r.mitarbeiter].abN++;}
     });
     var maSorted=Object.entries(maMap).sort(function(a,b){return b[1].stunden-a[1].stunden;});
-    ctx += "MITARBEITER-DETAILS (Top "+Math.min(maSorted.length,10)+"):\n";
+    ctx += "MITARBEITER-DETAILS (Top "+Math.min(maSorted.length,10)+" nach Stunden):\n";
     maSorted.slice(0,10).forEach(function(e){
       var m=e[1];
       var line=e[0]+": "+Math.round(m.stunden)+"h / "+fmt(m.kosten)+" ("+m.schichten+" Schichten)";
@@ -5532,6 +5699,28 @@ function buildAiContext() {
       ctx += line + "\n";
     });
     ctx += "\n";
+
+    // Abbau-Effizienz Ranking (wie im Dashboard, sortiert nach Ø Abbau-Stunden, min. 2 Schichten)
+    var abRanking=Object.entries(maMap).filter(function(e){return e[1].abN>=2;}).sort(function(a,b){return(a[1].abStd/a[1].abN)-(b[1].abStd/b[1].abN);});
+    if(abRanking.length>0){
+      ctx += "ABBAU-EFFIZIENZ RANKING (Ø Stunden nach Ladenschluss, min. 2 Schichten):\n";
+      abRanking.forEach(function(e,i){
+        var m=e[1];var avg=(m.abStd/m.abN).toFixed(1);
+        ctx += (i+1)+". "+e[0]+": Ø "+avg+"h ("+m.abN+" Schichten, "+fmt(m.abK)+")"+(avg<=1.0?" ✅":avg<=1.3?" ⚠️":" 🔴")+"\n";
+      });
+      ctx += "\n";
+    }
+
+    // Aufbau-Effizienz Ranking (wie im Dashboard, sortiert nach Ø Aufbau-Stunden, min. 2 Schichten)
+    var aufRanking=Object.entries(maMap).filter(function(e){return e[1].aufN>=2;}).sort(function(a,b){return(a[1].aufStd/a[1].aufN)-(b[1].aufStd/b[1].aufN);});
+    if(aufRanking.length>0){
+      ctx += "AUFBAU-EFFIZIENZ RANKING (Ø Stunden vor Öffnung, min. 2 Schichten):\n";
+      aufRanking.forEach(function(e,i){
+        var m=e[1];var avg=(m.aufStd/m.aufN).toFixed(1);
+        ctx += (i+1)+". "+e[0]+": Ø "+avg+"h ("+m.aufN+" Schichten, "+fmt(m.aufK)+")"+(avg<=1.0?" ✅":avg<=1.5?" ⚠️":" 🔴")+"\n";
+      });
+      ctx += "\n";
+    }
   }
 
   // Waste
