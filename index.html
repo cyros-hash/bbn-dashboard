@@ -3776,7 +3776,8 @@ function renderFoodCost(){
 
     ${(function(){
       function fcStBox(sd,name,emoji,color){
-        var fcCol=sd.fcPct>ZIELE.fc?'#ef4444':'#22c55e';
+        var fcSuspect=sd.fcPct<0.20&&sd.u>0;
+        var fcCol=fcSuspect?'#f97316':(sd.fcPct>ZIELE.fc?'#ef4444':'#22c55e');
         var wasteCol=sd.wastePct>0.02?'#ef4444':'#22c55e';
         var html='<div class="box">';
         // Header mit großen Zahlen
@@ -3784,10 +3785,14 @@ function renderFoodCost(){
           +'<span style="font-size:14px">'+emoji+'</span>'
           +'<div><div style="font-size:14px;font-weight:700;color:'+color+'">'+name+'</div>'
           +'<div style="font-size:10px;color:#475569">Food Cost & Waste Analyse</div></div></div>';
+        // Warnung bei unplausiblem FC
+        if(fcSuspect){
+          html+='<div style="background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:6px 10px;font-size:11px;color:#f97316;margin-bottom:10px">⚠️ FC unter 20% — wahrscheinlich unvollständige Rezepturen in Apicbase. Wert nicht belastbar.</div>';
+        }
         // KPI Mini-Cards
         html+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">'
-          +'<div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center;border:1px solid #1e3a5f">'
-            +'<div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px">Food Cost</div>'
+          +'<div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center;border:1px solid '+(fcSuspect?'#92400e40':'#1e3a5f')+'">'
+            +'<div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px">Food Cost'+(fcSuspect?' ⚠️':'')+'</div>'
             +'<div style="font-size:16px;font-weight:700;color:'+fcCol+'">'+fmtP(sd.fcPct)+'</div>'
             +'<div style="font-size:10px;color:#94a3b8;margin-top:2px">'+fmt(sd.fc)+'</div>'
           +'</div>'
@@ -3838,6 +3843,73 @@ function renderFoodCost(){
         return html;
       }
       return'<div class="grid2">'+fcStBox(stData["Mehringdamm"],"Mehringdamm","🔴","#f97316")+fcStBox(stData["Rosenthaler Straße"],"Rosenthaler Straße","🔵","#3b82f6")+'</div>';
+    })()}
+
+    ${(function(){
+      // Debug-Box nur anzeigen wenn ein Standort verdächtig niedrigen FC hat
+      var sdMd=stData["Mehringdamm"],sdRs=stData["Rosenthaler Straße"];
+      if(sdMd.fcPct>=0.20&&sdRs.fcPct>=0.20)return'';
+      // Apicbase-Daten analysieren
+      var apicMd=alle.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.st==="Mehringdamm";});
+      var apicRs=alle.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.st==="Rosenthaler Straße";});
+      var mdMitFC=apicMd.filter(function(r){return r.f>0;});
+      var mdOhneFC=apicMd.filter(function(r){return r.f===0;});
+      var rsMitFC=apicRs.filter(function(r){return r.f>0;});
+      var rsOhneFC=apicRs.filter(function(r){return r.f===0;});
+      // Tage ohne FC
+      var mdOhneTage=mdOhneFC.map(function(r){return r.datum;}).sort();
+      var rsOhneTage=rsOhneFC.map(function(r){return r.datum;}).sort();
+      // FC-Quote nur für Tage MIT FC
+      var mdUmitFC=mdMitFC.reduce(function(s,r){return s+r.u;},0);
+      var mdFmitFC=mdMitFC.reduce(function(s,r){return s+r.f;},0);
+      var rsUmitFC=rsMitFC.reduce(function(s,r){return s+r.u;},0);
+      var rsFmitFC=rsMitFC.reduce(function(s,r){return s+r.f;},0);
+      // Standort-Namen in Apicbase prüfen (erste 50 unique)
+      var apicSt=new Set();alle.forEach(function(r){apicSt.add(r.st);});
+      var apicStList=Array.from(apicSt).join(", ");
+      // Lightspeed Standort-Namen
+      var lsSt=new Set();lsTx.forEach(function(r){lsSt.add(r.standort);});
+      var lsStList=Array.from(lsSt).join(", ");
+
+      var html='<div class="box" style="margin-top:14px;border:1px solid #92400e40">'
+        +'<div class="box-title" style="color:#f97316">🔍 FC-Diagnose — Datenqualität</div>'
+        +'<div class="box-sub">Automatische Analyse warum FC ungewöhnlich niedrig ist</div>';
+
+      // Standort-Namen Vergleich
+      html+='<div style="background:#0f172a;border-radius:6px;padding:10px;margin-bottom:10px;font-size:11px">'
+        +'<div style="color:#94a3b8;margin-bottom:4px">📋 Standort-Namen im Merge</div>'
+        +'<div style="color:#e2e8f0;margin-bottom:2px">Apicbase (alle[].st): <span style="color:#f97316">'+apicStList+'</span></div>'
+        +'<div style="color:#e2e8f0">Lightspeed (lsTx[].standort): <span style="color:#3b82f6">'+lsStList+'</span></div>'
+      +'</div>';
+
+      // Mehringdamm Detail
+      html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">';
+      html+='<div style="background:#0f172a;border-radius:6px;padding:10px;font-size:11px">'
+        +'<div style="color:#f97316;font-weight:600;margin-bottom:6px">🟠 Mehringdamm</div>'
+        +'<div style="color:#e2e8f0">Tage gesamt: <strong>'+apicMd.length+'</strong></div>'
+        +'<div style="color:#22c55e">Tage mit FC > 0: <strong>'+mdMitFC.length+'</strong>'+(mdMitFC.length>0?' → FC-Quote: <strong>'+fmtP(mdUmitFC>0?mdFmitFC/mdUmitFC:0)+'</strong>':'')+'</div>'
+        +'<div style="color:#ef4444">Tage mit FC = 0: <strong>'+mdOhneFC.length+'</strong>'+(mdUmitFC>0?' → Umsatz ohne FC: '+fmt(mdOhneFC.reduce(function(s,r){return s+r.u;},0)):'')+'</div>'
+        +(mdOhneTage.length>0?'<div style="color:#64748b;margin-top:4px;font-size:10px">Fehlende Tage: '+mdOhneTage.slice(0,5).map(function(d){return d.slice(5);}).join(", ")+(mdOhneTage.length>5?' … +'+(mdOhneTage.length-5)+' weitere':'')+'</div>':'')
+      +'</div>';
+      html+='<div style="background:#0f172a;border-radius:6px;padding:10px;font-size:11px">'
+        +'<div style="color:#3b82f6;font-weight:600;margin-bottom:6px">🔵 Rosenthaler Straße</div>'
+        +'<div style="color:#e2e8f0">Tage gesamt: <strong>'+apicRs.length+'</strong></div>'
+        +'<div style="color:#22c55e">Tage mit FC > 0: <strong>'+rsMitFC.length+'</strong>'+(rsMitFC.length>0?' → FC-Quote: <strong>'+fmtP(rsUmitFC>0?rsFmitFC/rsUmitFC:0)+'</strong>':'')+'</div>'
+        +'<div style="color:#ef4444">Tage mit FC = 0: <strong>'+rsOhneFC.length+'</strong>'+(rsUmitFC>0?' → Umsatz ohne FC: '+fmt(rsOhneFC.reduce(function(s,r){return s+r.u;},0)):'')+'</div>'
+        +(rsOhneTage.length>0?'<div style="color:#64748b;margin-top:4px;font-size:10px">Fehlende Tage: '+rsOhneTage.slice(0,5).map(function(d){return d.slice(5);}).join(", ")+(rsOhneTage.length>5?' … +'+(rsOhneTage.length-5)+' weitere':'')+'</div>':'')
+      +'</div>';
+      html+='</div>';
+
+      // Fazit
+      var fazit='';
+      if(mdOhneFC.length>0&&mdMitFC.length>0)fazit+='MD hat '+mdOhneFC.length+' Tage ohne Apicbase-FC. An Tagen MIT FC beträgt die Quote '+fmtP(mdUmitFC>0?mdFmitFC/mdUmitFC:0)+'. ';
+      if(mdMitFC.length===0&&apicMd.length>0)fazit+='MD: Kein einziger Tag hat FC-Daten — Apicbase-Export prüfen. ';
+      if(rsOhneFC.length>0&&rsMitFC.length>0)fazit+='RS hat '+rsOhneFC.length+' Tage ohne FC. ';
+      if(apicStList!==lsStList)fazit+='⚠️ Standort-Namen unterscheiden sich zwischen Apicbase und Lightspeed — Merge-Problem möglich.';
+      if(fazit)html+='<div class="ai-box">'+fazit+'</div>';
+
+      html+='</div>';
+      return html;
     })()}
 
     <div class="box">
