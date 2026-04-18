@@ -3221,38 +3221,11 @@ function renderPersonal(){
       </div>
     </div>
 
-    <!-- AUFBAU / ABBAU KOSTENANALYSE -->
-    <div class="box" style="margin-bottom:14px">
-      <div class="box-title">🌅 Aufbau & 🌙 Abbau — Kosten außerhalb der Öffnungszeiten</div>
-      <div class="box-sub">Stunden & Kosten vor 12:00 (Aufbau) und nach Ladenschluss (Abbau)</div>
-      <div class="resp-3col aufbau-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0">
-        <div style="background:#1a2538;border-radius:10px;padding:14px;border-left:3px solid #f59e0b">
-          <div style="font-size:10px;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">🌅 Aufbau (vor 12:00)</div>
-          <div style="font-size:22px;font-weight:700;color:#f59e0b">${fmt(aufbau.kosten)}</div>
-          <div style="font-size:12px;color:#94a3b8;margin-top:4px">${aufbau.stunden.toFixed(1)} h · ${aufbau.count} Schichten</div>
-          <div style="font-size:11px;color:#475569;margin-top:2px">Ø ${aufbau.count>0?(aufbau.stunden/aufbau.count).toFixed(1):'0'} h vor Öffnung</div>
-          <div style="font-size:11px;color:#475569">${fmtP(pk.total>0?aufbau.kosten/pk.total:0)} der Personalkosten</div>
-        </div>
-        <div style="background:#1a2538;border-radius:10px;padding:14px;border-left:3px solid #22c55e">
-          <div style="font-size:10px;color:#22c55e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">☀️ Betrieb (Öffnungszeit)</div>
-          <div style="font-size:22px;font-weight:700;color:#22c55e">${fmt(betrieb.kosten)}</div>
-          <div style="font-size:12px;color:#94a3b8;margin-top:4px">${betrieb.stunden.toFixed(1)} h</div>
-          <div style="font-size:11px;color:#475569;margin-top:2px">Umsatzgenerierende Stunden</div>
-          <div style="font-size:11px;color:#475569">${fmtP(pk.total>0?betrieb.kosten/pk.total:0)} der Personalkosten</div>
-        </div>
-        <div style="background:#1a2538;border-radius:10px;padding:14px;border-left:3px solid #6366f1">
-          <div style="font-size:10px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">🌙 Abbau (nach Schluss)</div>
-          <div style="font-size:22px;font-weight:700;color:#6366f1">${fmt(abbau.kosten)}</div>
-          <div style="font-size:12px;color:#94a3b8;margin-top:4px">${abbau.stunden.toFixed(1)} h · ${abbau.count} Schichten</div>
-          <div style="font-size:11px;color:#475569;margin-top:2px">Ø ${abbau.count>0?(abbau.stunden/abbau.count).toFixed(1):'0'} h nach Schluss</div>
-          <div style="font-size:11px;color:#475569">${fmtP(pk.total>0?abbau.kosten/pk.total:0)} der Personalkosten</div>
-        </div>
-      </div>
-    </div>
+    <!-- Aufbau/Abbau Wochentag-Sektionen folgen direkt -->
 
     <!-- AUFBAU NACH WOCHENTAG (mit Standort) -->
     ${Object.keys(aufbauWtMap).length>0?'<div class="box" style="margin-bottom:14px"><div class="box-title">🌅 Aufbau nach Wochentag</div><div class="box-sub">Ø Stunden & Kosten vor 12:00 · nach Standort</div>'+
-      '<div class="wt-flex" style="display:flex;gap:6px;flex-wrap:wrap">'+
+      '<div class="wt-flex" style="display:flex;gap:6px;flex-wrap:nowrap">'+
         ["Di","Mi","Do","Fr","Sa","So"].filter(function(wt){return aufbauWtMap[wt];}).map(function(wt){
           var d=aufbauWtMap[wt];
           var avg=d.count>0?d.stunden/d.count:0;
@@ -3264,7 +3237,7 @@ function renderPersonal(){
             var sCol=e[0]==="Mehringdamm"?"#ef4444":"#3b82f6";
             return'<span style="color:'+sCol+';font-size:9px">'+e[0].substring(0,2)+': '+sAvg.toFixed(1)+'h</span>';
           }).join(' · ');
-          return'<div style="flex:1;min-width:80px;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center;border-top:3px solid #f59e0b">'+
+          return'<div style="flex:1;min-width:0;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center;border-top:3px solid #f59e0b">'+
             '<div style="font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:4px">'+wt+'</div>'+
             '<div style="font-size:18px;font-weight:700;color:'+col+'">'+avg.toFixed(1)+'h</div>'+
             '<div style="font-size:10px;color:#94a3b8;margin-top:3px">'+fmt(avgK)+'/Tag</div>'+
@@ -3277,7 +3250,7 @@ function renderPersonal(){
 
     <!-- ABBAU NACH WOCHENTAG (mit Standort) -->
     ${Object.keys(abbauWtMap).length>0?'<div class="box" style="margin-bottom:14px"><div class="box-title">🌙 Abbau nach Wochentag</div><div class="box-sub">Ø Stunden & Kosten nach Ladenschluss · nach Standort</div>'+
-      '<div class="wt-flex" style="display:flex;gap:6px;flex-wrap:wrap">'+
+      '<div class="wt-flex" style="display:flex;gap:6px;flex-wrap:nowrap">'+
         ["Di","Mi","Do","Fr","Sa","So"].filter(function(wt){return abbauWtMap[wt];}).map(function(wt){
           var d=abbauWtMap[wt];
           var avg=d.count>0?d.stunden/d.count:0;
@@ -3289,7 +3262,7 @@ function renderPersonal(){
             var sCol=e[0]==="Mehringdamm"?"#ef4444":"#3b82f6";
             return'<span style="color:'+sCol+';font-size:9px">'+e[0].substring(0,2)+': '+sAvg.toFixed(1)+'h</span>';
           }).join(' · ');
-          return'<div style="flex:1;min-width:80px;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center;border-top:3px solid #6366f1">'+
+          return'<div style="flex:1;min-width:0;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center;border-top:3px solid #6366f1">'+
             '<div style="font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:4px">'+wt+'</div>'+
             '<div style="font-size:18px;font-weight:700;color:'+col+'">'+avg.toFixed(1)+'h</div>'+
             '<div style="font-size:10px;color:#94a3b8;margin-top:3px">'+fmt(avgK)+'/Tag</div>'+
