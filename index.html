@@ -16,40 +16,40 @@ body{font-family:system-ui,sans-serif;background:#0a0f1e;color:#e2e8f0;min-heigh
 .filterbar{background:#0f1829;padding:8px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #1e2d40;flex-wrap:wrap}
 input[type=date]{background:#1a2538;border:1px solid #2d3f54;border-radius:6px;padding:4px 8px;color:#e2e8f0;font-size:12px}
 .wtbtn{background:transparent;border:none;color:#475569;font-size:10px;font-weight:600;padding:3px 6px;border-radius:4px;cursor:pointer;transition:all 0.15s}
-.wtbtn.active{background:#f9731620;color:#f97316}
+.wtbtn.active{background:#E8439320;color:#E84393}
 .wtbtn:hover{color:#e2e8f0}
 .qbtn{background:#1a2538;border:1px solid #2d3f54;border-radius:6px;padding:4px 10px;color:#64748b;font-size:11px;cursor:pointer;transition:all 0.15s}
-.qbtn.active{background:#f9731615;border-color:#f97316;color:#f97316}
-.apply-btn{margin-left:auto;background:#f97316;border:none;border-radius:6px;padding:5px 16px;color:#fff;font-size:12px;font-weight:600;cursor:pointer}
+.qbtn.active{background:#E8439315;border-color:#E84393;color:#E84393}
+.apply-btn{margin-left:auto;background:#E84393;border:none;border-radius:6px;padding:5px 16px;color:#fff;font-size:12px;font-weight:600;cursor:pointer}
 select{background:#1a2538;color:#e2e8f0;border:1px solid #2d3f54;border-radius:6px;padding:5px 10px;font-size:12px}
 .reload-btn{background:#1a2538;border:1px solid #2d3f54;border-radius:6px;padding:5px 10px;color:#64748b;font-size:11px;cursor:pointer}
 /* TABS */
 .tabs{background:#111827;display:flex;padding:0 20px;border-bottom:1px solid #1e2d40;overflow-x:auto}
 .tab{padding:10px 14px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:12px;font-weight:500;color:#64748b;white-space:nowrap;transition:all 0.15s}
-.tab.active{color:#f97316;border-bottom-color:#f97316}
+.tab.active{color:#E84393;border-bottom-color:#E84393}
 /* CONTENT */
 .content{padding:16px 20px}
 /* KPI GRID */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
 .kpi-card{background:#111827;border-radius:10px;padding:14px;border:1px solid #1e2d40;cursor:pointer;transition:border-color 0.15s;position:relative}
-.kpi-card:hover{border-color:#f9731640}
-.kpi-card.active{border-color:#f97316}
+.kpi-card:hover{border-color:#E8439340}
+.kpi-card.active{border-color:#E84393}
 .kpi-label{font-size:11px;color:#475569;margin-bottom:4px;display:flex;align-items:center;gap:6px}
 .kpi-val{font-size:21px;font-weight:700}
 .kpi-delta{font-size:11px;margin-top:3px}
 .kpi-ai{font-size:10px;color:#475569;margin-top:6px;padding-top:6px;border-top:1px solid #1e2d40;line-height:1.5}
 .delta-up{color:#22c55e}
 .delta-dn{color:#ef4444}
-.delta-neu{color:#f97316}
+.delta-neu{color:#FF8000}
 /* DRILL PANEL */
-.drill-panel{background:#0a1628;border:1px solid #1e3a5f;border-radius:8px;padding:12px 14px;margin-bottom:14px;display:none}
+.drill-panel{background:#0a1628;border:1px solid #0a3545;border-radius:8px;padding:12px 14px;margin-bottom:14px;display:none}
 .drill-panel.open{display:block}
-.drill-title{font-size:11px;font-weight:600;color:#60a5fa;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px}
+.drill-title{font-size:11px;font-weight:600;color:#40F0FF;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px}
 .drill-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e2d40;font-size:12px}
 .drill-row:last-of-type{border-bottom:none}
 .drill-row span:first-child{color:#64748b}
 .drill-row span:last-child{color:#e2e8f0;font-weight:600}
-.ai-box{background:#0c1f3a;border-left:3px solid #3b82f6;border-radius:0 6px 6px 0;padding:8px 10px;margin-top:10px;font-size:11px;color:#93c5fd;line-height:1.6}
+.ai-box{background:#0a1520;border-left:3px solid #00EEFC;border-radius:0 6px 6px 0;padding:8px 10px;margin-top:10px;font-size:11px;color:#7DF3FF;line-height:1.6}
 /* BOX */
 .box{background:#111827;border-radius:10px;padding:16px;border:1px solid #1e2d40;margin-bottom:14px}
 .box-title{font-size:13px;font-weight:600;color:#f1f5f9;margin-bottom:4px}
@@ -70,12 +70,12 @@ select{background:#1a2538;color:#e2e8f0;border:1px solid #2d3f54;border-radius:6
 .badge{display:inline-block;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:600}
 .bg{background:#16653430;color:#22c55e}
 .br{background:#7f1d1d30;color:#ef4444}
-.by{background:#78350f30;color:#f97316}
-.bb{background:#1e3a5f;color:#60a5fa}
+.by{background:#66330030;color:#FF8000}
+.bb{background:#0a3545;color:#40F0FF}
 /* STANDORT CARDS */
 .st-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
 .st-card{background:#111827;border:1px solid #1e2d40;border-radius:10px;padding:16px;cursor:pointer;transition:border-color 0.15s}
-.st-card:hover{border-color:#3b82f640}
+.st-card:hover{border-color:#00EEFC40}
 .st-name{font-size:11px;color:#475569;margin-bottom:4px}
 .st-val{font-size:24px;font-weight:700;color:#f1f5f9}
 .st-meta{font-size:11px;color:#475569;margin-top:6px;display:flex;gap:12px}
@@ -102,7 +102,7 @@ select{background:#1a2538;color:#e2e8f0;border:1px solid #2d3f54;border-radius:6
 /* SLIDER */
 .slider-row{margin-bottom:16px}
 .slider-top{display:flex;justify-content:space-between;font-size:12px;color:#64748b;margin-bottom:5px}
-input[type=range]{width:100%;accent-color:#f97316}
+input[type=range]{width:100%;accent-color:#E84393}
 canvas{max-height:220px}
 /* AMPEL */
 .ampel-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #1e2d40;font-size:12px}
@@ -112,7 +112,7 @@ canvas{max-height:220px}
 /* ============================================================
    KI ASSISTENT — Floating Chat
    ============================================================ */
-#ai-fab{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 20px #7c3aed60;z-index:1000;transition:transform 0.2s}
+#ai-fab{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#E84393,#C73680);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 20px #E8439360;z-index:1000;transition:transform 0.2s}
 #ai-fab:hover{transform:scale(1.08)}
 #ai-fab .ai-badge{position:absolute;top:-3px;right:-3px;background:#22c55e;width:12px;height:12px;border-radius:50%;border:2px solid #0a0f1e;display:none}
 #ai-fab .ai-badge.show{display:block}
@@ -128,16 +128,16 @@ canvas{max-height:220px}
 #ai-messages::-webkit-scrollbar-track{background:transparent}
 #ai-messages::-webkit-scrollbar-thumb{background:#2d3f54;border-radius:2px}
 .ai-msg{max-width:88%;padding:10px 12px;border-radius:12px;font-size:12px;line-height:1.6}
-.ai-msg.user{background:#1e3a5f;color:#e2e8f0;align-self:flex-end;border-bottom-right-radius:3px}
-.ai-msg.assistant{background:#1a2538;color:#e2e8f0;align-self:flex-start;border-bottom-left-radius:3px;border-left:3px solid #7c3aed}
+.ai-msg.user{background:#0a3545;color:#e2e8f0;align-self:flex-end;border-bottom-right-radius:3px}
+.ai-msg.assistant{background:#1a2538;color:#e2e8f0;align-self:flex-start;border-bottom-left-radius:3px;border-left:3px solid #E84393}
 .ai-msg.thinking{color:#475569;font-style:italic}
 #ai-suggestions{padding:0 14px 10px;display:flex;flex-direction:column;gap:5px}
 .ai-suggestion{background:#1a2538;border:1px solid #2d3f54;border-radius:8px;padding:7px 10px;font-size:11px;color:#94a3b8;cursor:pointer;text-align:left;transition:all 0.15s}
-.ai-suggestion:hover{border-color:#7c3aed;color:#e2e8f0;background:#1e2d40}
+.ai-suggestion:hover{border-color:#E84393;color:#e2e8f0;background:#1e2d40}
 #ai-input-row{padding:12px 14px;border-top:1px solid #1e2d40;display:flex;gap:8px;background:#0f1829}
 #ai-input{flex:1;background:#1a2538;border:1px solid #2d3f54;border-radius:8px;padding:8px 12px;color:#e2e8f0;font-size:12px;resize:none;height:38px;font-family:inherit}
-#ai-input:focus{outline:none;border-color:#7c3aed}
-#ai-send{background:#7c3aed;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background 0.15s}
+#ai-input:focus{outline:none;border-color:#E84393}
+#ai-send{background:#E84393;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background 0.15s}
 #ai-send:hover{background:#6d28d9}
 #ai-send:disabled{background:#2d3f54;color:#475569;cursor:not-allowed}
 /* ============================================================
@@ -278,10 +278,10 @@ canvas{max-height:220px}
     <h2 style="color:#f1f5f9;margin:0 0 4px;font-size:18px">Bang Bang Noodles</h2>
     <div style="color:#64748b;font-size:12px;margin-bottom:24px">Intelligence Dashboard</div>
     <input id="lock-pw" type="password" placeholder="Passwort eingeben"
-      style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #1e3a5f;background:#0f1d32;color:#f1f5f9;font-size:14px;outline:none;box-sizing:border-box"
+      style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #0a3545;background:#0f1d32;color:#f1f5f9;font-size:14px;outline:none;box-sizing:border-box"
       onkeydown="if(event.key==='Enter')unlockDash()">
     <button onclick="unlockDash()"
-      style="width:100%;margin-top:10px;padding:10px;border-radius:8px;border:none;background:#3b82f6;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Entsperren</button>
+      style="width:100%;margin-top:10px;padding:10px;border-radius:8px;border:none;background:#00EEFC;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Entsperren</button>
     <div id="lock-err" style="color:#ef4444;font-size:12px;margin-top:8px;min-height:16px"></div>
   </div>
 </div>
@@ -317,7 +317,7 @@ if(sessionStorage.getItem("bbn_unlocked")==="1"){document.getElementById("lock-s
       <option>Rosenthaler Straße</option>
     </select>
     <button class="reload-btn" onclick="ladeDaten()">🔄 Neu laden</button>
-    <button class="reload-btn" onclick="toggleApiKeyModal()" id="ai-key-btn" style="background:#7c3aed30;color:#7c3aed;border-color:#7c3aed40">🤖 API Key</button>
+    <button class="reload-btn" onclick="toggleApiKeyModal()" id="ai-key-btn" style="background:#E8439330;color:#E84393;border-color:#E8439340">🤖 API Key</button>
   </div>
 </div>
 
@@ -331,7 +331,7 @@ if(sessionStorage.getItem("bbn_unlocked")==="1"){document.getElementById("lock-s
       onkeydown="if(event.key==='Enter')saveApiKey()">
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button onclick="toggleApiKeyModal()" style="background:#1a2538;border:1px solid #2d3f54;border-radius:8px;padding:8px 16px;color:#94a3b8;font-size:12px;cursor:pointer">Abbrechen</button>
-      <button onclick="saveApiKey()" style="background:#7c3aed;border:none;border-radius:8px;padding:8px 16px;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Speichern</button>
+      <button onclick="saveApiKey()" style="background:#E84393;border:none;border-radius:8px;padding:8px 16px;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Speichern</button>
     </div>
   </div>
 </div>
@@ -510,6 +510,7 @@ function getFixkostenTage(von, bis) {
 function fmt(v){return"€ "+Math.round(v).toLocaleString("de-DE");}
 function fmtD(v){return"€ "+Number(v).toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtP(v){return(v*100).toFixed(1)+"%";}
+function fmtP2(v){return(v*100).toFixed(2)+"%";}
 function pDE(s){if(!s)return 0;return parseFloat(String(s).replace(/[€%\s]/g,"").replace(/\./g,"").replace(",","."))||0;}
 function pStd(s){if(!s)return 0;return parseFloat(String(s).replace(",","."))||0;}
 function pDat(r){if(!r)return null;r=String(r).trim();if(r.includes(".")){var p=r.split(".");return p[2]+"-"+p[1].padStart(2,"0")+"-"+p[0].padStart(2,"0");}return r.slice(0,10);}
@@ -787,7 +788,7 @@ function badge(ok,label){
 }
 
 function ampelDot(ok,warn){
-  var col=ok?"#22c55e":warn?"#f97316":"#ef4444";
+  var col=ok?"#22c55e":warn?"#FF8000":"#ef4444";
   return'<div class="ampel-dot" style="background:'+col+'"></div>';
 }
 
@@ -812,7 +813,7 @@ function prevPeriod(von,bis){
 // ============================================================
 async function ladeDaten(){
   document.getElementById("status").textContent="● Lade Daten...";
-  document.getElementById("status").style.color="#f97316";
+  document.getElementById("status").style.color="#E84393";
   try{
     // APICBASE — nur für Food Cost
     var r=await fetch(CSV.apic);var t=await r.text();
@@ -1410,7 +1411,7 @@ function renderOverview(){
       ${cmpMd>0&&cmpRs>0?" · Rosenthaler effizienter als Mehringdamm ("+fmtP(cmpRs)+" vs "+fmtP(cmpMd)+")":""}
     </div>
     <div style="font-size:10px;color:#64748b;text-align:right;margin:4px 0 8px;padding:0 2px">📊 Vergleich: ${vpOv.von.slice(8,10)}.${vpOv.von.slice(5,7)}. – ${vpOv.bis.slice(8,10)}.${vpOv.bis.slice(5,7)}. (${vpLabel})</div>
-    ${dataTage<kalTage?'<div style="background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:8px 10px;font-size:11px;color:#f97316;margin-bottom:12px">⚠️ Nur '+dataTage+' von '+kalTage+' Tagen haben Apicbase-Daten. Kosten (Fixkosten, Lieferando-Provision) wurden auf Datentage heruntergerechnet.</div>':''}
+    ${dataTage<kalTage?'<div style="background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:8px 10px;font-size:11px;color:#E84393;margin-bottom:12px">⚠️ Nur '+dataTage+' von '+kalTage+' Tagen haben Apicbase-Daten. Kosten (Fixkosten, Lieferando-Provision) wurden auf Datentage heruntergerechnet.</div>':''}
 
     <div class="kpi-grid">
       <div class="kpi-card" onclick="drill('d-ov-umsatz')">
@@ -1426,14 +1427,14 @@ function renderOverview(){
         <div class="kpi-ai">${pk.stunden>0?Math.round(pk.stunden)+" h · Ø "+fmtD(pa/pk.stunden)+"/h":""} · Closing-Check Mehringdamm</div>
       </div>
       <div class="kpi-card" onclick="drill('d-ov-fc')">
-        <div class="kpi-label">🥩 Food Cost ${hatIstFC?'<span style="font-size:9px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px;margin-left:4px">Ist (direkt)</span>':'<span style="font-size:9px;background:#eab308;color:#000;padding:1px 5px;border-radius:3px;margin-left:4px">Soll</span>'}</div>
+        <div class="kpi-label">🥩 Food Cost ${hatIstFC?'<span style="font-size:9px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px;margin-left:4px">Ist (direkt)</span>':'<span style="font-size:9px;background:#FF8000;color:#000;padding:1px 5px;border-radius:3px;margin-left:4px">Soll</span>'}</div>
         <div class="kpi-val" style="color:${anzFcPct>ZIELE.fc?'#ef4444':'#22c55e'}">${fmt(fcAmt)}</div>
         <div class="kpi-delta ${anzFcPct>ZIELE.fc?'delta-dn':'delta-up'}">${fmtP(anzFcPct)} vom Umsatz · Ziel ${fmtP(ZIELE.fc)}</div>
         <div class="kpi-ai">${hatIstFC?'Ist-Daten aus Bestandsbericht '+rfc.von+' → '+rfc.bis+' ('+rfc.tage+'T) · Soll: '+fmtP(k.fp):'Soll (Rezeptur) — Zeitraum außerhalb Bestandsbericht'+(rfc.hat?' ('+rfc.von+' → '+rfc.bis+')':'')}</div>
       </div>
       <div class="kpi-card" onclick="drill('d-ov-cm')">
         <div class="kpi-label">📈 Contribution Margin</div>
-        <div class="kpi-val" style="color:${cmPct>=ZIELE.cm?'#22c55e':'#f97316'}">${fmt(cm)}</div>
+        <div class="kpi-val" style="color:${cmPct>=ZIELE.cm?'#22c55e':'#FF8000'}">${fmt(cm)}</div>
         <div class="kpi-delta ${cmPct>=ZIELE.cm?'delta-up':'delta-neu'}">${fmtP(cmPct)} · Ziel ${fmtP(ZIELE.cm)}</div>
         <div class="kpi-ai">Nach FC + Personal. EBITDA ~${fmt(ebitda)} (${fmtP(ebitdaPct)})</div>
       </div>
@@ -1444,7 +1445,7 @@ function renderOverview(){
       <div class="chart-flex" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
         <div style="flex:0 0 auto">
           <table style="border-collapse:collapse;font-size:12px">
-            <thead><tr style="border-bottom:2px solid #1e3a5f">
+            <thead><tr style="border-bottom:2px solid #0a3545">
               <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500"></th>
               <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Umsatz</th>
               <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Ø/Tag</th>
@@ -1460,14 +1461,14 @@ function renderOverview(){
                 <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwUDiff,false)}</td>
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
-                <td style="color:#f97316;padding:6px 8px 6px 0">Mehringdamm</td>
+                <td style="color:#E84393;padding:6px 8px 6px 0">Mehringdamm</td>
                 <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${fmt(km.u)}</td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(km.u/Math.max(km.t,1))}</td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmtD(bonWertMd.avg)}</td>
                 <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwUMdDiff,false)}</td>
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
-                <td style="color:#3b82f6;padding:6px 8px 6px 0">Rosenthaler</td>
+                <td style="color:#00EEFC;padding:6px 8px 6px 0">Rosenthaler</td>
                 <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${fmt(kr.u)}</td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(kr.u/Math.max(kr.t,1))}</td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmtD(bonWertRs.avg)}</td>
@@ -1488,7 +1489,7 @@ function renderOverview(){
       <div class="chart-flex" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
         <div style="flex:0 0 auto">
           <table style="border-collapse:collapse;font-size:12px">
-            <thead><tr style="border-bottom:2px solid #1e3a5f">
+            <thead><tr style="border-bottom:2px solid #0a3545">
               <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500"></th>
               <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Kosten</th>
               <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Quote</th>
@@ -1504,14 +1505,14 @@ function renderOverview(){
                 <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwPaDiff,true)}</td>
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
-                <td style="color:#f97316;padding:6px 8px 6px 0">Mehringdamm</td>
+                <td style="color:#E84393;padding:6px 8px 6px 0">Mehringdamm</td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(pkMd.total)}</td>
                 <td style="text-align:right;color:${km.u>0&&pkMd.total/km.u>ZIELE.pa?'#ef4444':'#22c55e'};padding:6px 8px">${km.u>0?fmtP(pkMd.total/km.u):"—"}</td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${Math.round(pkMd.stunden)} h</td>
                 <td style="text-align:right;padding:6px 0 6px 8px">${vwBadge(vwPaMdDiff,true)}</td>
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
-                <td style="color:#3b82f6;padding:6px 8px 6px 0">Rosenthaler</td>
+                <td style="color:#00EEFC;padding:6px 8px 6px 0">Rosenthaler</td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(pkRs.total)}</td>
                 <td style="text-align:right;color:${kr.u>0&&pkRs.total/kr.u>ZIELE.pa?'#ef4444':'#22c55e'};padding:6px 8px">${kr.u>0?fmtP(pkRs.total/kr.u):"—"}</td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${Math.round(pkRs.stunden)} h</td>
@@ -1529,11 +1530,11 @@ function renderOverview(){
     </div>
 
     <div id="d-ov-fc" class="drill-panel">
-      <div class="drill-title">Food Cost — Aufschlüsselung ${hatIstFC?'<span style="font-size:10px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px">Ist (direkt)</span>':'<span style="font-size:10px;background:#eab308;color:#000;padding:1px 5px;border-radius:3px">Soll</span>'}</div>
+      <div class="drill-title">Food Cost — Aufschlüsselung ${hatIstFC?'<span style="font-size:10px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px">Ist (direkt)</span>':'<span style="font-size:10px;background:#FF8000;color:#000;padding:1px 5px;border-radius:3px">Soll</span>'}</div>
       <div class="chart-flex" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
       <div style="flex:0 0 auto">
       <table style="border-collapse:collapse;font-size:12px">
-        <thead><tr style="border-bottom:2px solid #1e3a5f">
+        <thead><tr style="border-bottom:2px solid #0a3545">
           <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500"></th>
           <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Betrag</th>
           <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Quote</th>
@@ -1543,28 +1544,28 @@ function renderOverview(){
           <tr style="border-bottom:1px solid #1e2d40">
             <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">Gesamt ${hatIstFC?"(Ist)":"(Soll)"}</td>
             <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${fmt(fcAmt)}</td>
-            <td style="text-align:right;color:${anzFcPct>ZIELE.fc?'#ef4444':'#22c55e'};font-weight:600;padding:6px 8px">${fmtP(anzFcPct)}${vwBadge(vwFcDiff,true)}</td>
-            <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.fc)}</td>
+            <td style="text-align:right;color:${anzFcPct>ZIELE.fc?'#ef4444':'#22c55e'};font-weight:600;padding:6px 8px">${fmtP2(anzFcPct)}${vwBadge(vwFcDiff,true)}</td>
+            <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP2(ZIELE.fc)}</td>
           </tr>
           <tr style="border-bottom:1px solid #1e2d40">
-            <td style="color:#f97316;padding:6px 8px 6px 0">Mehringdamm</td>
+            <td style="color:#E84393;padding:6px 8px 6px 0">Mehringdamm</td>
             <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(hatIstFC?rfc.md.fc:km.f)}</td>
-            <td style="text-align:right;color:${anzFcMdPct>ZIELE.fc?'#ef4444':'#22c55e'};padding:6px 8px">${fmtP(anzFcMdPct)}</td>
-            <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.fc)}</td>
+            <td style="text-align:right;color:${anzFcMdPct>ZIELE.fc?'#ef4444':'#22c55e'};padding:6px 8px">${fmtP2(anzFcMdPct)}</td>
+            <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP2(ZIELE.fc)}</td>
           </tr>
           <tr style="border-bottom:1px solid #1e2d40">
-            <td style="color:#3b82f6;padding:6px 8px 6px 0">Rosenthaler</td>
+            <td style="color:#00EEFC;padding:6px 8px 6px 0">Rosenthaler</td>
             <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(hatIstFC?rfc.rs.fc:kr.f)}</td>
-            <td style="text-align:right;color:${anzFcRsPct>ZIELE.fc?'#ef4444':'#22c55e'};padding:6px 8px">${fmtP(anzFcRsPct)}</td>
-            <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.fc)}</td>
+            <td style="text-align:right;color:${anzFcRsPct>ZIELE.fc?'#ef4444':'#22c55e'};padding:6px 8px">${fmtP2(anzFcRsPct)}</td>
+            <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP2(ZIELE.fc)}</td>
           </tr>
           <tr style="border-bottom:1px solid #1e2d40">
             <td style="color:#94a3b8;padding:6px 8px 6px 0">Soll (Rezeptur)</td>
             <td style="text-align:right;color:#94a3b8;padding:6px 8px">${fmt(k.f)}</td>
-            <td style="text-align:right;color:#94a3b8;padding:6px 8px">${fmtP(k.fp)}</td>
+            <td style="text-align:right;color:#94a3b8;padding:6px 8px">${fmtP2(k.fp)}</td>
             <td style="text-align:right;padding:6px 0 6px 8px"></td>
           </tr>
-          ${hatIstFC?'<tr style="border-bottom:1px solid #1e2d40"><td style="color:#94a3b8;padding:6px 8px 6px 0">Abweichung Ist vs. Soll</td><td style="text-align:right;color:'+(fcAmt>k.f?'#ef4444':'#22c55e')+';padding:6px 8px">'+fmt(fcAmt-k.f)+'</td><td style="text-align:right;color:'+(anzFcPct>k.fp?'#ef4444':'#22c55e')+';padding:6px 8px">'+fmtP(anzFcPct-k.fp)+'</td><td></td></tr>':''}
+          ${hatIstFC?'<tr style="border-bottom:1px solid #1e2d40"><td style="color:#94a3b8;padding:6px 8px 6px 0">Abweichung Ist vs. Soll</td><td style="text-align:right;color:'+(fcAmt>k.f?'#ef4444':'#22c55e')+';padding:6px 8px">'+fmt(fcAmt-k.f)+'</td><td style="text-align:right;color:'+(anzFcPct>k.fp?'#ef4444':'#22c55e')+';padding:6px 8px">'+fmtP2(anzFcPct-k.fp)+'</td><td></td></tr>':''}
         </tbody>
       </table>
       </div>
@@ -1578,12 +1579,12 @@ function renderOverview(){
         return'<div class="chart-flex" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-top:10px">'
           +'<div style="flex:0 0 auto">'
           +'<table style="border-collapse:collapse;font-size:11px">'
-          +'<thead><tr style="border-bottom:2px solid #1e3a5f"><th style="text-align:left;color:#64748b;padding:4px 8px 4px 0;font-weight:500">Traceability</th><th style="text-align:right;color:#f97316;padding:4px 8px;font-weight:500">Mehringdamm</th><th style="text-align:right;color:#3b82f6;padding:4px 8px;font-weight:500">Rosenthaler</th><th style="text-align:right;color:#e2e8f0;padding:4px 0 4px 8px;font-weight:500">Gesamt</th></tr></thead>'
+          +'<thead><tr style="border-bottom:2px solid #0a3545"><th style="text-align:left;color:#64748b;padding:4px 8px 4px 0;font-weight:500">Traceability</th><th style="text-align:right;color:#E84393;padding:4px 8px;font-weight:500">Mehringdamm</th><th style="text-align:right;color:#00EEFC;padding:4px 8px;font-weight:500">Rosenthaler</th><th style="text-align:right;color:#e2e8f0;padding:4px 0 4px 8px;font-weight:500">Gesamt</th></tr></thead>'
           +'<tbody>'
           +'<tr style="border-bottom:1px solid #1e2d40"><td style="color:#64748b;padding:5px 8px 5px 0">Verkauft</td><td style="text-align:right;color:#e2e8f0;padding:5px 8px">'+fmt(m.verkauft*mSc)+' ('+fmtP(m.verkauft/mRev)+')</td><td style="text-align:right;color:#e2e8f0;padding:5px 8px">'+fmt(r.verkauft*rSc)+' ('+fmtP(r.verkauft/rRev)+')</td><td style="text-align:right;color:#e2e8f0;padding:5px 0 5px 8px">'+fmt(m.verkauft*mSc+r.verkauft*rSc)+'</td></tr>'
-          +'<tr style="border-bottom:1px solid #1e2d40"><td style="color:#f97316;padding:5px 8px 5px 0">Verschwendet</td><td style="text-align:right;color:#f97316;padding:5px 8px">'+fmt(m.verschwendet*mSc)+' ('+fmtP(m.verschwendet/mRev)+')</td><td style="text-align:right;color:#f97316;padding:5px 8px">'+fmt(r.verschwendet*rSc)+' ('+fmtP(r.verschwendet/rRev)+')</td><td style="text-align:right;color:#f97316;padding:5px 0 5px 8px">'+fmt(m.verschwendet*mSc+r.verschwendet*rSc)+'</td></tr>'
+          +'<tr style="border-bottom:1px solid #1e2d40"><td style="color:#E84393;padding:5px 8px 5px 0">Verschwendet</td><td style="text-align:right;color:#E84393;padding:5px 8px">'+fmt(m.verschwendet*mSc)+' ('+fmtP(m.verschwendet/mRev)+')</td><td style="text-align:right;color:#E84393;padding:5px 8px">'+fmt(r.verschwendet*rSc)+' ('+fmtP(r.verschwendet/rRev)+')</td><td style="text-align:right;color:#E84393;padding:5px 0 5px 8px">'+fmt(m.verschwendet*mSc+r.verschwendet*rSc)+'</td></tr>'
           +'<tr style="border-bottom:1px solid #1e2d40"><td style="color:#ef4444;padding:5px 8px 5px 0">Schwund</td><td style="text-align:right;color:#ef4444;font-weight:600;padding:5px 8px">'+fmt(m.unkontrolliert*mSc)+' ('+fmtP(m.unkontrolliert/mRev)+')</td><td style="text-align:right;color:#ef4444;font-weight:600;padding:5px 8px">'+fmt(r.unkontrolliert*rSc)+' ('+fmtP(r.unkontrolliert/rRev)+')</td><td style="text-align:right;color:#ef4444;font-weight:600;padding:5px 0 5px 8px">'+fmt(m.unkontrolliert*mSc+r.unkontrolliert*rSc)+'</td></tr>'
-          +'<tr style="border-top:2px solid #1e3a5f"><td style="color:#f1f5f9;font-weight:600;padding:6px 8px 5px 0">Verlust gesamt</td><td style="text-align:right;color:#ef4444;font-weight:600;padding:6px 8px">'+fmt(mVerl)+'</td><td style="text-align:right;color:#ef4444;font-weight:600;padding:6px 8px">'+fmt(rVerl)+'</td><td style="text-align:right;color:#ef4444;font-weight:700;padding:6px 0 5px 8px">'+fmt(gVerl)+'</td></tr>'
+          +'<tr style="border-top:2px solid #0a3545"><td style="color:#f1f5f9;font-weight:600;padding:6px 8px 5px 0">Verlust gesamt</td><td style="text-align:right;color:#ef4444;font-weight:600;padding:6px 8px">'+fmt(mVerl)+'</td><td style="text-align:right;color:#ef4444;font-weight:600;padding:6px 8px">'+fmt(rVerl)+'</td><td style="text-align:right;color:#ef4444;font-weight:700;padding:6px 0 5px 8px">'+fmt(gVerl)+'</td></tr>'
           +'</tbody></table>'
           +'</div>'
           +'<div style="flex:1;min-width:220px;height:170px;position:relative"><canvas id="c-ov-fc-verlust"></canvas></div>'
@@ -1597,7 +1598,7 @@ function renderOverview(){
       <div class="chart-flex" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
         <div style="flex:0 0 auto">
           <table style="border-collapse:collapse;font-size:12px">
-            <thead><tr style="border-bottom:2px solid #1e3a5f">
+            <thead><tr style="border-bottom:2px solid #0a3545">
               <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500"></th>
               <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Betrag</th>
               <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Quote</th>
@@ -1606,23 +1607,23 @@ function renderOverview(){
             <tbody>
               <tr style="border-bottom:1px solid #1e2d40">
                 <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">CM gesamt</td>
-                <td style="text-align:right;color:${cmPct>=ZIELE.cm?'#22c55e':'#f97316'};font-weight:600;padding:6px 8px">${fmt(cm)}</td>
-                <td style="text-align:right;color:${cmPct>=ZIELE.cm?'#22c55e':'#f97316'};font-weight:600;padding:6px 8px">${fmtP(cmPct)}${vwBadge(vwCmDiff,false)}</td>
+                <td style="text-align:right;color:${cmPct>=ZIELE.cm?'#22c55e':'#FF8000'};font-weight:600;padding:6px 8px">${fmt(cm)}</td>
+                <td style="text-align:right;color:${cmPct>=ZIELE.cm?'#22c55e':'#FF8000'};font-weight:600;padding:6px 8px">${fmtP(cmPct)}${vwBadge(vwCmDiff,false)}</td>
                 <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.cm)}</td>
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
-                <td style="color:#f97316;padding:6px 8px 6px 0">Mehringdamm</td>
+                <td style="color:#E84393;padding:6px 8px 6px 0">Mehringdamm</td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(km.u-km.f-pkMd.total)}</td>
-                <td style="text-align:right;color:${cmpMd>=ZIELE.cm?'#22c55e':'#f97316'};padding:6px 8px">${fmtP(cmpMd)}</td>
+                <td style="text-align:right;color:${cmpMd>=ZIELE.cm?'#22c55e':'#FF8000'};padding:6px 8px">${fmtP(cmpMd)}</td>
                 <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.cm)}</td>
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
-                <td style="color:#3b82f6;padding:6px 8px 6px 0">Rosenthaler</td>
+                <td style="color:#00EEFC;padding:6px 8px 6px 0">Rosenthaler</td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(kr.u-kr.f-pkRs.total)}</td>
-                <td style="text-align:right;color:${cmpRs>=ZIELE.cm?'#22c55e':'#f97316'};padding:6px 8px">${fmtP(cmpRs)}</td>
+                <td style="text-align:right;color:${cmpRs>=ZIELE.cm?'#22c55e':'#FF8000'};padding:6px 8px">${fmtP(cmpRs)}</td>
                 <td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">${fmtP(ZIELE.cm)}</td>
               </tr>
-              <tr style="border-top:2px solid #1e3a5f">
+              <tr style="border-top:2px solid #0a3545">
                 <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">EBITDA</td>
                 <td style="text-align:right;color:${ebitda>0?'#22c55e':'#ef4444'};font-weight:600;padding:6px 8px">${fmt(ebitda)}</td>
                 <td style="text-align:right;color:${ebitda>0?'#22c55e':'#ef4444'};font-weight:600;padding:6px 8px">${fmtP(ebitdaPct)}</td>
@@ -1650,7 +1651,7 @@ function renderOverview(){
         <div style="display:flex;align-items:center;gap:16px">
           <div style="position:relative;width:110px;height:110px;flex-shrink:0"><canvas id="c-ov-donut"></canvas></div>
           <div style="font-size:11px;flex:1">
-            ${[{l:"Food Cost",v:donutFC,c:"#ef4444"},{l:"Operative Personal",v:donutOpa,c:"#8b5cf6"},{l:"Personalgemeinkosten",v:donutPG,c:"#3b82f6"},{l:"Rest Gemeinkosten",v:donutRest,c:"#64748b"},{l:"EBITDA",v:donutEBITDA,c:"#22c55e"}].map(function(i){return'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #1e2d40"><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:'+i.c+';display:inline-block"></span><span style="color:#94a3b8">'+i.l+'</span></span><span style="color:#f1f5f9">'+fmtP(k.u>0?i.v/k.u:0)+'</span></div>';}).join("")}
+            ${[{l:"Food Cost",v:donutFC,c:"#ef4444"},{l:"Operative Personal",v:donutOpa,c:"#E84393"},{l:"Personalgemeinkosten",v:donutPG,c:"#00EEFC"},{l:"Rest Gemeinkosten",v:donutRest,c:"#64748b"},{l:"EBITDA",v:donutEBITDA,c:"#22c55e"}].map(function(i){return'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #1e2d40"><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:'+i.c+';display:inline-block"></span><span style="color:#94a3b8">'+i.l+'</span></span><span style="color:#f1f5f9">'+fmtP(k.u>0?i.v/k.u:0)+'</span></div>';}).join("")}
           </div>
         </div>
       </div>
@@ -1680,16 +1681,16 @@ function renderOverview(){
             leftCell='<div style="padding:8px 14px;border-right:1px solid #1e2d40;border-bottom:1px solid #1e2d40;display:flex;flex-direction:column;justify-content:center">'
               +'<div style="font-size:11px;color:#94a3b8;margin-bottom:4px">'+r.l+'</div>'
               +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">'
-                +'<span style="font-size:9px;color:#f97316;width:20px;flex-shrink:0">MD</span>'
+                +'<span style="font-size:9px;color:#E84393;width:20px;flex-shrink:0">MD</span>'
                 +'<div style="flex:1;height:14px;background:#1e2d40;border-radius:3px;overflow:hidden">'
-                  +'<div style="width:'+mdPct+'%;height:100%;background:'+(mdWin?"#f97316":"rgba(249,115,22,0.4)")+';border-radius:3px"></div>'
+                  +'<div style="width:'+mdPct+'%;height:100%;background:'+(mdWin?"#E84393":"rgba(232,67,147,0.4)")+';border-radius:3px"></div>'
                 +'</div>'
                 +'<span style="font-size:10px;color:'+(mdWin?"#f1f5f9":"#64748b")+';font-weight:'+(mdWin?"600":"400")+';min-width:90px;text-align:right">'+r.mdS+'</span>'
               +'</div>'
               +'<div style="display:flex;align-items:center;gap:6px">'
-                +'<span style="font-size:9px;color:#3b82f6;width:20px;flex-shrink:0">RS</span>'
+                +'<span style="font-size:9px;color:#00EEFC;width:20px;flex-shrink:0">RS</span>'
                 +'<div style="flex:1;height:14px;background:#1e2d40;border-radius:3px;overflow:hidden">'
-                  +'<div style="width:'+rsPct+'%;height:100%;background:'+(rsWin?"#3b82f6":"rgba(59,130,246,0.4)")+';border-radius:3px"></div>'
+                  +'<div style="width:'+rsPct+'%;height:100%;background:'+(rsWin?"#00EEFC":"rgba(0,238,252,0.4)")+';border-radius:3px"></div>'
                 +'</div>'
                 +'<span style="font-size:10px;color:'+(rsWin?"#f1f5f9":"#64748b")+';font-weight:'+(rsWin?"600":"400")+';min-width:90px;text-align:right">'+r.rsS+'</span>'
               +'</div>'
@@ -1705,7 +1706,7 @@ function renderOverview(){
             var val=r.gV;var ziel=r.ziel;
             var ok=r.inv?val<=ziel:val>=ziel;
             var warn=r.inv?val<=ziel*1.15:val>=ziel*0.85;
-            var col=ok?"#22c55e":(warn?"#f97316":"#ef4444");
+            var col=ok?"#22c55e":(warn?"#FF8000":"#ef4444");
             var barMax=Math.max(Math.abs(val),ziel,0.01)*1.15;
             var valPct=Math.min(Math.round(Math.abs(val)/barMax*100),100);
             var zielPos=Math.min(Math.round(ziel/barMax*100),100);
@@ -1732,7 +1733,7 @@ function renderOverview(){
           <div class="box-title">📋 Tagesbericht</div>
           <div class="box-sub">${von.split("-").reverse().join(".")}${von!==bis?' - '+bis.split("-").reverse().join("."):''}${stundenLabel()} · KI-Interpretation</div>
         </div>
-        <button onclick="generiereKIBericht()" id="btn-bericht" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Aktualisieren</button>
+        <button onclick="generiereKIBericht()" id="btn-bericht" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Aktualisieren</button>
       </div>
       <div id="ki-bericht-inhalt" style="font-size:12px;color:#94a3b8;line-height:1.8">
         <div style="color:#475569;font-style:italic">Klicke "Aktualisieren" für KI-Interpretation der aktuellen Daten.</div>
@@ -1741,11 +1742,11 @@ function renderOverview(){
     `;
 
   dc("c-ov-tag");
-  charts["c-ov-tag"]=new Chart(document.getElementById("c-ov-tag"),{type:"bar",data:{labels:labs,datasets:[{label:"Umsatz",data:data,backgroundColor:"#f97316",borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#475569",font:{size:9},maxTicksLimit:10},grid:{color:"#1e2d40"}},y:{ticks:{color:"#475569",font:{size:9},callback:function(v){return(v/1000).toFixed(0)+"k";}},grid:{color:"#1e2d40"}}}}});
+  charts["c-ov-tag"]=new Chart(document.getElementById("c-ov-tag"),{type:"bar",data:{labels:labs,datasets:[{label:"Umsatz",data:data,backgroundColor:"#E84393",borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#475569",font:{size:9},maxTicksLimit:10},grid:{color:"#1e2d40"}},y:{ticks:{color:"#475569",font:{size:9},callback:function(v){return(v/1000).toFixed(0)+"k";}},grid:{color:"#1e2d40"}}}}});
 
   dc("c-ov-donut");
   // donutFC etc. bereits oben definiert
-  charts["c-ov-donut"]=new Chart(document.getElementById("c-ov-donut"),{type:"doughnut",data:{labels:["Food Cost","Operative Personal","Personalgemeinkosten","Rest Gemeinkosten","EBITDA"],datasets:[{data:[donutFC,donutOpa,donutPG,donutRest,donutEBITDA],backgroundColor:["#ef4444","#8b5cf6","#3b82f6","#64748b","#22c55e"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:"72%"}});
+  charts["c-ov-donut"]=new Chart(document.getElementById("c-ov-donut"),{type:"doughnut",data:{labels:["Food Cost","Operative Personal","Personalgemeinkosten","Rest Gemeinkosten","EBITDA"],datasets:[{data:[donutFC,donutOpa,donutPG,donutRest,donutEBITDA],backgroundColor:["#ef4444","#E84393","#00EEFC","#64748b","#22c55e"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:"72%"}});
 
   // --- Umsatz-Trend Liniendiagramm ---
   (function(){
@@ -1769,8 +1770,8 @@ function renderOverview(){
     charts["c-ov-um-trend"]=new Chart(umEl,{
       type:"line",
       data:{labels:umLabels,datasets:[
-        {label:"Mehringdamm",data:dMd,borderColor:"#f97316",backgroundColor:"rgba(249,115,22,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,fill:true},
-        {label:"Rosenthaler",data:dRs,borderColor:"#3b82f6",backgroundColor:"rgba(59,130,246,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,fill:true}
+        {label:"Mehringdamm",data:dMd,borderColor:"#E84393",backgroundColor:"rgba(232,67,147,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,fill:true},
+        {label:"Rosenthaler",data:dRs,borderColor:"#00EEFC",backgroundColor:"rgba(0,238,252,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,fill:true}
       ]},
       options:{
         responsive:true,maintainAspectRatio:false,
@@ -1823,8 +1824,8 @@ function renderOverview(){
     charts["c-ov-pa-quote"]=new Chart(paEl,{
       type:"line",
       data:{labels:paLabels,datasets:[
-        {label:"Mehringdamm",data:dataMd,borderColor:"#f97316",backgroundColor:"rgba(249,115,22,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,spanGaps:true},
-        {label:"Rosenthaler",data:dataRs,borderColor:"#3b82f6",backgroundColor:"rgba(59,130,246,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,spanGaps:true},
+        {label:"Mehringdamm",data:dataMd,borderColor:"#E84393",backgroundColor:"rgba(232,67,147,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,spanGaps:true},
+        {label:"Rosenthaler",data:dataRs,borderColor:"#00EEFC",backgroundColor:"rgba(0,238,252,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,spanGaps:true},
         {label:"Ziel",data:dataZiel,borderColor:"#475569",borderDash:[4,3],borderWidth:1,pointRadius:0}
       ]},
       options:{
@@ -1865,8 +1866,8 @@ function renderOverview(){
     charts["c-ov-fc-quote"]=new Chart(fcEl,{
       type:"line",
       data:{labels:fcLabels,datasets:[
-        {label:"Mehringdamm",data:dMd,borderColor:"#f97316",backgroundColor:"rgba(249,115,22,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,spanGaps:true},
-        {label:"Rosenthaler",data:dRs,borderColor:"#3b82f6",backgroundColor:"rgba(59,130,246,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,spanGaps:true},
+        {label:"Mehringdamm",data:dMd,borderColor:"#E84393",backgroundColor:"rgba(232,67,147,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,spanGaps:true},
+        {label:"Rosenthaler",data:dRs,borderColor:"#00EEFC",backgroundColor:"rgba(0,238,252,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,spanGaps:true},
         {label:"Ziel",data:dZiel,borderColor:"#475569",borderDash:[4,3],borderWidth:1,pointRadius:0}
       ]},
       options:{
@@ -1892,7 +1893,7 @@ function renderOverview(){
     charts["c-ov-fc-verlust"]=new Chart(vlEl,{
       type:"bar",
       data:{labels:["Mehringdamm","Rosenthaler"],datasets:[
-        {label:"Verschwendet",data:[m.verschwendet*mSc,r.verschwendet*rSc],backgroundColor:"#f97316",borderRadius:2},
+        {label:"Verschwendet",data:[m.verschwendet*mSc,r.verschwendet*rSc],backgroundColor:"#E84393",borderRadius:2},
         {label:"Schwund",data:[m.unkontrolliert*mSc,r.unkontrolliert*rSc],backgroundColor:"#ef4444",borderRadius:2}
       ]},
       options:{
@@ -1926,7 +1927,7 @@ function renderOverview(){
     var labels=["Umsatz","Food Cost","Personal","= CM","Gemeinkosten","= EBITDA"];
     var bases=[0, wfCM+wfPA, wfCM, 0, Math.max(wfEBITDA,0), 0];
     var values=[wfUmsatz, wfFC, wfPA, wfCM, wfGK, Math.max(wfEBITDA,0)];
-    var colors=["#22c55e","#ef4444","#8b5cf6","#22c55e","#64748b",wfEBITDA>=0?"#22c55e":"#ef4444"];
+    var colors=["#22c55e","#ef4444","#E84393","#22c55e","#64748b",wfEBITDA>=0?"#22c55e":"#ef4444"];
     dc("c-ov-cm-waterfall");
     charts["c-ov-cm-waterfall"]=new Chart(wfEl,{
       type:"bar",
@@ -2108,15 +2109,15 @@ function renderUmsatz(){
       </div>
       <div class="st-card" onclick="drill('d-md')">
         <div class="st-name">Mehringdamm</div>
-        <div class="st-val" style="color:#f97316;display:flex;align-items:center">${fmt(km.u)}${trendBadge(diffMd)}</div>
+        <div class="st-val" style="color:#E84393;display:flex;align-items:center">${fmt(km.u)}${trendBadge(diffMd)}</div>
         <div class="st-meta"><span>Ø ${fmt(km.u/Math.max(km.t,1))}/Tag</span><span>Ø Bon: ${fmtD(bonWertMd.avg)}</span></div>
-        <div class="progress"><div class="progress-fill" style="width:${km.u+kr.u>0?Math.round(km.u/(km.u+kr.u)*100):50}%;background:#f97316"></div></div>
+        <div class="progress"><div class="progress-fill" style="width:${km.u+kr.u>0?Math.round(km.u/(km.u+kr.u)*100):50}%;background:#E84393"></div></div>
       </div>
       <div class="st-card" onclick="drill('d-rs')">
         <div class="st-name">Rosenthaler Straße</div>
-        <div class="st-val" style="color:#3b82f6;display:flex;align-items:center">${fmt(kr.u)}${trendBadge(diffRs)}</div>
+        <div class="st-val" style="color:#00EEFC;display:flex;align-items:center">${fmt(kr.u)}${trendBadge(diffRs)}</div>
         <div class="st-meta"><span>Ø ${fmt(kr.u/Math.max(kr.t,1))}/Tag</span><span>Ø Bon: ${fmtD(bonWertRs.avg)}</span></div>
-        <div class="progress"><div class="progress-fill" style="width:${km.u+kr.u>0?Math.round(kr.u/(km.u+kr.u)*100):50}%;background:#3b82f6"></div></div>
+        <div class="progress"><div class="progress-fill" style="width:${km.u+kr.u>0?Math.round(kr.u/(km.u+kr.u)*100):50}%;background:#00EEFC"></div></div>
       </div>
     </div>
     <div style="font-size:10px;color:#64748b;text-align:right;margin:-8px 0 10px;padding:0 2px">📊 Vergleich: ${vpUm.von.slice(8,10)}.${vpUm.von.slice(5,7)}. – ${vpUm.bis.slice(8,10)}.${vpUm.bis.slice(5,7)}. (${vpLabelUm})</div>
@@ -2126,7 +2127,7 @@ function renderUmsatz(){
       <div class="chart-flex" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
         <div style="flex:0 0 auto">
           <table style="border-collapse:collapse;font-size:12px">
-            <thead><tr style="border-bottom:2px solid #1e3a5f">
+            <thead><tr style="border-bottom:2px solid #0a3545">
               <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500">Kanal</th>
               <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Umsatz</th>
               <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Anteil</th>
@@ -2140,24 +2141,24 @@ function renderUmsatz(){
                 <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(kGes.u,kVorGes.u)}</td>
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
-                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block"></span><span style="color:#e2e8f0">Inhouse</span></span></td>
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#00EEFC;display:inline-block"></span><span style="color:#e2e8f0">Inhouse</span></span></td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(gesInhouse)}</td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${kGes.u>0?fmtP(gesInhouse/kGes.u):"—"}</td>
                 <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(gesInhouse,vwGesInhouse)}</td>
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
-                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f97316;display:inline-block"></span><span style="color:#f97316">Lieferando</span></span></td>
-                <td style="text-align:right;color:#f97316;padding:6px 8px">${fmt(gesLdo)}</td>
-                <td style="text-align:right;color:#f97316;padding:6px 8px">${kGes.u>0?fmtP(gesLdo/kGes.u):"—"}</td>
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#E84393;display:inline-block"></span><span style="color:#E84393">Lieferando</span></span></td>
+                <td style="text-align:right;color:#E84393;padding:6px 8px">${fmt(gesLdo)}</td>
+                <td style="text-align:right;color:#E84393;padding:6px 8px">${kGes.u>0?fmtP(gesLdo/kGes.u):"—"}</td>
                 <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(gesLdo,vwGesLdo)}</td>
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
-                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span><span style="color:#8b5cf6">Take Away</span></span></td>
-                <td style="text-align:right;color:#8b5cf6;padding:6px 8px">${fmt(gesTakeaway)}</td>
-                <td style="text-align:right;color:#8b5cf6;padding:6px 8px">${kGes.u>0?fmtP(gesTakeaway/kGes.u):"—"}</td>
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#E84393;display:inline-block"></span><span style="color:#E84393">Take Away</span></span></td>
+                <td style="text-align:right;color:#E84393;padding:6px 8px">${fmt(gesTakeaway)}</td>
+                <td style="text-align:right;color:#E84393;padding:6px 8px">${kGes.u>0?fmtP(gesTakeaway/kGes.u):"—"}</td>
                 <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(gesTakeaway,vwGesTakeaway)}</td>
               </tr>
-              <tr style="border-top:2px solid #1e3a5f">
+              <tr style="border-top:2px solid #0a3545">
                 <td style="color:#94a3b8;padding:6px 8px 6px 0">Verkäufe</td>
                 <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${(km.s+kr.s).toLocaleString("de-DE")}</td>
                 <td style="text-align:right;color:#64748b;padding:6px 8px;font-size:10px">Bons</td>
@@ -2184,7 +2185,7 @@ function renderUmsatz(){
       <div class="chart-flex" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
         <div style="flex:0 0 auto">
           <table style="border-collapse:collapse;font-size:12px">
-            <thead><tr style="border-bottom:2px solid #1e3a5f">
+            <thead><tr style="border-bottom:2px solid #0a3545">
               <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500">Kanal</th>
               <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Umsatz</th>
               <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Anteil</th>
@@ -2193,29 +2194,29 @@ function renderUmsatz(){
             <tbody>
               <tr style="border-bottom:1px solid #1e2d40">
                 <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">Gesamt</td>
-                <td style="text-align:right;color:#f97316;font-weight:600;padding:6px 8px">${fmt(km.u)}</td>
+                <td style="text-align:right;color:#E84393;font-weight:600;padding:6px 8px">${fmt(km.u)}</td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">100%</td>
                 <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(km.u,kVorMd.u)}</td>
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
-                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block"></span><span style="color:#e2e8f0">Inhouse</span></span></td>
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#00EEFC;display:inline-block"></span><span style="color:#e2e8f0">Inhouse</span></span></td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(mdInhouse)}</td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${km.u>0?fmtP(mdInhouse/km.u):"—"}</td>
                 <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(mdInhouse,vwMdInhouse)}</td>
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
-                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f97316;display:inline-block"></span><span style="color:#f97316">Lieferando</span></span></td>
-                <td style="text-align:right;color:#f97316;padding:6px 8px">${fmt(mdLdo)}</td>
-                <td style="text-align:right;color:#f97316;padding:6px 8px">${km.u>0?fmtP(mdLdo/km.u):"—"}</td>
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#E84393;display:inline-block"></span><span style="color:#E84393">Lieferando</span></span></td>
+                <td style="text-align:right;color:#E84393;padding:6px 8px">${fmt(mdLdo)}</td>
+                <td style="text-align:right;color:#E84393;padding:6px 8px">${km.u>0?fmtP(mdLdo/km.u):"—"}</td>
                 <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(mdLdo,vwMdLdo)}</td>
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
-                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span><span style="color:#8b5cf6">Take Away</span></span></td>
-                <td style="text-align:right;color:#8b5cf6;padding:6px 8px">${fmt(mdTakeaway)}</td>
-                <td style="text-align:right;color:#8b5cf6;padding:6px 8px">${km.u>0?fmtP(mdTakeaway/km.u):"—"}</td>
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#E84393;display:inline-block"></span><span style="color:#E84393">Take Away</span></span></td>
+                <td style="text-align:right;color:#E84393;padding:6px 8px">${fmt(mdTakeaway)}</td>
+                <td style="text-align:right;color:#E84393;padding:6px 8px">${km.u>0?fmtP(mdTakeaway/km.u):"—"}</td>
                 <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(mdTakeaway,vwMdTakeaway)}</td>
               </tr>
-              <tr style="border-top:2px solid #1e3a5f">
+              <tr style="border-top:2px solid #0a3545">
                 <td style="color:#94a3b8;padding:6px 8px 6px 0">Verkäufe</td>
                 <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${km.s.toLocaleString("de-DE")}</td>
                 <td style="text-align:right;color:#64748b;padding:6px 8px;font-size:10px">Bons</td>
@@ -2241,7 +2242,7 @@ function renderUmsatz(){
       <div class="chart-flex" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
         <div style="flex:0 0 auto">
           <table style="border-collapse:collapse;font-size:12px">
-            <thead><tr style="border-bottom:2px solid #1e3a5f">
+            <thead><tr style="border-bottom:2px solid #0a3545">
               <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500">Kanal</th>
               <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Umsatz</th>
               <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Anteil</th>
@@ -2250,29 +2251,29 @@ function renderUmsatz(){
             <tbody>
               <tr style="border-bottom:1px solid #1e2d40">
                 <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">Gesamt</td>
-                <td style="text-align:right;color:#3b82f6;font-weight:600;padding:6px 8px">${fmt(kr.u)}</td>
+                <td style="text-align:right;color:#00EEFC;font-weight:600;padding:6px 8px">${fmt(kr.u)}</td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">100%</td>
                 <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(kr.u,kVorRs.u)}</td>
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
-                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block"></span><span style="color:#e2e8f0">Inhouse</span></span></td>
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#00EEFC;display:inline-block"></span><span style="color:#e2e8f0">Inhouse</span></span></td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(rsInhouse)}</td>
                 <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${kr.u>0?fmtP(rsInhouse/kr.u):"—"}</td>
                 <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(rsInhouse,vwRsInhouse)}</td>
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
-                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f97316;display:inline-block"></span><span style="color:#f97316">Lieferando</span></span></td>
-                <td style="text-align:right;color:#f97316;padding:6px 8px">${fmt(rsLdo)}</td>
-                <td style="text-align:right;color:#f97316;padding:6px 8px">${kr.u>0?fmtP(rsLdo/kr.u):"—"}</td>
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#E84393;display:inline-block"></span><span style="color:#E84393">Lieferando</span></span></td>
+                <td style="text-align:right;color:#E84393;padding:6px 8px">${fmt(rsLdo)}</td>
+                <td style="text-align:right;color:#E84393;padding:6px 8px">${kr.u>0?fmtP(rsLdo/kr.u):"—"}</td>
                 <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(rsLdo,vwRsLdo)}</td>
               </tr>
               <tr style="border-bottom:1px solid #1e2d40">
-                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span><span style="color:#8b5cf6">Take Away</span></span></td>
-                <td style="text-align:right;color:#8b5cf6;padding:6px 8px">${fmt(rsTakeaway)}</td>
-                <td style="text-align:right;color:#8b5cf6;padding:6px 8px">${kr.u>0?fmtP(rsTakeaway/kr.u):"—"}</td>
+                <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#E84393;display:inline-block"></span><span style="color:#E84393">Take Away</span></span></td>
+                <td style="text-align:right;color:#E84393;padding:6px 8px">${fmt(rsTakeaway)}</td>
+                <td style="text-align:right;color:#E84393;padding:6px 8px">${kr.u>0?fmtP(rsTakeaway/kr.u):"—"}</td>
                 <td style="text-align:right;padding:6px 0 6px 8px">${vwDiff(rsTakeaway,vwRsTakeaway)}</td>
               </tr>
-              <tr style="border-top:2px solid #1e3a5f">
+              <tr style="border-top:2px solid #0a3545">
                 <td style="color:#94a3b8;padding:6px 8px 6px 0">Verkäufe</td>
                 <td style="text-align:right;color:#e2e8f0;font-weight:600;padding:6px 8px">${kr.s.toLocaleString("de-DE")}</td>
                 <td style="text-align:right;color:#64748b;padding:6px 8px;font-size:10px">Bons</td>
@@ -2300,21 +2301,21 @@ function renderUmsatz(){
         <div class="box-title">💳 Zahlungsarten</div>
         <div class="box-sub">${lsPay.length>0?"Lightspeed Live":"Keine LS-Daten"}</div>
         <table style="width:100%;border-collapse:collapse;font-size:12px">
-          <thead><tr style="border-bottom:2px solid #1e3a5f">
+          <thead><tr style="border-bottom:2px solid #0a3545">
             <th style="text-align:left;color:#64748b;padding:4px 8px 6px 0;font-weight:500">Zahlungsart</th>
             <th style="text-align:right;color:#64748b;padding:4px 8px 6px;font-weight:500">Betrag</th>
             <th style="text-align:right;color:#64748b;padding:4px 0 6px 8px;font-weight:500">Anteil</th>
           </tr></thead>
           <tbody>
             <tr style="border-bottom:1px solid #1e2d40">
-              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block"></span><span style="color:#e2e8f0">Karte</span></span></td>
+              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#00EEFC;display:inline-block"></span><span style="color:#e2e8f0">Karte</span></span></td>
               <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(totalKarte)}</td>
               <td style="text-align:right;color:#e2e8f0;padding:6px 0 6px 8px">${totalZahl>0?(totalKarte/totalZahl*100).toFixed(1):0}%</td>
             </tr>
             <tr style="border-bottom:1px solid #1e2d40">
-              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f97316;display:inline-block"></span><span style="color:#f97316">Lieferando</span></span></td>
-              <td style="text-align:right;color:#f97316;padding:6px 8px">${fmt(totalLdoPay)}</td>
-              <td style="text-align:right;color:#f97316;padding:6px 0 6px 8px">${totalZahl>0?(totalLdoPay/totalZahl*100).toFixed(1):0}%</td>
+              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#E84393;display:inline-block"></span><span style="color:#E84393">Lieferando</span></span></td>
+              <td style="text-align:right;color:#E84393;padding:6px 8px">${fmt(totalLdoPay)}</td>
+              <td style="text-align:right;color:#E84393;padding:6px 0 6px 8px">${totalZahl>0?(totalLdoPay/totalZahl*100).toFixed(1):0}%</td>
             </tr>
             <tr style="border-bottom:1px solid #1e2d40">
               <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block"></span><span style="color:#22c55e">Online Order</span></span></td>
@@ -2322,16 +2323,16 @@ function renderUmsatz(){
               <td style="text-align:right;color:#22c55e;padding:6px 0 6px 8px">${totalZahl>0?(totalOnlineOrder/totalZahl*100).toFixed(1):0}%</td>
             </tr>
             <tr style="border-bottom:1px solid #1e2d40">
-              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;display:inline-block"></span><span style="color:#8b5cf6">Bar</span></span></td>
-              <td style="text-align:right;color:#8b5cf6;padding:6px 8px">${fmt(totalBar)}</td>
-              <td style="text-align:right;color:#8b5cf6;padding:6px 0 6px 8px">${totalZahl>0?(totalBar/totalZahl*100).toFixed(1):0}%</td>
+              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#E84393;display:inline-block"></span><span style="color:#E84393">Bar</span></span></td>
+              <td style="text-align:right;color:#E84393;padding:6px 8px">${fmt(totalBar)}</td>
+              <td style="text-align:right;color:#E84393;padding:6px 0 6px 8px">${totalZahl>0?(totalBar/totalZahl*100).toFixed(1):0}%</td>
             </tr>
             <tr style="border-bottom:1px solid #1e2d40">
               <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#a78bfa;display:inline-block"></span><span style="color:#a78bfa">Manuell</span></span></td>
               <td style="text-align:right;color:#a78bfa;padding:6px 8px">${fmt(totalManuell)}</td>
               <td style="text-align:right;color:#a78bfa;padding:6px 0 6px 8px">${totalZahl>0?(totalManuell/totalZahl*100).toFixed(1):0}%</td>
             </tr>
-            <tr style="border-top:2px solid #1e3a5f">
+            <tr style="border-top:2px solid #0a3545">
               <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">Gesamt</td>
               <td style="text-align:right;color:#22c55e;font-weight:600;padding:6px 8px">${fmt(totalZahl)}</td>
               <td style="text-align:right;color:#e2e8f0;padding:6px 0 6px 8px">100%</td>
@@ -2358,9 +2359,9 @@ function renderUmsatz(){
     <div class="box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: Umsatz</div><div class="box-sub">Automatische Bewertung der Umsatzdaten</div></div>
-        <button id="btn-report-umsatz" onclick="generateTabReport('umsatz')" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+        <button id="btn-report-umsatz" onclick="generateTabReport('umsatz')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
       </div>
-      <div id="tab-report-umsatz" style="display:none;margin-top:12px;border-top:1px solid #1e3a5f;padding-top:12px"></div>
+      <div id="tab-report-umsatz" style="display:none;margin-top:12px;border-top:1px solid #0a3545;padding-top:12px"></div>
     </div>`;
 
   // --- MD Tagestrend ---
@@ -2377,7 +2378,7 @@ function renderUmsatz(){
     dc("c-um-md-trend");
     charts["c-um-md-trend"]=new Chart(el,{type:"line",
       data:{labels:tL,datasets:[
-        {label:"Mehringdamm",data:dU,borderColor:"#f97316",backgroundColor:"rgba(249,115,22,0.1)",borderWidth:2,pointRadius:tage.length>14?0:3,tension:0.3,fill:true},
+        {label:"Mehringdamm",data:dU,borderColor:"#E84393",backgroundColor:"rgba(232,67,147,0.1)",borderWidth:2,pointRadius:tage.length>14?0:3,tension:0.3,fill:true},
         {label:"Ø/Tag",data:dAvg,borderColor:"#475569",borderDash:[4,3],borderWidth:1,pointRadius:0}
       ]},
       options:{responsive:true,maintainAspectRatio:false,
@@ -2402,7 +2403,7 @@ function renderUmsatz(){
     dc("c-um-rs-trend");
     charts["c-um-rs-trend"]=new Chart(el,{type:"line",
       data:{labels:tL,datasets:[
-        {label:"Rosenthaler",data:dU,borderColor:"#3b82f6",backgroundColor:"rgba(59,130,246,0.1)",borderWidth:2,pointRadius:tage.length>14?0:3,tension:0.3,fill:true},
+        {label:"Rosenthaler",data:dU,borderColor:"#00EEFC",backgroundColor:"rgba(0,238,252,0.1)",borderWidth:2,pointRadius:tage.length>14?0:3,tension:0.3,fill:true},
         {label:"Ø/Tag",data:dAvg,borderColor:"#475569",borderDash:[4,3],borderWidth:1,pointRadius:0}
       ]},
       options:{responsive:true,maintainAspectRatio:false,
@@ -2433,8 +2434,8 @@ function renderUmsatz(){
     charts["c-um-ges-trend"]=new Chart(el,{
       type:"line",
       data:{labels:tLabels,datasets:[
-        {label:"Mehringdamm",data:dMd,borderColor:"#f97316",backgroundColor:"rgba(249,115,22,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,fill:true},
-        {label:"Rosenthaler",data:dRs,borderColor:"#3b82f6",backgroundColor:"rgba(59,130,246,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,fill:true}
+        {label:"Mehringdamm",data:dMd,borderColor:"#E84393",backgroundColor:"rgba(232,67,147,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,fill:true},
+        {label:"Rosenthaler",data:dRs,borderColor:"#00EEFC",backgroundColor:"rgba(0,238,252,0.1)",borderWidth:1.5,pointRadius:tage.length>14?0:2,tension:0.3,fill:true}
       ]},
       options:{
         responsive:true,maintainAspectRatio:false,
@@ -2451,7 +2452,7 @@ function renderUmsatz(){
 
   dc("c-um-std");
   if(sKeys.length>0){
-    charts["c-um-std"]=new Chart(document.getElementById("c-um-std"),{type:"line",data:{labels:sKeys.map(function(h){return h+":00";}),datasets:[{label:"Umsatz",data:sKeys.map(function(h){return Math.round(stundenMap[h]);}),borderColor:"#f97316",backgroundColor:"#f9731620",fill:true,tension:0.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#475569",font:{size:10}},grid:{color:"#1e2d40"}},y:{ticks:{color:"#475569",font:{size:10},callback:function(v){return fmt(v);}},grid:{color:"#1e2d40"}}}}});
+    charts["c-um-std"]=new Chart(document.getElementById("c-um-std"),{type:"line",data:{labels:sKeys.map(function(h){return h+":00";}),datasets:[{label:"Umsatz",data:sKeys.map(function(h){return Math.round(stundenMap[h]);}),borderColor:"#E84393",backgroundColor:"#E8439320",fill:true,tension:0.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#475569",font:{size:10}},grid:{color:"#1e2d40"}},y:{ticks:{color:"#475569",font:{size:10},callback:function(v){return fmt(v);}},grid:{color:"#1e2d40"}}}}});
   }
   // Inhouse vs. Lieferando Chart
   dc("c-um-kanal");
@@ -2486,13 +2487,13 @@ function renderUmsatz(){
     var datasets = [{
       label: "Inhouse",
       data: stdKeys.map(function(h){ return Math.round(stdInhouse[h]); }),
-      borderColor: "#3b82f6", backgroundColor: "#3b82f620",
+      borderColor: "#00EEFC", backgroundColor: "#00EEFC20",
       fill: true, tension: 0.4, pointRadius: 3
     }];
     if(hatLdo) datasets.push({
       label: "Lieferando",
       data: stdKeys.map(function(h){ return Math.round(stdLdo[h]); }),
-      borderColor: "#f97316", backgroundColor: "#f9731620",
+      borderColor: "#E84393", backgroundColor: "#E8439320",
       fill: false, tension: 0.4, pointRadius: 3, borderWidth: 2
     });
     charts["c-um-kanal"] = new Chart(document.getElementById("c-um-kanal"), {
@@ -2522,13 +2523,13 @@ function renderUmsatz(){
           {
             label: "Inhouse",
             data: kanalLabs.map(function(d){ return Math.round(kanalDaten[d].inhouse); }),
-            borderColor: "#3b82f6", backgroundColor: "#3b82f620",
+            borderColor: "#00EEFC", backgroundColor: "#00EEFC20",
             fill: false, tension: 0.4, pointRadius: 3, borderWidth: 2
           },
           {
             label: "Lieferando",
             data: kanalLabs.map(function(d){ return Math.round(kanalDaten[d].ldo); }),
-            borderColor: "#f97316", backgroundColor: "#f9731620",
+            borderColor: "#E84393", backgroundColor: "#E8439320",
             fill: false, tension: 0.4, pointRadius: 3, borderWidth: 2
           }
         ]
@@ -2587,7 +2588,7 @@ function renderArtikelProStunde(von, bis, st) {
   var tage = new Set(artG.map(function(r){return r.datum;})).size || 1;
 
   var kats = ["Main","Starter","Getränke","Dessert","Sonstiges"];
-  var katColors = {Main:"#f97316",Starter:"#3b82f6","Getränke":"#22c55e",Dessert:"#8b5cf6",Sonstiges:"#475569"};
+  var katColors = {Main:"#E84393",Starter:"#00EEFC","Getränke":"#22c55e",Dessert:"#FF8000",Sonstiges:"#475569"};
 
   // Ordio nach Datum für Drill-Down
   var ordioMap = {};
@@ -2639,26 +2640,26 @@ function renderArtikelProStunde(von, bis, st) {
           kats.filter(function(kat){return d[kat]>0;}).map(function(kat){
             return '<span style="font-size:10px;color:'+katColors[kat]+'">'+kat+' '+Math.round(d[kat])+'</span>';
           }).join("")+
-          '<span style="color:#f97316;font-weight:700;font-size:13px">'+Math.round(d.total)+' ges.</span>'+
+          '<span style="color:#E84393;font-weight:700;font-size:13px">'+Math.round(d.total)+' ges.</span>'+
           '<span style="color:#64748b;font-size:10px">Ø '+avgPro+'/Tag</span>'+
         '</span>'+
       '</div>'+
       '<div style="height:16px;background:#1e2d40;border-radius:3px;overflow:hidden">'+segments+'</div>'+
-      '<div id="ad-'+h+'" style="display:none;margin-top:8px;padding:10px;background:#0a1628;border:1px solid #1e3a5f;border-radius:6px">'+
-        '<div style="font-size:11px;color:#60a5fa;font-weight:600;margin-bottom:6px">👥 Eingeplante Mitarbeiter (Tage mit Aktivität in dieser Stunde)</div>'+
+      '<div id="ad-'+h+'" style="display:none;margin-top:8px;padding:10px;background:#0a1628;border:1px solid #0a3545;border-radius:6px">'+
+        '<div style="font-size:11px;color:#40F0FF;font-weight:600;margin-bottom:6px">👥 Eingeplante Mitarbeiter (Tage mit Aktivität in dieser Stunde)</div>'+
         (maListe.length>0
           ? '<div class="wt-flex" style="display:flex;gap:6px;flex-wrap:wrap">'+
               maListe.map(function(ma){
                 var zeit    = maZeiten[ma] || '';
                 var bereich = maBereiche[ma] || '';
-                var bCol = bereich==='Kitchen'?'#f97316':
-                           bereich==='Social Media'?'#8b5cf6':
+                var bCol = bereich==='Kitchen'?'#E84393':
+                           bereich==='Social Media'?'#E84393':
                            bereich==='Service'?'#22c55e':
-                           bereich?'#3b82f6':'#475569';
+                           bereich?'#00EEFC':'#475569';
                 return '<span style="background:#1a2538;border:1px solid '+bCol+'40;border-radius:4px;padding:3px 10px;font-size:11px;color:#e2e8f0;display:inline-flex;align-items:center;gap:5px">'+
                   (bereich?'<span style="width:6px;height:6px;border-radius:50%;background:'+bCol+';display:inline-block;flex-shrink:0"></span>':'')+
                   '<span>'+ma+'</span>'+
-                  (zeit?'<span style="color:#60a5fa;font-size:10px">'+zeit+'</span>':'')+
+                  (zeit?'<span style="color:#40F0FF;font-size:10px">'+zeit+'</span>':'')+
                   (bereich?'<span style="color:'+bCol+';font-size:10px;font-weight:600">'+bereich+'</span>':'')+
                   '</span>';
               }).join("")+
@@ -2719,7 +2720,7 @@ function buildArtikelProStundeChart(von, bis, st) {
 
   var sKeys = Object.keys(stundenMap).sort(function(a,b){return parseInt(a)-parseInt(b);});
   var kats   = ["Main","Starter","Getränke","Dessert","Sonstiges"];
-  var colors = {Main:"#f97316",Starter:"#3b82f6","Getränke":"#22c55e",Dessert:"#8b5cf6",Sonstiges:"#475569"};
+  var colors = {Main:"#E84393",Starter:"#00EEFC","Getränke":"#22c55e",Dessert:"#FF8000",Sonstiges:"#475569"};
 
   dc("c-art-std");
   var el = document.getElementById("c-art-std");
@@ -2890,7 +2891,7 @@ function renderGuV(){
       +'<div class="guv-row" style="cursor:default;border-top:1px solid #334155"><span style="color:#f1f5f9;font-weight:700">= Rohertrag</span><span style="color:#f1f5f9;font-weight:700">'+fmt(p.roh)+' ('+fmtP(p.u>0?p.roh/p.u:0)+')</span></div>'
 
       // Personal
-      +gR("— Personal ("+fmtP(p.paP)+")","- "+fmt(p.pa),"#8b5cf6","d-guv-"+id+"-pa")
+      +gR("— Personal ("+fmtP(p.paP)+")","- "+fmt(p.pa),"#E84393","d-guv-"+id+"-pa")
       +'<div id="d-guv-'+id+'-pa" class="drill-panel">'
         +dR("Kosten",fmt(p.pa))
         +dR("Quote",fmtP(p.paP)+" (Ziel "+fmtP(ZIELE.pa)+")")
@@ -2900,7 +2901,7 @@ function renderGuV(){
       +'</div>'
 
       // CM
-      +'<div class="guv-row" style="cursor:default;border-top:2px solid #3b82f6"><span style="color:#60a5fa;font-weight:700">= Contribution Margin</span><span style="color:#60a5fa;font-weight:700">'+fmt(p.cm)+' ('+fmtP(p.cmP)+')</span></div>'
+      +'<div class="guv-row" style="cursor:default;border-top:2px solid #00EEFC"><span style="color:#40F0FF;font-weight:700">= Contribution Margin</span><span style="color:#40F0FF;font-weight:700">'+fmt(p.cm)+' ('+fmtP(p.cmP)+')</span></div>'
 
       // Fixkosten Header
       +'<div style="font-size:10px;color:#475569;padding:5px 0 3px;text-transform:uppercase;letter-spacing:0.5px">Fixkosten ('+fk.tage+'T'+(p.fkMul<1?' · 50%':'')+')</div>'
@@ -2963,7 +2964,7 @@ function renderGuV(){
       +'<div class="guv-row" style="cursor:default;font-size:10px;color:#475569"><span>Fixkosten gesamt</span><span>'+fmt(fkGes)+'</span></div>'
 
       // EBITDA
-      +'<div class="guv-row" style="cursor:default;border-top:2px solid #f97316;margin-top:2px">'
+      +'<div class="guv-row" style="cursor:default;border-top:2px solid #E84393;margin-top:2px">'
         +'<span style="color:#f1f5f9;font-weight:700;font-size:14px">= EBITDA</span>'
         +'<span style="color:'+(p.ebitda>=0?'#22c55e':'#ef4444')+';font-weight:700;font-size:16px">'+fmt(p.ebitda)+'</span>'
       +'</div>'
@@ -2976,10 +2977,10 @@ function renderGuV(){
   var ldoRsBrutto=txGuvG.filter(function(r){return r.standort==="Rosenthaler Straße"&&rsDatumSet[r.datum];}).reduce(function(s,r){return s+r.ldo;},0);
 
   document.getElementById("t-guv").innerHTML=`
-    ${!paReal?'<div style="background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:8px 10px;font-size:11px;color:#f97316;margin-bottom:12px">⚠️ Operative Personalkosten sind Schätzwerte (33%). Für echte Zahlen Ordio-Daten laden.</div>':""}
+    ${!paReal?'<div style="background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:8px 10px;font-size:11px;color:#E84393;margin-bottom:12px">⚠️ Operative Personalkosten sind Schätzwerte (33%). Für echte Zahlen Ordio-Daten laden.</div>':""}
     <div class="resp-3col guv-card-wrap" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
       ${guvCard({name:"Mehringdamm",emoji:"🔴",color:"#ef4444",u:km.u,fc:fcMdAmt,fcP:fcMdPct,pa:paMd,paP:paMdPct,ldo:ldoMd,ldoBrutto:ldoMdBrutto,roh:rohMd,cm:cmMd,cmP:cmMdPct,ebitda:ebitdaMd,ebitdaP:ebitdaMdPct,t:km.t,stunden:pkMd.stunden,sm:smMd,fkMul:0.5},"md")}
-      ${guvCard({name:"Rosenthaler",emoji:"🔵",color:"#3b82f6",u:kr.u,fc:fcRsAmt,fcP:fcRsPct,pa:paRs,paP:paRsPct,ldo:ldoRs,ldoBrutto:ldoRsBrutto,roh:rohRs,cm:cmRs,cmP:cmRsPct,ebitda:ebitdaRs,ebitdaP:ebitdaRsPct,t:kr.t,stunden:pkRs.stunden,sm:smRs,fkMul:0.5},"rs")}
+      ${guvCard({name:"Rosenthaler",emoji:"🔵",color:"#00EEFC",u:kr.u,fc:fcRsAmt,fcP:fcRsPct,pa:paRs,paP:paRsPct,ldo:ldoRs,ldoBrutto:ldoRsBrutto,roh:rohRs,cm:cmRs,cmP:cmRsPct,ebitda:ebitdaRs,ebitdaP:ebitdaRsPct,t:kr.t,stunden:pkRs.stunden,sm:smRs,fkMul:0.5},"rs")}
       ${guvCard({name:"Gesamt",emoji:"🟢",color:"#22c55e",u:k.u,fc:uFcAmt,fcP:uFcPct,pa:pa,paP:paPct,ldo:ldoProv,ldoBrutto:ldoUmsatz,roh:rohertrag,cm:cm,cmP:cmPct,ebitda:ebitda,ebitdaP:ebitdaPct,t:k.t,stunden:pk.stunden,sm:smKosten,fkMul:1},"ges")}
     </div>
 
@@ -2988,9 +2989,9 @@ function renderGuV(){
     <div class="box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: GuV</div><div class="box-sub">Automatische Bewertung der Ergebnisrechnung</div></div>
-        <button id="btn-report-guv" onclick="generateTabReport('guv')" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+        <button id="btn-report-guv" onclick="generateTabReport('guv')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
       </div>
-      <div id="tab-report-guv" style="display:none;margin-top:12px;border-top:1px solid #1e3a5f;padding-top:12px"></div>
+      <div id="tab-report-guv" style="display:none;margin-top:12px;border-top:1px solid #0a3545;padding-top:12px"></div>
     </div>`;
 }
 
@@ -3273,13 +3274,13 @@ function renderPersonal(){
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-label">Personalkosten <span class="badge bb">Ordio Live</span></div>
-        <div class="kpi-val" style="color:#8b5cf6">${fmt(pk.total)}</div>
+        <div class="kpi-val" style="color:#E84393">${fmt(pk.total)}</div>
         <div class="kpi-delta ${paPct>ZIELE.pa?'delta-dn':'delta-up'}">${fmtP(paPct)} vom Umsatz · Ziel ${fmtP(ZIELE.pa)}</div>
         <div class="kpi-ai">${paPct>ZIELE.pa?"⚠️ "+fmtP(paPct-ZIELE.pa)+" über Ziel — Potenzial: "+fmt((paPct-ZIELE.pa)*k.u):"✓ Im Zielbereich"}</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Gesamtstunden</div>
-        <div class="kpi-val" style="color:#3b82f6">${Math.round(pk.stunden)} h</div>
+        <div class="kpi-val" style="color:#00EEFC">${Math.round(pk.stunden)} h</div>
         <div class="kpi-delta delta-neu">Ø ${(pk.stunden/Math.max(tagKeys.length,1)).toFixed(1)} h/Tag</div>
         <div class="kpi-ai">${pk.count} Schichten · ${maList.length} Mitarbeiter</div>
       </div>
@@ -3291,7 +3292,7 @@ function renderPersonal(){
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Ø Stundenlohn (all-in)</div>
-        <div class="kpi-val" style="color:#f97316">${fmtD(stdKosten)}</div>
+        <div class="kpi-val" style="color:#E84393">${fmtD(stdKosten)}</div>
         <div class="kpi-delta delta-neu">inkl. AG-Anteil 21%</div>
         <div class="kpi-ai">Basis: ${fmtD(stdKosten/1.21)}/h · AG: ${fmtD(stdKosten-stdKosten/1.21)}/h</div>
       </div>
@@ -3308,7 +3309,7 @@ function renderPersonal(){
         </div>
         <div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center">
           <div style="font-size:10px;color:#64748b">Bester Tag</div>
-          <div style="font-size:18px;font-weight:700;color:#8b5cf6">${(function(){var best=0;Object.values(umsatzStdMap).forEach(function(s){if(s.stunden>0){var v=s.umsatz/s.stunden;if(v>best)best=v;}});return fmt(best);})()}</div>
+          <div style="font-size:18px;font-weight:700;color:#E84393">${(function(){var best=0;Object.values(umsatzStdMap).forEach(function(s){if(s.stunden>0){var v=s.umsatz/s.stunden;if(v>best)best=v;}});return fmt(best);})()}</div>
           <div style="font-size:10px;color:#475569">${(function(){var best=0,bd='';Object.entries(umsatzStdMap).forEach(function(e){if(e[1].stunden>0){var v=e[1].umsatz/e[1].stunden;if(v>best){best=v;bd=e[0];}}});return bd?bd.slice(8)+'.'+bd.slice(5,7):'–';})()}</div>
         </div>
         <div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center">
@@ -3326,10 +3327,10 @@ function renderPersonal(){
         ${(function(){
           var entries=Object.entries(stMap);
           var maxKosten=entries.reduce(function(m,e){return Math.max(m,e[1].kosten);},0);
-          var colors={"Mehringdamm":"#ef4444","Rosenthaler Straße":"#3b82f6"};
+          var colors={"Mehringdamm":"#E84393","Rosenthaler Straße":"#00EEFC"};
           return entries.map(function(e){
             var name=e[0],d=e[1];
-            var col=colors[name]||"#8b5cf6";
+            var col=colors[name]||"#E84393";
             var stUmsatzGes=lokalGefiltert.filter(function(r){return r.st===name;}).reduce(function(s,r){return s+r.u;},0);
             var pct=stUmsatzGes>0?d.kosten/stUmsatzGes:0;
             var stAktivEntries=Object.entries(umsatzStdMapSt).filter(function(e){return e[0].indexOf("|"+name)>-1&&e[1].umsatz>0&&e[1].stunden>0;});
@@ -3375,7 +3376,7 @@ function renderPersonal(){
               '<div class="drill-row"><span>Schichten</span><span>'+d.count+'</span></div>'+
               '<div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;padding:10px 0 6px;border-top:1px solid #1e2d40;margin-top:8px">Mitarbeiter</div>'+
               d.ma.sort(function(a,b){return a.startZeit.localeCompare(b.startZeit);}).map(function(m){
-                var bereichCol=m.bereich==="Kitchen"?"#f97316":m.bereich==="Service"?"#22c55e":m.bereich==="Social Media"?"#8b5cf6":"#3b82f6";
+                var bereichCol=m.bereich==="Kitchen"?"#E84393":m.bereich==="Service"?"#22c55e":m.bereich==="Social Media"?"#E84393":"#00EEFC";
                 return'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1e2d40">'+
                   '<span style="color:#e2e8f0;font-size:12px">'+m.mitarbeiter+'</span>'+
                   '<span style="display:flex;align-items:center;gap:8px">'+
@@ -3397,7 +3398,7 @@ function renderPersonal(){
         ${maList.slice(0,10).map(function(e,i){
           var name=e[0],d=e[1];
           var pct=d.stunden/maxStd*100;
-          var col=d.stunden>avgStdMA*1.2?"#22c55e":d.stunden>avgStdMA*0.8?"#3b82f6":"#f97316";
+          var col=d.stunden>avgStdMA*1.2?"#22c55e":d.stunden>avgStdMA*0.8?"#00EEFC":"#E84393";
           return'<div class="ma-row" onclick="drill(\'d-ma-'+i+'\')">'+
             '<span class="ma-name">'+name+'</span>'+
             '<div class="ma-bar-wrap"><div class="ma-bar-fill" style="width:'+pct+'%;background:'+col+'"></div></div>'+
@@ -3431,7 +3432,7 @@ function renderPersonal(){
           var stData=aufbauWtStMap[wt]||{};
           var stLines=Object.entries(stData).map(function(e){
             var sAvg=e[1].count>0?e[1].stunden/e[1].count:0;
-            var sCol=e[0]==="Mehringdamm"?"#ef4444":"#3b82f6";
+            var sCol=e[0]==="Mehringdamm"?"#ef4444":"#00EEFC";
             return'<span style="color:'+sCol+';font-size:9px">'+e[0].substring(0,2)+': '+sAvg.toFixed(1)+'h</span>';
           }).join(' · ');
           return'<div style="flex:1;min-width:0;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center;border-top:3px solid #f59e0b">'+
@@ -3456,7 +3457,7 @@ function renderPersonal(){
           var stData=abbauWtStMap[wt]||{};
           var stLines=Object.entries(stData).map(function(e){
             var sAvg=e[1].count>0?e[1].stunden/e[1].count:0;
-            var sCol=e[0]==="Mehringdamm"?"#ef4444":"#3b82f6";
+            var sCol=e[0]==="Mehringdamm"?"#ef4444":"#00EEFC";
             return'<span style="color:'+sCol+';font-size:9px">'+e[0].substring(0,2)+': '+sAvg.toFixed(1)+'h</span>';
           }).join(' · ');
           return'<div style="flex:1;min-width:0;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center;border-top:3px solid #6366f1">'+
@@ -3523,9 +3524,9 @@ function renderPersonal(){
     <div class="box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: Personal</div><div class="box-sub">Automatische Bewertung der Personaleffizienz</div></div>
-        <button id="btn-report-personal" onclick="generateTabReport('personal')" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+        <button id="btn-report-personal" onclick="generateTabReport('personal')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
       </div>
-      <div id="tab-report-personal" style="display:none;margin-top:12px;border-top:1px solid #1e3a5f;padding-top:12px"></div>
+      <div id="tab-report-personal" style="display:none;margin-top:12px;border-top:1px solid #0a3545;padding-top:12px"></div>
     </div>`;
 
   dc("c-pa-tag");
@@ -3543,8 +3544,8 @@ function renderPersonal(){
           {
             label:"Umsatz/h",
             data:stdData,
-            borderColor:"#8b5cf6",
-            backgroundColor:"#8b5cf620",
+            borderColor:"#E84393",
+            backgroundColor:"#E8439320",
             fill:true,
             tension:0.4,
             pointRadius:3,
@@ -3553,7 +3554,7 @@ function renderPersonal(){
           {
             label:"Ziel €"+ZIELE.umsatzStd,
             data:stdKeys.map(function(){return ZIELE.umsatzStd;}),
-            borderColor:"#f97316",
+            borderColor:"#E84393",
             borderDash:[6,4],
             borderWidth:1.5,
             pointRadius:0,
@@ -3762,8 +3763,8 @@ function renderFoodCost(){
   })();
 
   // Farben für Kategorien
-  var katColors={'Kitchen error':'#ef4444','Date expired':'#f97316','Used for marketing':'#3b82f6',
-    'Staff':'#8b5cf6','Expired because of mistake':'#ec4899','':'#64748b'};
+  var katColors={'Kitchen error':'#ef4444','Date expired':'#FF8000','Used for marketing':'#00EEFC',
+    'Staff':'#E84393','Expired because of mistake':'#ec4899','':'#64748b'};
   function katColor(k){return katColors[k]||'#64748b';}
 
   // Waste-Konsistenz pro Standort
@@ -3816,7 +3817,7 @@ function renderFoodCost(){
       </div>
       <div class="kpi-card" onclick="drill('d-fc-we')">
         <div class="kpi-label">Wareneinsatz (netto)</div>
-        <div class="kpi-val" style="color:#f97316">${fmt(wareneinsatz)}</div>
+        <div class="kpi-val" style="color:#E84393">${fmt(wareneinsatz)}</div>
         <div class="kpi-delta delta-neu">${fmtP(wareneinsatzQuote)} vom Umsatz</div>
         <div class="kpi-ai">Food Cost minus Waste · Ø ${fmt(wareneinsatz/tage)}/Tag</div>
       </div>
@@ -3839,28 +3840,28 @@ function renderFoodCost(){
     </div>
 
     <div class="kpi-grid">
-      <div class="kpi-card" style="border-color:${wkMd.quote>=0.8?'#22c55e40':wkMd.quote>=0.5?'#f9731640':'#ef444440'}">
+      <div class="kpi-card" style="border-color:${wkMd.quote>=0.8?'#22c55e40':wkMd.quote>=0.5?'#E8439340':'#ef444440'}">
         <div class="kpi-label">🟠 MD — Waste-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">täglich</span></div>
-        <div class="kpi-val" style="color:${wkMd.quote>=0.8?'#22c55e':wkMd.quote>=0.5?'#f97316':'#ef4444'}">${Math.round(wkMd.quote*100)}%</div>
-        <div class="kpi-delta" style="color:${wkMd.quote>=0.8?'#22c55e':wkMd.quote>=0.5?'#f97316':'#ef4444'}">${wkMd.tageMitWaste} von ${wkMd.betriebsTage} Tagen</div>
+        <div class="kpi-val" style="color:${wkMd.quote>=0.8?'#22c55e':wkMd.quote>=0.5?'#FF8000':'#ef4444'}">${Math.round(wkMd.quote*100)}%</div>
+        <div class="kpi-delta" style="color:${wkMd.quote>=0.8?'#22c55e':wkMd.quote>=0.5?'#FF8000':'#ef4444'}">${wkMd.tageMitWaste} von ${wkMd.betriebsTage} Tagen</div>
         <div class="kpi-ai">Ø ${fmt(wkMd.avgProWasteTag)}/Tag · ${wkMd.quote>=0.8?'✓ Regelmäßig':wkMd.quote>=0.5?'⚠️ Lückenhaft':'🔴 Sofort handeln'}</div>
       </div>
-      <div class="kpi-card" style="border-color:${wkRs.quote>=0.8?'#22c55e40':wkRs.quote>=0.5?'#f9731640':'#ef444440'}">
+      <div class="kpi-card" style="border-color:${wkRs.quote>=0.8?'#22c55e40':wkRs.quote>=0.5?'#E8439340':'#ef444440'}">
         <div class="kpi-label">🔵 RS — Waste-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">täglich</span></div>
-        <div class="kpi-val" style="color:${wkRs.quote>=0.8?'#22c55e':wkRs.quote>=0.5?'#f97316':'#ef4444'}">${Math.round(wkRs.quote*100)}%</div>
-        <div class="kpi-delta" style="color:${wkRs.quote>=0.8?'#22c55e':wkRs.quote>=0.5?'#f97316':'#ef4444'}">${wkRs.tageMitWaste} von ${wkRs.betriebsTage} Tagen</div>
+        <div class="kpi-val" style="color:${wkRs.quote>=0.8?'#22c55e':wkRs.quote>=0.5?'#FF8000':'#ef4444'}">${Math.round(wkRs.quote*100)}%</div>
+        <div class="kpi-delta" style="color:${wkRs.quote>=0.8?'#22c55e':wkRs.quote>=0.5?'#FF8000':'#ef4444'}">${wkRs.tageMitWaste} von ${wkRs.betriebsTage} Tagen</div>
         <div class="kpi-ai">Ø ${fmt(wkRs.avgProWasteTag)}/Tag · ${wkRs.quote>=0.8?'✓ Regelmäßig':wkRs.quote>=0.5?'⚠️ Lückenhaft':'🔴 Sofort handeln'}</div>
       </div>
-      <div class="kpi-card" style="border-color:${ikMd.quote>=0.9?'#22c55e40':ikMd.quote>=0.5?'#f9731640':'#ef444440'}">
+      <div class="kpi-card" style="border-color:${ikMd.quote>=0.9?'#22c55e40':ikMd.quote>=0.5?'#E8439340':'#ef444440'}">
         <div class="kpi-label">🟠 MD — Inventur-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">sonntags</span></div>
-        <div class="kpi-val" style="color:${ikMd.quote>=0.9?'#22c55e':ikMd.quote>=0.5?'#f97316':'#ef4444'}">${ikMd.totalSo>0?Math.round(ikMd.quote*100)+'%':'—'}</div>
-        <div class="kpi-delta" style="color:${ikMd.quote>=0.9?'#22c55e':ikMd.quote>=0.5?'#f97316':'#ef4444'}">${ikMd.soMitInv} von ${ikMd.totalSo} Sonntagen</div>
+        <div class="kpi-val" style="color:${ikMd.quote>=0.9?'#22c55e':ikMd.quote>=0.5?'#E84393':'#ef4444'}">${ikMd.totalSo>0?Math.round(ikMd.quote*100)+'%':'—'}</div>
+        <div class="kpi-delta" style="color:${ikMd.quote>=0.9?'#22c55e':ikMd.quote>=0.5?'#E84393':'#ef4444'}">${ikMd.soMitInv} von ${ikMd.totalSo} Sonntagen</div>
         <div class="kpi-ai">${ikMd.totalSo===0?'Kein Sonntag im Zeitraum':ikMd.quote>=0.9?'✓ Vollständig':ikMd.quote>=0.5?'⚠️ Lücken — jeden So. zählen':'🔴 Inventur fehlt'}</div>
       </div>
-      <div class="kpi-card" style="border-color:${ikRs.quote>=0.9?'#22c55e40':ikRs.quote>=0.5?'#f9731640':'#ef444440'}">
+      <div class="kpi-card" style="border-color:${ikRs.quote>=0.9?'#22c55e40':ikRs.quote>=0.5?'#E8439340':'#ef444440'}">
         <div class="kpi-label">🔵 RS — Inventur-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">sonntags</span></div>
-        <div class="kpi-val" style="color:${ikRs.quote>=0.9?'#22c55e':ikRs.quote>=0.5?'#f97316':'#ef4444'}">${ikRs.totalSo>0?Math.round(ikRs.quote*100)+'%':'—'}</div>
-        <div class="kpi-delta" style="color:${ikRs.quote>=0.9?'#22c55e':ikRs.quote>=0.5?'#f97316':'#ef4444'}">${ikRs.soMitInv} von ${ikRs.totalSo} Sonntagen</div>
+        <div class="kpi-val" style="color:${ikRs.quote>=0.9?'#22c55e':ikRs.quote>=0.5?'#E84393':'#ef4444'}">${ikRs.totalSo>0?Math.round(ikRs.quote*100)+'%':'—'}</div>
+        <div class="kpi-delta" style="color:${ikRs.quote>=0.9?'#22c55e':ikRs.quote>=0.5?'#E84393':'#ef4444'}">${ikRs.soMitInv} von ${ikRs.totalSo} Sonntagen</div>
         <div class="kpi-ai">${ikRs.totalSo===0?'Kein Sonntag im Zeitraum':ikRs.quote>=0.9?'✓ Vollständig':ikRs.quote>=0.5?'⚠️ Lücken — jeden So. zählen':'🔴 Inventur fehlt'}</div>
       </div>
     </div>
@@ -3871,7 +3872,7 @@ function renderFoodCost(){
       // Helfer: Header + KPIs + Kategorien (oberer Teil der Box)
       function fcStTop(sd,name,emoji,color){
         var fcSuspect=sd.fcPct<0.20&&sd.u>0;
-        var fcCol=fcSuspect?'#f97316':(sd.fcPct>ZIELE.fc?'#ef4444':'#22c55e');
+        var fcCol=fcSuspect?'#E84393':(sd.fcPct>ZIELE.fc?'#ef4444':'#22c55e');
         var wasteCol=sd.wastePct>0.02?'#ef4444':'#22c55e';
         var html='<div class="box" style="margin-bottom:0;border-radius:10px 10px 0 0">';
         html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
@@ -3879,23 +3880,23 @@ function renderFoodCost(){
           +'<div><div style="font-size:14px;font-weight:700;color:'+color+'">'+name+'</div>'
           +'<div style="font-size:10px;color:#475569">Food Cost & Waste Analyse</div></div></div>';
         html+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">'
-          +'<div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center;border:1px solid '+(fcSuspect?'#92400e40':'#1e3a5f')+'">'
+          +'<div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center;border:1px solid '+(fcSuspect?'#92400e40':'#0a3545')+'">'
             +'<div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px">Food Cost'+(sd.hatIst?' <span style="font-size:7px;background:#22c55e;color:#000;padding:0 3px;border-radius:2px">Ist</span>':'')+(fcSuspect?' ⚠️':'')+'</div>'
             +'<div style="font-size:16px;font-weight:700;color:'+fcCol+'">'+fmtP(sd.fcPct)+'</div>'
-            +'<div style="font-size:10px;color:'+(fcSuspect?'#f97316':'#94a3b8')+';margin-top:2px">'+fmt(sd.fc)+'</div>'
+            +'<div style="font-size:10px;color:'+(fcSuspect?'#E84393':'#94a3b8')+';margin-top:2px">'+fmt(sd.fc)+'</div>'
           +'</div>'
-          +'<div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center;border:1px solid #1e3a5f">'
+          +'<div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center;border:1px solid #0a3545">'
             +'<div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px">Wareneinsatz</div>'
-            +'<div style="font-size:16px;font-weight:700;color:#f97316">'+fmt(sd.wareneinsatz)+'</div>'
+            +'<div style="font-size:16px;font-weight:700;color:#E84393">'+fmt(sd.wareneinsatz)+'</div>'
             +'<div style="font-size:10px;color:#94a3b8;margin-top:2px">netto</div>'
           +'</div>'
-          +'<div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center;border:1px solid '+(sd.wastePct>0.02?'#ef444440':'#1e3a5f')+'">'
+          +'<div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center;border:1px solid '+(sd.wastePct>0.02?'#ef444440':'#0a3545')+'">'
             +'<div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px">Waste</div>'
             +'<div style="font-size:16px;font-weight:700;color:'+wasteCol+'">'+fmt(sd.waste)+'</div>'
             +'<div style="font-size:10px;color:#94a3b8;margin-top:2px">'+fmtP(sd.wastePct)+' vom Umsatz</div>'
           +'</div>'
         +'</div>';
-        html+='<div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #1e3a5f">🗑️ Waste nach Kategorie</div>';
+        html+='<div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #0a3545">🗑️ Waste nach Kategorie</div>';
         if(sd.katList.length===0){html+='<div style="color:#475569;font-size:12px;padding:8px 0">Keine Waste-Daten.</div>';}
         sd.katList.forEach(function(e){
           var n=e[0]||'Keine Kategorie',d=e[1];
@@ -3915,8 +3916,8 @@ function renderFoodCost(){
       // Helfer: Top 5 Waste + FC-Diagnose (unterer Teil — synchronisiert)
       function fcStBottom(sd,name,emoji,color,stKey){
         var fcSuspect=sd.fcPct<0.20&&sd.u>0;
-        var html='<div class="box" style="margin-top:0;border-radius:0 0 10px 10px;border-top:1px solid #1e3a5f">';
-        html+='<div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #1e3a5f">📦 Top 5 Waste-Artikel</div>';
+        var html='<div class="box" style="margin-top:0;border-radius:0 0 10px 10px;border-top:1px solid #0a3545">';
+        html+='<div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #0a3545">📦 Top 5 Waste-Artikel</div>';
         if(sd.topWaste.length===0){html+='<div style="color:#475569;font-size:12px;padding:8px 0">Keine Artikel-Daten.</div>';}
         sd.topWaste.forEach(function(e,i){
           var n=e[0],d=e[1];
@@ -3941,7 +3942,7 @@ function renderFoodCost(){
           var fMitFC=mitFC.reduce(function(s,r){return s+r.f;},0);
           var ohneTage=ohneFC.map(function(r){return r.datum;}).sort();
           var drillId='d-fc-diag-'+stKey;
-          html+='<div onclick="drill(\''+drillId+'\')" style="cursor:pointer;background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:6px 10px;margin-top:12px;font-size:11px;color:#f97316;display:flex;justify-content:space-between;align-items:center">'
+          html+='<div onclick="drill(\''+drillId+'\')" style="cursor:pointer;background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:6px 10px;margin-top:12px;font-size:11px;color:#E84393;display:flex;justify-content:space-between;align-items:center">'
             +'<span>⚠️ FC unter 20% — Daten unvollständig?</span>'
             +'<span style="font-size:9px;color:#64748b">Details ▾</span>'
           +'</div>';
@@ -3980,13 +3981,13 @@ function renderFoodCost(){
       var sdMd=stData["Mehringdamm"], sdRs=stData["Rosenthaler Straße"];
       // Oberer Teil: Kategorien (darf unterschiedlich hoch sein)
       var out='<div class="grid2" style="align-items:start">'
-        +fcStTop(sdMd,"Mehringdamm","🔴","#f97316")
-        +fcStTop(sdRs,"Rosenthaler Straße","🔵","#3b82f6")
+        +fcStTop(sdMd,"Mehringdamm","🔴","#E84393")
+        +fcStTop(sdRs,"Rosenthaler Straße","🔵","#00EEFC")
       +'</div>';
       // Unterer Teil: Top 5 (startet auf gleicher Höhe)
       out+='<div class="grid2" style="align-items:start">'
-        +fcStBottom(sdMd,"Mehringdamm","🔴","#f97316","md")
-        +fcStBottom(sdRs,"Rosenthaler Straße","🔵","#3b82f6","rs")
+        +fcStBottom(sdMd,"Mehringdamm","🔴","#E84393","md")
+        +fcStBottom(sdRs,"Rosenthaler Straße","🔵","#00EEFC","rs")
       +'</div>';
       return out;
     })()}
@@ -4069,8 +4070,8 @@ function renderFoodCost(){
       function stCard(emoji, stName, kpi, color) {
         var realFC = kpi.offen + kpi.waren - kpi.schluss;
         var schwundPct = realFC>0?Math.abs(kpi.schwund)/realFC:0;
-        var schwundCol = kpi.schwund<-50?'#ef4444':kpi.schwund<0?'#f97316':'#22c55e';
-        return '<div style="background:#0a1628;border-radius:10px;padding:16px;border:1px solid #1e3a5f">' +
+        var schwundCol = kpi.schwund<-50?'#ef4444':kpi.schwund<0?'#E84393':'#22c55e';
+        return '<div style="background:#0a1628;border-radius:10px;padding:16px;border:1px solid #0a3545">' +
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
             '<span style="font-size:14px">'+emoji+'</span>' +
             '<div><div style="font-size:13px;font-weight:700;color:'+color+'">'+stName+'</div>' +
@@ -4079,7 +4080,7 @@ function renderFoodCost(){
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">' +
             '<div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center">' +
               '<div style="font-size:9px;color:#64748b;text-transform:uppercase;margin-bottom:4px">Realer Wareneinsatz</div>' +
-              '<div style="font-size:18px;font-weight:700;color:#f97316">'+fmt(realFC)+'</div>' +
+              '<div style="font-size:18px;font-weight:700;color:#E84393">'+fmt(realFC)+'</div>' +
             '</div>' +
             '<div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center">' +
               '<div style="font-size:9px;color:#64748b;text-transform:uppercase;margin-bottom:4px">Schwund / Varianz</div>' +
@@ -4113,18 +4114,18 @@ function renderFoodCost(){
         '<div class="box-title">📦 Warenwirtschaft — Reale Food Cost</div>' +
         '<div class="box-sub">Bestandsbericht zwischen Inventuren (Apicbase)</div>' +
         '<div class="grid2" style="margin-top:14px;align-items:start">' +
-          stCard('🟠', 'Mehringdamm', kpiMd, '#f97316') +
-          stCard('🔵', 'Rosenthaler Straße', kpiRs, '#3b82f6') +
+          stCard('🟠', 'Mehringdamm', kpiMd, '#E84393') +
+          stCard('🔵', 'Rosenthaler Straße', kpiRs, '#00EEFC') +
         '</div>' +
         '<div class="grid2" style="margin-top:14px;align-items:start">' +
-          '<div style="background:#0a1628;border-radius:10px;padding:14px;border:1px solid #1e3a5f">' +
-            '<div onclick="toggleSchwund(\'md\')" style="font-size:10px;font-weight:600;color:#f97316;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #1e3a5f;cursor:pointer;display:flex;justify-content:space-between;align-items:center">' +
+          '<div style="background:#0a1628;border-radius:10px;padding:14px;border:1px solid #0a3545">' +
+            '<div onclick="toggleSchwund(\'md\')" style="font-size:10px;font-weight:600;color:#E84393;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #0a3545;cursor:pointer;display:flex;justify-content:space-between;align-items:center">' +
               '<span>🟠 MD — Top Schwund-Artikel</span><span id="schwund-arrow-md" style="font-size:8px;transition:transform .2s">▶</span></div>' +
             '<div id="schwund-top-md">' + schwundListe(schwundMd) + '</div>' +
             '<div id="schwund-all-md" style="display:none">' + schwundListe(schwundAllMd) + '</div>' +
           '</div>' +
-          '<div style="background:#0a1628;border-radius:10px;padding:14px;border:1px solid #1e3a5f">' +
-            '<div onclick="toggleSchwund(\'rs\')" style="font-size:10px;font-weight:600;color:#3b82f6;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #1e3a5f;cursor:pointer;display:flex;justify-content:space-between;align-items:center">' +
+          '<div style="background:#0a1628;border-radius:10px;padding:14px;border:1px solid #0a3545">' +
+            '<div onclick="toggleSchwund(\'rs\')" style="font-size:10px;font-weight:600;color:#00EEFC;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #0a3545;cursor:pointer;display:flex;justify-content:space-between;align-items:center">' +
               '<span>🔵 RS — Top Schwund-Artikel</span><span id="schwund-arrow-rs" style="font-size:8px;transition:transform .2s">▶</span></div>' +
             '<div id="schwund-top-rs">' + schwundListe(schwundRs) + '</div>' +
             '<div id="schwund-all-rs" style="display:none">' + schwundListe(schwundAllRs) + '</div>' +
@@ -4146,10 +4147,10 @@ function renderFoodCost(){
             <th style="text-align:right">Umsatz Netto</th>
             <th style="text-align:right">Ø Preis</th>
             <th style="text-align:right">Umsatz/Tag</th>
-            <th style="text-align:right">FC <span style="font-size:8px;color:#f97316;font-weight:400">Soll</span></th>
+            <th style="text-align:right">FC <span style="font-size:8px;color:#E84393;font-weight:400">Soll</span></th>
             <th style="text-align:right">FC%</th>
             <th style="text-align:right">Marge%</th>
-            <th style="text-align:right">Profit <span style="font-size:8px;color:#f97316;font-weight:400">Soll</span></th>
+            <th style="text-align:right">Profit <span style="font-size:8px;color:#E84393;font-weight:400">Soll</span></th>
           </tr></thead>
           <tbody>
           ${artUmsatzList.map(function(e){
@@ -4160,7 +4161,7 @@ function renderFoodCost(){
             var margePct=d.umsatz>0?(1-d.fc/d.umsatz)*100:0;
             var profit=d.umsatz-d.fc;
             var barW=maxArtUmsatz>0?Math.round(d.umsatz/maxArtUmsatz*100):0;
-            var fcCol=fcPct>30?'#ef4444':fcPct>25?'#f97316':'#22c55e';
+            var fcCol=fcPct>30?'#ef4444':fcPct>25?'#E84393':'#22c55e';
             var hatFC=d.fc>0;
             return'<tr>'+
               '<td style="padding:8px 6px;font-size:12px">'+
@@ -4170,7 +4171,7 @@ function renderFoodCost(){
                 '</div>'+
               '</td>'+
               '<td style="padding:8px 6px;text-align:right;color:#64748b;font-size:11px">'+d.gruppe+'</td>'+
-              '<td style="padding:8px 6px;text-align:right;color:#f97316;font-size:12px;font-weight:600">'+Math.round(d.menge)+'x</td>'+
+              '<td style="padding:8px 6px;text-align:right;color:#E84393;font-size:12px;font-weight:600">'+Math.round(d.menge)+'x</td>'+
               '<td style="padding:8px 6px;text-align:right;color:#22c55e;font-size:12px;font-weight:600">'+fmt(d.umsatz)+'</td>'+
               '<td style="padding:8px 6px;text-align:right;color:#f1f5f9;font-size:12px">'+fmtD(avgPreis)+'</td>'+
               '<td style="padding:8px 6px;text-align:right;color:#94a3b8;font-size:12px">'+fmt(umsatzTag)+'</td>'+
@@ -4193,9 +4194,9 @@ function renderFoodCost(){
     <div class="box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: Food Cost</div><div class="box-sub">Automatische Bewertung von Food Cost & Waste</div></div>
-        <button id="btn-report-foodcost" onclick="generateTabReport('foodcost')" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+        <button id="btn-report-foodcost" onclick="generateTabReport('foodcost')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
       </div>
-      <div id="tab-report-foodcost" style="display:none;margin-top:12px;border-top:1px solid #1e3a5f;padding-top:12px"></div>
+      <div id="tab-report-foodcost" style="display:none;margin-top:12px;border-top:1px solid #0a3545;padding-top:12px"></div>
     </div>`;
 
   // Donut Chart FC Aufschlüsselung
@@ -4211,8 +4212,8 @@ function renderFoodCost(){
         data:{
           labels:tagKeys.map(function(d){return d.slice(8)+"."+d.slice(5,7);}),
           datasets:[
-            {label:"Mehringdamm",data:tagKeys.map(function(d){return Math.round(tagWasteMd[d]||0);}),backgroundColor:"#f97316",borderRadius:3},
-            {label:"Rosenthaler Str.",data:tagKeys.map(function(d){return Math.round(tagWasteRs[d]||0);}),backgroundColor:"#3b82f6",borderRadius:3}
+            {label:"Mehringdamm",data:tagKeys.map(function(d){return Math.round(tagWasteMd[d]||0);}),backgroundColor:"#E84393",borderRadius:3},
+            {label:"Rosenthaler Str.",data:tagKeys.map(function(d){return Math.round(tagWasteRs[d]||0);}),backgroundColor:"#00EEFC",borderRadius:3}
           ]
         },
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:"#94a3b8",font:{size:10},boxWidth:12,padding:8}}},scales:{
@@ -4300,7 +4301,7 @@ function renderSpeisekarte(){
     var hoheGeschw  = umsatzProTag >= avgUmsatzTag;
     if(hoherAnteil && hoheGeschw)  return {badge:'🟢 Renner',     color:'#22c55e', grund:'Hoher Umsatzanteil ('+( anteilPct*100).toFixed(1)+'%) und hohe Verkaufsgeschwindigkeit ('+fmtD(umsatzProTag)+'/Tag). Priorität bei Verfügbarkeit und Qualität.'};
     if(!hoherAnteil && hoheGeschw) return {badge:'🟡 Schnelldreher', color:'#f59e0b', grund:'Oft bestellt aber geringer Umsatzanteil ('+( anteilPct*100).toFixed(1)+'%). Günstiger Artikel der Volumen macht — prüfe ob Preis erhöhbar.'};
-    if(hoherAnteil && !hoheGeschw) return {badge:'🟠 Schläfer',   color:'#f97316', grund:'Hoher Umsatzanteil ('+( anteilPct*100).toFixed(1)+'%) aber selten bestellt. Teurer Artikel — gezielt promoten oder besser platzieren.'};
+    if(hoherAnteil && !hoheGeschw) return {badge:'🟠 Schläfer',   color:'#E84393', grund:'Hoher Umsatzanteil ('+( anteilPct*100).toFixed(1)+'%) aber selten bestellt. Teurer Artikel — gezielt promoten oder besser platzieren.'};
     return                                {badge:'🔴 Penner',      color:'#ef4444', grund:'Geringer Umsatzanteil ('+( anteilPct*100).toFixed(1)+'%) und niedrige Verkaufsgeschwindigkeit ('+fmtD(umsatzProTag)+'/Tag). Überdenken oder streichen.'};
   }
 
@@ -4315,7 +4316,7 @@ function renderSpeisekarte(){
         '<div style="margin-top:3px"><span style="font-size:10px;font-weight:600;color:'+rp.color+'">'+rp.badge+'</span></div>'+
       '</td>'+
       '<td style="padding:8px 6px;text-align:right;color:#64748b;font-size:12px">'+g.gruppe+'</td>'+
-      '<td style="padding:8px 6px;text-align:right;font-weight:600;color:#f97316;font-size:12px">'+Math.round(g.menge)+'x</td>'+
+      '<td style="padding:8px 6px;text-align:right;font-weight:600;color:#E84393;font-size:12px">'+Math.round(g.menge)+'x</td>'+
       '<td style="padding:8px 6px;text-align:right;color:#22c55e;font-size:12px">'+fmt(g.umsatz)+'</td>'+
       '<td style="padding:8px 6px;text-align:right;color:#64748b;font-size:12px">'+fmtD(avgPreis)+'</td>'+
       '<td style="padding:8px 6px;text-align:right;color:#64748b;font-size:12px">'+anteil+'%</td>'+
@@ -4325,7 +4326,7 @@ function renderSpeisekarte(){
       '<div class="drill-panel open" style="margin:4px 6px 8px">'+
         '<div class="drill-title">'+g.name+' — Details</div>'+
         '<div class="drill-row"><span>Kategorie</span><span style="color:'+rp.color+';font-weight:700">'+rp.badge+'</span></div>'+
-        '<div style="background:#0c1f3a;border-left:3px solid '+rp.color+';border-radius:0 6px 6px 0;padding:8px 10px;margin:6px 0 10px;font-size:11px;color:#93c5fd;line-height:1.6">'+rp.grund+'</div>'+
+        '<div style="background:#1a0a20;border-left:3px solid '+rp.color+';border-radius:0 6px 6px 0;padding:8px 10px;margin:6px 0 10px;font-size:11px;color:#7DF3FF;line-height:1.6">'+rp.grund+'</div>'+
         '<div class="drill-row"><span>Verkäufe gesamt</span><span>'+Math.round(g.menge)+'x</span></div>'+
         '<div class="drill-row"><span>Ø Verkäufe/Tag</span><span>'+(g.menge/tage).toFixed(1)+'x</span></div>'+
         '<div class="drill-row"><span>Umsatz gesamt</span><span>'+fmt(g.umsatz)+'</span></div>'+
@@ -4345,7 +4346,7 @@ function renderSpeisekarte(){
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-label">Artikel-Positionen</div>
-        <div class="kpi-val" style="color:#f97316">${Math.round(totalMenge).toLocaleString("de-DE")}</div>
+        <div class="kpi-val" style="color:#E84393">${Math.round(totalMenge).toLocaleString("de-DE")}</div>
         <div class="kpi-delta delta-neu">Ø ${(totalMenge/tage).toFixed(0)}/Tag · ${tage} Tage</div>
         <div class="kpi-ai">${speise.length} verschiedene Artikel</div>
       </div>
@@ -4363,7 +4364,7 @@ function renderSpeisekarte(){
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Kategorien</div>
-        <div class="kpi-val" style="color:#8b5cf6">${gruppen.length}</div>
+        <div class="kpi-val" style="color:#E84393">${gruppen.length}</div>
         <div class="kpi-delta delta-neu">Top: ${gruppen.length>0?gruppen[0][0]:"-"}</div>
         <div class="kpi-ai">${gruppen.length>0?fmt(gruppen[0][1].umsatz)+" ("+( gruppen[0][1].umsatz/totalUmsatz*100).toFixed(1)+"%)":""}</div>
       </div>
@@ -4423,9 +4424,9 @@ function renderSpeisekarte(){
     <div class="box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: Speisekarte</div><div class="box-sub">Automatische Bewertung der Artikel-Performance</div></div>
-        <button id="btn-report-speisekarte" onclick="generateTabReport('speisekarte')" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+        <button id="btn-report-speisekarte" onclick="generateTabReport('speisekarte')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
       </div>
-      <div id="tab-report-speisekarte" style="display:none;margin-top:12px;border-top:1px solid #1e3a5f;padding-top:12px"></div>
+      <div id="tab-report-speisekarte" style="display:none;margin-top:12px;border-top:1px solid #0a3545;padding-top:12px"></div>
     </div>`;
 }
 
@@ -4511,13 +4512,13 @@ function renderTrinkgeld(){
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-label">Trinkgeld gesamt</div>
-        <div class="kpi-val" style="color:#8b5cf6">${fmt(tkGesamt)}</div>
+        <div class="kpi-val" style="color:#E84393">${fmt(tkGesamt)}</div>
         <div class="kpi-delta delta-up">inkl. Online Order</div>
         <div class="kpi-ai">Ohne Lieferando: ${fmt(tkOhneLdo)} · Quote: ${fmtP(tkQuoteGesamt)}</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Online Order TK-Quote</div>
-        <div class="kpi-val" style="color:#3b82f6">${fmtP(quoteOnline)}</div>
+        <div class="kpi-val" style="color:#00EEFC">${fmtP(quoteOnline)}</div>
         <div class="kpi-delta delta-neu">${bonsOnline.length} Bons · ${fmt(tkOnline)}</div>
         <div class="kpi-ai">QR-Code Bestellungen am Tisch</div>
       </div>
@@ -4557,13 +4558,13 @@ function renderTrinkgeld(){
           var name=e[0],d=e[1];
           var quote=d.total>0?d.tk/d.total:0;
           var pct=maxTk>0?Math.round(d.tk/maxTk*100):0;
-          var col=quote>0.03?"#22c55e":quote>0.02?"#3b82f6":"#f97316";
+          var col=quote>0.03?"#22c55e":quote>0.02?"#00EEFC":"#E84393";
           return'<div style="margin-bottom:12px;cursor:pointer" onclick="drill(\'d-tk-ma-'+name.replace(/[\s\W]/g,'')+'\')">'+
             '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">'+
               '<span style="color:#f1f5f9;font-weight:600">'+name+'</span>'+
               '<span style="display:flex;gap:10px">'+
                 '<span style="color:'+col+';font-weight:600">'+fmtP(quote)+' Quote</span>'+
-                '<span style="color:#8b5cf6">'+fmt(d.tk)+'</span>'+
+                '<span style="color:#E84393">'+fmt(d.tk)+'</span>'+
               '</span>'+
             '</div>'+
             '<div style="height:4px;background:#1e2d40;border-radius:2px">'+
@@ -4572,7 +4573,7 @@ function renderTrinkgeld(){
             '<div id="d-tk-ma-'+name.replace(/[\s\W]/g,'')+'" class="drill-panel">'+
               '<div class="drill-row"><span>Bons</span><span>'+d.bons+'</span></div>'+
               '<div class="drill-row"><span>Umsatz betreut</span><span>'+fmt(d.total)+'</span></div>'+
-              '<div class="drill-row"><span>Trinkgeld</span><span style="color:#8b5cf6">'+fmt(d.tk)+'</span></div>'+
+              '<div class="drill-row"><span>Trinkgeld</span><span style="color:#E84393">'+fmt(d.tk)+'</span></div>'+
               '<div class="drill-row"><span>TK-Quote</span><span style="color:'+col+'">'+fmtP(quote)+'</span></div>'+
               '<div class="ai-box">'+name+': '+fmtP(quote)+' Trinkgeld-Quote bei '+d.bons+' Bons. '+
                 (quote>0.03?'Überdurchschnittlich guter Service.':quote>0.02?'Durchschnittliche Performance.':'Unter Durchschnitt — Training oder Schichtzuteilung prüfen.')+'</div>'+
@@ -4590,7 +4591,7 @@ function renderTrinkgeld(){
           return'<div style="padding:10px 0;border-bottom:1px solid #1e2d40">'+
             '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px">'+
               '<span style="color:#f1f5f9;font-weight:600">'+name+'</span>'+
-              '<span style="color:#8b5cf6">'+fmt(d.tk)+'</span>'+
+              '<span style="color:#E84393">'+fmt(d.tk)+'</span>'+
             '</div>'+
             '<div style="display:flex;justify-content:space-between;font-size:11px;color:#475569">'+
               '<span>'+d.bons+' Bons · Umsatz: '+fmt(d.total)+'</span>'+
@@ -4623,9 +4624,9 @@ function renderTrinkgeld(){
     <div class="box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: Trinkgeld & Stornos</div><div class="box-sub">Automatische Bewertung der Servicequalität</div></div>
-        <button id="btn-report-trinkgeld" onclick="generateTabReport('trinkgeld')" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+        <button id="btn-report-trinkgeld" onclick="generateTabReport('trinkgeld')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
       </div>
-      <div id="tab-report-trinkgeld" style="display:none;margin-top:12px;border-top:1px solid #1e3a5f;padding-top:12px"></div>
+      <div id="tab-report-trinkgeld" style="display:none;margin-top:12px;border-top:1px solid #0a3545;padding-top:12px"></div>
     </div>`;
 
   // Charts
@@ -4646,7 +4647,7 @@ function renderTrinkgeld(){
         datasets:[{
           label:"TK-Quote %",
           data:tkZeitKeys.map(function(d){return Math.round(tkZeitMap[d].tk/Math.max(tkZeitMap[d].total,1)*1000)/10;}),
-          borderColor:"#8b5cf6",backgroundColor:"#8b5cf620",fill:true,tension:0.4,pointRadius:3,borderWidth:2
+          borderColor:"#E84393",backgroundColor:"#E8439320",fill:true,tension:0.4,pointRadius:3,borderWidth:2
         }]
       },
       options:{responsive:true,maintainAspectRatio:false,
@@ -4666,13 +4667,13 @@ function renderTrinkgeld(){
       data:{
         labels:stundenKeys.map(function(h){return h+":00";}),
         datasets:[
-          {label:"TK-Quote %",data:stundenKeys.map(function(h){return Math.round(stundenMap[h].tk/Math.max(stundenMap[h].total,1)*100*10)/10;}),backgroundColor:"#8b5cf6",borderRadius:3,yAxisID:"y1"},
+          {label:"TK-Quote %",data:stundenKeys.map(function(h){return Math.round(stundenMap[h].tk/Math.max(stundenMap[h].total,1)*100*10)/10;}),backgroundColor:"#E84393",borderRadius:3,yAxisID:"y1"},
           {label:"Trinkgeld €",data:stundenKeys.map(function(h){return Math.round(stundenMap[h].tk);}),type:"line",borderColor:"#22c55e",backgroundColor:"transparent",tension:0.4,pointRadius:4,yAxisID:"y2"}
         ]
       },
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
         x:{ticks:{color:"#475569",font:{size:10}},grid:{color:"#1e2d40"}},
-        y1:{ticks:{color:"#8b5cf6",font:{size:9},callback:function(v){return v+"%";}},grid:{color:"#1e2d40"},position:"left"},
+        y1:{ticks:{color:"#E84393",font:{size:9},callback:function(v){return v+"%";}},grid:{color:"#1e2d40"},position:"left"},
         y2:{ticks:{color:"#22c55e",font:{size:9},callback:function(v){return"€"+v;}},grid:{display:false},position:"right"}
       }}
     });
@@ -4753,7 +4754,7 @@ function renderSimulator(){
     var better=neg?n<a:n>a;
     var col=Math.abs(n-a)<0.5?"#64748b":better?"#22c55e":"#ef4444";
     var style=bold?"font-weight:700;color:#f1f5f9;font-size:13px":"color:#64748b";
-    var borderTop=sep?"border-top:2px solid #f97316;margin-top:4px;padding-top:10px":"border-bottom:1px solid #1e2d40";
+    var borderTop=sep?"border-top:2px solid #E84393;margin-top:4px;padding-top:10px":"border-bottom:1px solid #1e2d40";
     return'<div style="display:flex;justify-content:space-between;padding:7px 0;'+borderTop+';font-size:12px">'+
       '<span style="'+style+';flex:1">'+label+'</span>'+
       '<span style="color:#475569;width:80px;text-align:right">'+fmt(a)+'</span>'+
@@ -4764,13 +4765,13 @@ function renderSimulator(){
   document.getElementById("t-simulator").innerHTML=`
     <div class="grid2">
       <div class="box">
-        <div class="box-title" style="color:#f97316">🧮 GuV-Simulator</div>
+        <div class="box-title" style="color:#E84393">🧮 GuV-Simulator</div>
         <div style="font-size:11px;color:#475569;margin-bottom:6px">Basis: echte Daten aus Apicbase + Ordio</div>
         <div style="font-size:11px;margin-bottom:16px">${paReal?'<span class="badge bb">Personal: Ordio Live ('+fmt(paBase)+')</span>':'<span class="badge by">Personal: Schätzung 33%</span>'}</div>
         ${[
-          {id:"p",label:"Preisänderung",val:simV.p,min:-20,max:30,col:"#f97316"},
-          {id:"v",label:"Verkaufsmenge",val:simV.v,min:-30,max:30,col:"#3b82f6"},
-          {id:"f",label:"Food Cost (Punkte)",val:simV.f,min:-5,max:10,col:"#8b5cf6"},
+          {id:"p",label:"Preisänderung",val:simV.p,min:-20,max:30,col:"#E84393"},
+          {id:"v",label:"Verkaufsmenge",val:simV.v,min:-30,max:30,col:"#00EEFC"},
+          {id:"f",label:"Food Cost (Punkte)",val:simV.f,min:-5,max:10,col:"#E84393"},
           {id:"a",label:paReal?"Personal (%±)":"Personal (Punkte)",val:simV.a,min:-15,max:25,col:"#22c55e"}
         ].map(function(s){
           return'<div class="slider-row">'+
@@ -4783,7 +4784,7 @@ function renderSimulator(){
 
       <div class="box">
         <div class="box-title">📄 Vorher vs. Nachher</div>
-        <div style="display:flex;justify-content:space-between;padding:4px 0 8px;border-bottom:1px solid #1e3a5f;font-size:10px;color:#475569;margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;padding:4px 0 8px;border-bottom:1px solid #0a3545;font-size:10px;color:#475569;margin-bottom:4px">
           <span style="flex:1"></span>
           <span style="width:80px;text-align:right">IST</span>
           <span style="width:90px;text-align:right">SIMULIERT</span>
@@ -4797,8 +4798,8 @@ function renderSimulator(){
           <span style="color:${rohertraN>=rohertraA?'#22c55e':'#ef4444'};width:90px;text-align:right">${fmt(rohertraN)}</span>
         </div>
         ${simRow("− Operative Personal "+(paReal?"(Ordio)":"(~33%)"),paOpaA,paN,true,false,false)}
-        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:2px solid #3b82f640;font-size:12px;font-weight:700">
-          <span style="color:#3b82f6;flex:1">= Contribution Margin</span>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:2px solid #00EEFC40;font-size:12px;font-weight:700">
+          <span style="color:#00EEFC;flex:1">= Contribution Margin</span>
           <span style="color:#475569;width:80px;text-align:right">${fmt(cmA)}</span>
           <span style="color:${cmN>=cmA?'#22c55e':'#ef4444'};width:90px;text-align:right">${fmt(cmN)}</span>
         </div>
@@ -4806,7 +4807,7 @@ function renderSimulator(){
         ${simRow("− Miete & Leasing (fix)",mieteA,mieteA,true,false,false)}
         ${simRow("− Werbe- & Reisekosten (fix)",werbeA,werbeA,true,false,false)}
         ${simRow("− Sonstige Fixkosten (fix)",sonstA,sonstA,true,false,false)}
-        <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid #f97316;margin-top:4px">
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid #E84393;margin-top:4px">
           <span style="font-weight:700;color:#f1f5f9;font-size:13px">= EBITDA</span>
           <span style="color:#475569;font-size:12px;font-weight:600">${fmt(ebitdaA)}</span>
           <span style="color:${ebitdaN>=ebitdaA?'#22c55e':'#ef4444'};font-size:15px;font-weight:700">${fmt(ebitdaN)}</span>
@@ -4839,9 +4840,9 @@ function renderSimulator(){
     <div class="box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: Simulator</div><div class="box-sub">KI-gestützte Szenario-Bewertung</div></div>
-        <button id="btn-report-simulator" onclick="generateTabReport('simulator')" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+        <button id="btn-report-simulator" onclick="generateTabReport('simulator')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
       </div>
-      <div id="tab-report-simulator" style="display:none;margin-top:12px;border-top:1px solid #1e3a5f;padding-top:12px"></div>
+      <div id="tab-report-simulator" style="display:none;margin-top:12px;border-top:1px solid #0a3545;padding-top:12px"></div>
     </div>`;
 }
 
@@ -4952,7 +4953,7 @@ function renderLieferando(){
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-label">🛵 LDO Bruttoumsatz</div>
-        <div class="kpi-val" style="color:#f97316">${fmt(ldoBrutto)}</div>
+        <div class="kpi-val" style="color:#E84393">${fmt(ldoBrutto)}</div>
         <div class="kpi-delta delta-neu">Ø ${fmt(ldoBrutto/tage)}/Tag · ${ldoBons.length} Bons</div>
         <div class="kpi-ai">${fmtP(ldoAnteil)} vom Gesamtumsatz</div>
       </div>
@@ -4970,7 +4971,7 @@ function renderLieferando(){
       </div>
       <div class="kpi-card">
         <div class="kpi-label">🎯 Marketing Payout</div>
-        <div class="kpi-val" style="color:#8b5cf6">${fmt((garMd.marketing+garRs.marketing)*0.33)}</div>
+        <div class="kpi-val" style="color:#E84393">${fmt((garMd.marketing+garRs.marketing)*0.33)}</div>
         <div class="kpi-delta delta-neu">Rabatte × 33% Food & Paper</div>
         <div class="kpi-ai">Gesamt Rabatte: ${fmt(garMd.marketing+garRs.marketing)}</div>
       </div>
@@ -4990,7 +4991,7 @@ function renderLieferando(){
         <div class="drill-row"><span>Discount Brutto gesamt</span><span style="color:#ef4444">${fmt(Math.abs(discountBrutto))}</span></div>
         <div class="drill-row"><span>Discount Netto gesamt</span><span style="color:#ef4444">${fmt(Math.abs(discountNetto))}</span></div>
         <div class="drill-row"><span>Betroffene Bons</span><span>${discountBons}</span></div>
-        <div class="drill-row"><span>Ø Ticketsize mit Aktion</span><span style="color:#f97316">${fmtD(ticketMitAktion)}</span></div>
+        <div class="drill-row"><span>Ø Ticketsize mit Aktion</span><span style="color:#E84393">${fmtD(ticketMitAktion)}</span></div>
         <div class="drill-row"><span>Ø Ticketsize ohne Aktion</span><span style="color:#22c55e">${fmtD(ticketOhneAktion)}</span></div>
         <div class="ai-box">${ticketMitAktion>ticketOhneAktion?"Aktionsbons haben höheren Ticketsize — Rabatt zieht Mehrkäufer an.":"Aktionsbons haben niedrigeren Ticketsize — Rabatt wirkt ohne Upsell."}</div>
         `:'<div style="color:#475569;font-size:12px;padding:12px 0">Keine Discount-Artikel im Zeitraum.</div>'}
@@ -5002,7 +5003,7 @@ function renderLieferando(){
         <div style="display:flex;gap:10px;margin-bottom:16px">
           <div style="flex:1;background:#1a2538;border-radius:8px;padding:12px;text-align:center">
             <div style="font-size:11px;color:#475569;margin-bottom:4px">Mit Aktion</div>
-            <div style="font-size:20px;font-weight:700;color:#f97316">${fmtD(ticketMitAktion)}</div>
+            <div style="font-size:20px;font-weight:700;color:#E84393">${fmtD(ticketMitAktion)}</div>
             <div style="font-size:10px;color:#475569;margin-top:3px">${bonsMitAktion.length} Bons</div>
           </div>
           <div style="flex:1;background:#1a2538;border-radius:8px;padding:12px;text-align:center">
@@ -5012,7 +5013,7 @@ function renderLieferando(){
           </div>
           <div style="flex:1;background:#1a2538;border-radius:8px;padding:12px;text-align:center">
             <div style="font-size:11px;color:#475569;margin-bottom:4px">Gesamt Ø</div>
-            <div style="font-size:20px;font-weight:700;color:#8b5cf6">${fmtD(ldoTicket)}</div>
+            <div style="font-size:20px;font-weight:700;color:#E84393">${fmtD(ldoTicket)}</div>
             <div style="font-size:10px;color:#475569;margin-top:3px">${ldoBons.length} Bons</div>
           </div>
         </div>
@@ -5026,15 +5027,15 @@ function renderLieferando(){
       <div class="grid2" style="margin-top:12px">
         ${['Mehringdamm','Rosenthaler Straße'].map(function(stName){
           var g=stName==='Mehringdamm'?garMd:garRs;
-          var col=stName==='Mehringdamm'?'#f97316':'#3b82f6';
-          return'<div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:8px;padding:14px">'+
+          var col=stName==='Mehringdamm'?'#E84393':'#00EEFC';
+          return'<div style="background:#0a1628;border:1px solid #0a3545;border-radius:8px;padding:14px">'+
             '<div style="font-size:13px;font-weight:700;color:'+col+';margin-bottom:10px">'+(stName==='Mehringdamm'?'🟠':'🔵')+' '+stName+'</div>'+
             '<div class="drill-row"><span>Garantie</span><span>€ 62.500</span></div>'+
             '<div class="drill-row"><span>Erreichter LDO-Umsatz</span><span>'+fmt(g.brutto)+'</span></div>'+
             '<div class="drill-row"><span>Marketing (Rabatte)</span><span>'+fmt(g.marketing)+'</span></div>'+
-            '<div class="drill-row"><span>Bereinigter Umsatz</span><span style="color:#f97316;font-weight:600">'+fmt(g.bereinigt)+'</span></div>'+
+            '<div class="drill-row"><span>Bereinigter Umsatz</span><span style="color:#E84393;font-weight:600">'+fmt(g.bereinigt)+'</span></div>'+
             '<div class="drill-row"><span>Differenz zur Garantie</span><span style="color:'+(g.differenz>0?'#ef4444':'#22c55e')+';font-weight:600">'+fmt(g.differenz)+'</span></div>'+
-            '<div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid #1e3a5f;margin-top:4px">'+
+            '<div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid #0a3545;margin-top:4px">'+
               '<span style="font-size:12px;font-weight:700;color:#f1f5f9">Garantieanspruch (×47%)</span>'+
               '<span style="color:'+(g.anspruch>0?'#22c55e':'#64748b')+';font-size:16px;font-weight:700">'+fmt(g.anspruch)+'</span>'+
             '</div>'+
@@ -5044,7 +5045,7 @@ function renderLieferando(){
           '</div>';
         }).join("")}
       </div>
-      <div style="border-top:2px solid #f97316;margin-top:14px;padding-top:12px;display:flex;gap:12px">
+      <div style="border-top:2px solid #E84393;margin-top:14px;padding-top:12px;display:flex;gap:12px">
         <div style="flex:1;background:#16653420;border:1px solid #16653440;border-radius:8px;padding:12px;text-align:center">
           <div style="font-size:11px;color:#94a3b8;margin-bottom:4px">💰 Garantie-Auszahlung gesamt</div>
           <div style="font-size:22px;font-weight:700;color:#22c55e">${fmt(garMd.anspruch+garRs.anspruch)}</div>
@@ -5052,7 +5053,7 @@ function renderLieferando(){
         </div>
         <div style="flex:1;background:#4c1d9520;border:1px solid #4c1d9540;border-radius:8px;padding:12px;text-align:center">
           <div style="font-size:11px;color:#94a3b8;margin-bottom:4px">🎯 Marketing Payout (×33%)</div>
-          <div style="font-size:22px;font-weight:700;color:#8b5cf6">${fmt((garMd.marketing+garRs.marketing)*0.33)}</div>
+          <div style="font-size:22px;font-weight:700;color:#E84393">${fmt((garMd.marketing+garRs.marketing)*0.33)}</div>
           <div style="font-size:10px;color:#475569;margin-top:4px">Rabatte gesamt: ${fmt(garMd.marketing+garRs.marketing)}</div>
         </div>
       </div>
@@ -5070,12 +5071,12 @@ function renderLieferando(){
             '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'+
               '<span style="color:#f1f5f9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">'+name+'</span>'+
               '<span style="display:flex;gap:10px">'+
-                '<span style="color:#f97316;font-weight:600">'+Math.round(d.menge)+'x</span>'+
+                '<span style="color:#E84393;font-weight:600">'+Math.round(d.menge)+'x</span>'+
                 '<span style="color:#64748b">'+anteil+'%</span>'+
               '</span>'+
             '</div>'+
             '<div style="height:4px;background:#1e2d40;border-radius:2px">'+
-              '<div style="height:100%;background:#f97316;border-radius:2px;width:'+pct+'%"></div>'+
+              '<div style="height:100%;background:#E84393;border-radius:2px;width:'+pct+'%"></div>'+
             '</div>'+
           '</div>';
         }).join(""):'<div style="color:#475569;font-size:12px;padding:12px 0">Keine Lieferando-Artikel im Zeitraum.</div>'}
@@ -5090,10 +5091,10 @@ function renderLieferando(){
           return'<div style="margin-bottom:8px">'+
             '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">'+
               '<span style="color:#e2e8f0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px">'+kombi+'</span>'+
-              '<span style="color:#8b5cf6;font-weight:600;margin-left:8px">'+count+'x</span>'+
+              '<span style="color:#E84393;font-weight:600;margin-left:8px">'+count+'x</span>'+
             '</div>'+
             '<div style="height:3px;background:#1e2d40;border-radius:2px">'+
-              '<div style="height:100%;background:#8b5cf6;border-radius:2px;width:'+pct+'%"></div>'+
+              '<div style="height:100%;background:#E84393;border-radius:2px;width:'+pct+'%"></div>'+
             '</div>'+
           '</div>';
         }).join(""):'<div style="color:#475569;font-size:12px;padding:12px 0">Nicht genug Daten für Kombinationsanalyse.</div>'}
@@ -5104,9 +5105,9 @@ function renderLieferando(){
     <div class="box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: Lieferando</div><div class="box-sub">Automatische Bewertung des Lieferando-Geschäfts</div></div>
-        <button id="btn-report-lieferando" onclick="generateTabReport('lieferando')" style="background:#7c3aed;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+        <button id="btn-report-lieferando" onclick="generateTabReport('lieferando')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
       </div>
-      <div id="tab-report-lieferando" style="display:none;margin-top:12px;border-top:1px solid #1e3a5f;padding-top:12px"></div>
+      <div id="tab-report-lieferando" style="display:none;margin-top:12px;border-top:1px solid #0a3545;padding-top:12px"></div>
     </div>`;
 
   // Chart
@@ -5120,8 +5121,8 @@ function renderLieferando(){
           {
             label:"LDO Brutto",
             data:tagKeys.map(function(d){return Math.round(tagLdoMap[d]||0);}),
-            borderColor:"#f97316",
-            backgroundColor:"#f9731620",
+            borderColor:"#E84393",
+            backgroundColor:"#E8439320",
             fill:true,
             tension:0.4,
             pointRadius:3,
@@ -5519,14 +5520,14 @@ function buildTagesberichtHTML(vonParam, bisParam) {
   var umsatzText = 'Gestern <b style="color:#f1f5f9">'+fmt(kG.u)+'</b> Netto.';
   if(umsatzDiff!==null) umsatzText += ' <span style="color:'+(umsatzDiff>=0?'#22c55e':'#ef4444')+'">'+(umsatzDiff>=0?'+':'')+umsatzDiff.toFixed(1)+'%</span> vs. Vorwoche ('+vorwoche+': '+fmt(kV.u)+').';
   umsatzText += ' Ø letzte 7 Tage: '+fmt(kW.u/tageW)+'/Tag.';
-  if(kGMd.u>0||kGRs.u>0) umsatzText += '<br>Mehringdamm <b style="color:#f97316">'+fmt(kGMd.u)+'</b> · Rosenthaler <b style="color:#3b82f6">'+fmt(kGRs.u)+'</b>.';
+  if(kGMd.u>0||kGRs.u>0) umsatzText += '<br>Mehringdamm <b style="color:#E84393">'+fmt(kGMd.u)+'</b> · Rosenthaler <b style="color:#00EEFC">'+fmt(kGRs.u)+'</b>.';
   if(ldoBruttoG>0) umsatzText += ' Lieferando: '+fmt(ldoBruttoG)+' ('+fmtP(ldoAnteilG)+' vom Umsatz).';
 
   // Personal-Text
   var paText = 'Operative Personalkosten <b style="color:#f1f5f9">'+fmt(paCostG)+'</b> (<span style="color:'+(paQuoteG>ZIELE.pa?'#ef4444':'#22c55e')+'">'+fmtP(paQuoteG)+'</span>, Ziel 22%).';
   paText += ' Ø letzte 7 Tage: '+fmtP(paQuoteW)+'.';
   paText += ' Umsatz/Stunde: <span style="color:'+(umsatzStdG>=ZIELE.umsatzStd?'#22c55e':'#ef4444')+'">'+fmt(umsatzStdG)+'</span> (Ziel €75).';
-  if(smG.length>0) paText += '<br>Social Media: '+smG.map(function(r){return '<b style="color:#8b5cf6">'+r.mitarbeiter+'</b> ('+r.standort.replace("Rosenthaler Straße","Rosi")+', '+r.startZeit+'-'+r.endeZeit+')';}).join(', ')+'.';
+  if(smG.length>0) paText += '<br>Social Media: '+smG.map(function(r){return '<b style="color:#E84393">'+r.mitarbeiter+'</b> ('+r.standort.replace("Rosenthaler Straße","Rosi")+', '+r.startZeit+'-'+r.endeZeit+')';}).join(', ')+'.';
   paText += ' Schichten: '+ordioG.length+' gesamt.';
 
   // Waste-Text
@@ -5537,17 +5538,17 @@ function buildTagesberichtHTML(vonParam, bisParam) {
   if(topWasteAll.length>0) wasteText += '<br>Größte Posten: '+topWasteAll.map(function(r){return r.artikel+' '+fmt(r.kosten)+' ('+r.kategorie+')';}).join(', ')+'.';
 
   // TK-Text
-  var tkText = 'TK-Quote: <b style="color:'+(tkQuoteG>=0.05?'#22c55e':'#f97316')+'">'+fmtP(tkQuoteG)+'</b> ('+fmt(tkG)+' gesamt).';
+  var tkText = 'TK-Quote: <b style="color:'+(tkQuoteG>=0.05?'#22c55e':'#E84393')+'">'+fmtP(tkQuoteG)+'</b> ('+fmt(tkG)+' gesamt).';
   if(bestTK.length>0) tkText += ' Bester MA: <b style="color:#f1f5f9">'+bestTK[0][0]+'</b> ('+fmtP(bestTK[0][1].total>0?bestTK[0][1].tk/bestTK[0][1].total:0)+' Quote).';
   tkText += ' Stornos: <span style="color:'+(stornosG>stornosW*1.5&&stornosG>1?'#ef4444':'#94a3b8')+'">'+stornosG+'x</span> (Ø '+stornosW.toFixed(1)+'/Tag).';
 
   var html = '<div style="font-size:11px;color:#475569;margin-bottom:10px">Automatisch berechnet · Daten vom '+zieldatum+'</div>';
   html += section('💰','Umsatz',umsatzDiff===null?'#64748b':umsatzDiff>=0?'#22c55e':'#ef4444', umsatzText);
-  html += section('👥','Personal',paQuoteG>ZIELE.pa*1.1?'#ef4444':paQuoteG>ZIELE.pa?'#f97316':'#22c55e', paText);
+  html += section('👥','Personal',paQuoteG>ZIELE.pa*1.1?'#ef4444':paQuoteG>ZIELE.pa?'#E84393':'#22c55e', paText);
   html += section('🗑️','Food Cost & Waste',kG.fp>ZIELE.fc?'#ef4444':'#22c55e', wasteText);
-  html += section('💝','Trinkgeld & Stornos',tkQuoteG>=0.05?'#22c55e':'#f97316', tkText);
+  html += section('💝','Trinkgeld & Stornos',tkQuoteG>=0.05?'#22c55e':'#E84393', tkText);
   if(anomalien.length>0) {
-    html += section('⚠️','Besonderheiten','#f97316', anomalien.join('<br>'));
+    html += section('⚠️','Besonderheiten','#E84393', anomalien.join('<br>'));
   }
 
   return html;
@@ -5557,7 +5558,7 @@ function generiereKIBericht() {
   var apiKey = localStorage.getItem("bbn_ai_key") || "";
   if(!apiKey) {
     document.getElementById("ki-bericht-inhalt").innerHTML = 
-      '<div style="color:#f97316">⚠️ Bitte zuerst den Anthropic API Key im KI-Chat eingeben.</div>';
+      '<div style="color:#E84393">⚠️ Bitte zuerst den Anthropic API Key im KI-Chat eingeben.</div>';
     return;
   }
 
@@ -5776,7 +5777,7 @@ async function generateTabReport(tabId) {
   if(!panel) return;
 
   if(!apiKey) {
-    panel.innerHTML = '<div style="color:#f97316;padding:12px">⚠️ Bitte zuerst den Anthropic API Key im KI-Chat eingeben.</div>';
+    panel.innerHTML = '<div style="color:#E84393;padding:12px">⚠️ Bitte zuerst den Anthropic API Key im KI-Chat eingeben.</div>';
     panel.style.display = "block";
     return;
   }
