@@ -379,6 +379,7 @@ if(sessionStorage.getItem("bbn_unlocked")==="1"){document.getElementById("lock-s
   <button class="tab" onclick="showTab('foodcost',this)">🥩 Food Cost</button>
   <button class="tab" onclick="showTab('speisekarte',this)">🍽️ Speisekarte</button>
   <button class="tab" onclick="showTab('trinkgeld',this)">💝 Trinkgeld & Stornos</button>
+  <button class="tab" onclick="showTab('rabatte',this)">🏷️ Rabatte</button>
   <button class="tab" onclick="showTab('simulator',this)">🧮 Simulator</button>
   <button class="tab" onclick="showTab('lieferando',this)">🛵 Lieferando</button>
 </div>
@@ -391,6 +392,7 @@ if(sessionStorage.getItem("bbn_unlocked")==="1"){document.getElementById("lock-s
   <div id="t-foodcost" style="display:none"></div>
   <div id="t-speisekarte" style="display:none"></div>
   <div id="t-trinkgeld" style="display:none"></div>
+  <div id="t-rabatte" style="display:none"></div>
   <div id="t-simulator" style="display:none"></div>
   <div id="t-lieferando" style="display:none"></div>
 </div>
@@ -1134,6 +1136,7 @@ function renderAll(){
   renderFoodCost();
   renderSpeisekarte();
   renderTrinkgeld();
+  renderRabatte();
   renderSimulator();
   renderLieferando();
 }
@@ -4950,6 +4953,425 @@ function renderTrinkgeld(){
           }}
       });
     }
+  }
+}
+
+// ============================================================
+// RABATTE
+// ============================================================
+function renderRabatte(){
+  var von=document.getElementById("von").value;
+  var bis=document.getElementById("bis").value;
+  var st=document.getElementById("standort").value;
+
+  // Alle Artikel im Zeitraum (inkl. stornierte, um Rabatte vollständig zu sehen)
+  var allArt=artikel.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);
+  });
+  // Alle Bons im Zeitraum
+  var allBons=(hatStundenfilter()?getBonsGefiltert(von,bis,st):bons.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);
+  }));
+
+  // Rabattierte Artikel: rabatt != 0 ODER gratis != 0
+  var rabArt=allArt.filter(function(r){return r.rabatt!==0||r.gratis!==0;});
+  // Rabattierte Bons
+  var rabBons=allBons.filter(function(r){return r.rabatt!==0;});
+
+  if(rabArt.length===0&&rabBons.length===0){
+    document.getElementById("t-rabatte").innerHTML='<div class="box" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">🏷️</div><div style="color:#475569">Keine Rabatt-Daten für diesen Zeitraum.</div></div>';
+    return;
+  }
+
+  var totalRabatt=rabArt.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis);},0);
+  var totalRabattBons=rabBons.length;
+  var totalRabattArt=rabArt.length;
+  var avgPerBon=totalRabattBons>0?totalRabatt/totalRabattBons:0;
+
+  // Unique Bon-IDs mit Rabatt
+  var rabBonIds={};rabArt.forEach(function(r){rabBonIds[r.bonNr]=1;});
+  var uniqueRabBons=Object.keys(rabBonIds).length;
+
+  // === MITARBEITER-TISCHE erkennen ===
+  // Tische die "mitarbeiter" oder "table" + Name enthalten
+  var maTischArt=allArt.filter(function(r){
+    var t=(r.tisch||"").toLowerCase();
+    return t.indexOf("mitarbeiter")!==-1||t.indexOf("ma ")===0||t.indexOf("staff")!==-1;
+  });
+  // Fallback: wenn keine Mitarbeiter-Tische gefunden, auch Bons mit rabatt > 50% des Totals prüfen
+  // Aber erstmal nur explizite Mitarbeiter-Tische
+
+  // === COMPLIANCE: Mitarbeiter-Essen pro Tag ===
+  // Erlaubt: 1x Bang Bang Minced Beef ODER Minced Soja pro Tag + Getränke 70% off
+  var maEssenMap={};// {tisch: {datum: {hauptspeisen:[], getraenke:[], andere:[]}}}
+  maTischArt.forEach(function(r){
+    var tisch=r.tisch||"Unbekannt";
+    var tag=r.datum;
+    if(!maEssenMap[tisch])maEssenMap[tisch]={};
+    if(!maEssenMap[tisch][tag])maEssenMap[tisch][tag]={hauptspeisen:[],getraenke:[],andere:[],total:0,rabattTotal:0};
+    var n=(r.name||"").toLowerCase();
+    var isHaupt=n.indexOf("minced beef")!==-1||n.indexOf("minced soja")!==-1||n.indexOf("biang biang")!==-1||n.indexOf("bang bang minced")!==-1;
+    var isGetraenk=(r.gruppe||"").toLowerCase().indexOf("getränk")!==-1||(r.gruppe||"").toLowerCase().indexOf("drink")!==-1||n.indexOf("cola")!==-1||n.indexOf("wasser")!==-1||n.indexOf("limo")!==-1||n.indexOf("bier")!==-1||n.indexOf("mate")!==-1||n.indexOf("saft")!==-1||n.indexOf("tee")!==-1||n.indexOf("kaffee")!==-1||n.indexOf("espresso")!==-1;
+    if(isHaupt) maEssenMap[tisch][tag].hauptspeisen.push(r);
+    else if(isGetraenk) maEssenMap[tisch][tag].getraenke.push(r);
+    else maEssenMap[tisch][tag].andere.push(r);
+    maEssenMap[tisch][tag].total+=r.preis;
+    maEssenMap[tisch][tag].rabattTotal+=Math.abs(r.rabatt)+Math.abs(r.gratis);
+  });
+
+  // Compliance-Auswertung
+  var violations=[];
+  var complianceStats={ok:0,warn:0};
+  Object.keys(maEssenMap).forEach(function(tisch){
+    Object.keys(maEssenMap[tisch]).forEach(function(tag){
+      var d=maEssenMap[tisch][tag];
+      var hauptCount=d.hauptspeisen.reduce(function(s,r){return s+r.menge;},0);
+      if(hauptCount>1){
+        violations.push({tisch:tisch,datum:tag,typ:"Hauptspeise",detail:hauptCount+"× Hauptspeise statt 1× erlaubt",artikel:d.hauptspeisen.map(function(r){return r.name;}).join(", ")});
+        complianceStats.warn++;
+      } else { complianceStats.ok++; }
+      // Andere Artikel (nicht Hauptspeise, nicht Getränk) = nicht erlaubt
+      if(d.andere.length>0){
+        violations.push({tisch:tisch,datum:tag,typ:"Nicht erlaubt",detail:d.andere.length+"× nicht erlaubte Artikel",artikel:d.andere.map(function(r){return r.name;}).join(", ")});
+      }
+    });
+  });
+  violations.sort(function(a,b){return b.datum>a.datum?1:b.datum<a.datum?-1:0;});
+
+  // === RABATTE NACH MITARBEITER (wer hat den Rabatt gegeben) ===
+  var maRabMap={};
+  rabArt.forEach(function(r){
+    var ma=r.mitarbeiter||"Unbekannt";
+    if(!maRabMap[ma])maRabMap[ma]={count:0,betrag:0,bons:{}};
+    maRabMap[ma].count++;
+    maRabMap[ma].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis);
+    maRabMap[ma].bons[r.bonNr]=1;
+  });
+  var maRabList=Object.entries(maRabMap).sort(function(a,b){return b[1].betrag-a[1].betrag;});
+
+  // === TOP RABATTIERTE ARTIKEL ===
+  var artRabMap={};
+  rabArt.forEach(function(r){
+    var n=r.name||"Unbekannt";
+    if(!artRabMap[n])artRabMap[n]={count:0,betrag:0,menge:0};
+    artRabMap[n].count++;
+    artRabMap[n].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis);
+    artRabMap[n].menge+=r.menge;
+  });
+  var artRabList=Object.entries(artRabMap).sort(function(a,b){return b[1].betrag-a[1].betrag;}).slice(0,10);
+  var maxArtRab=artRabList.length>0?artRabList[0][1].betrag:1;
+
+  // === NACH TISCH ===
+  var tischMap={};
+  rabArt.forEach(function(r){
+    var t=r.tisch||"Kein Tisch";
+    if(!tischMap[t])tischMap[t]={count:0,betrag:0,bons:{}};
+    tischMap[t].count++;
+    tischMap[t].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis);
+    tischMap[t].bons[r.bonNr]=1;
+  });
+  var tischList=Object.entries(tischMap).sort(function(a,b){return b[1].betrag-a[1].betrag;}).slice(0,12);
+
+  // === PER STANDORT ===
+  var mdRab=rabArt.filter(function(r){return r.standort==="Mehringdamm";});
+  var rsRab=rabArt.filter(function(r){return r.standort==="Rosenthaler Straße";});
+  var mdBetrag=mdRab.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis);},0);
+  var rsBetrag=rsRab.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis);},0);
+  var mdBonIds={};mdRab.forEach(function(r){mdBonIds[r.bonNr]=1;});
+  var rsBonIds={};rsRab.forEach(function(r){rsBonIds[r.bonNr]=1;});
+
+  // === NACH STUNDE ===
+  var stdMap={};
+  rabArt.forEach(function(r){
+    if(r.stunde>=0){
+      if(!stdMap[r.stunde])stdMap[r.stunde]={count:0,betrag:0};
+      stdMap[r.stunde].count++;
+      stdMap[r.stunde].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis);
+    }
+  });
+
+  // === WOCHEN-TREND ===
+  var wMap={};
+  rabArt.forEach(function(r){
+    var d=new Date(r.datum);
+    var day=d.getDay();var diff=d.getDate()-day+(day===0?-6:1);
+    var mon=new Date(d.setDate(diff));
+    var wk=mon.toISOString().slice(0,10);
+    if(!wMap[wk])wMap[wk]={count:0,betrag:0};
+    wMap[wk].count++;
+    wMap[wk].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis);
+  });
+  var wKeys=Object.keys(wMap).sort();
+
+  // === MA-Tisch Zusammenfassung ===
+  var maTischSummary=[];
+  Object.keys(maEssenMap).forEach(function(tisch){
+    var tage=Object.keys(maEssenMap[tisch]);
+    var totalRab=0;var totalItems=0;var hauptCount=0;var getCount=0;var andereCount=0;
+    tage.forEach(function(tag){
+      var d=maEssenMap[tisch][tag];
+      totalRab+=d.rabattTotal;
+      totalItems+=d.hauptspeisen.length+d.getraenke.length+d.andere.length;
+      hauptCount+=d.hauptspeisen.length;
+      getCount+=d.getraenke.length;
+      andereCount+=d.andere.length;
+    });
+    maTischSummary.push({tisch:tisch,tage:tage.length,totalRab:totalRab,totalItems:totalItems,haupt:hauptCount,getraenke:getCount,andere:andereCount});
+  });
+  maTischSummary.sort(function(a,b){return b.totalRab-a.totalRab;});
+
+  // === HTML RENDERING ===
+  var html='';
+
+  // KPI Row
+  html+='<div style="display:flex;gap:12px;margin-bottom:14px">'+
+    '<div style="flex:1;background:#111827;border-radius:10px;padding:14px;border:1px solid #1e2d40;border-left:3px solid #E84393">'+
+      '<div style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:0.5px">Rabatt-Gesamtwert</div>'+
+      '<div style="font-size:24px;font-weight:700;color:#E84393;margin:4px 0">'+fmt(totalRabatt)+'</div>'+
+      '<div style="font-size:11px;color:#94a3b8">Ø '+fmt(avgPerBon)+' pro Bon</div>'+
+    '</div>'+
+    '<div style="flex:1;background:#111827;border-radius:10px;padding:14px;border:1px solid #1e2d40;border-left:3px solid #FF8000">'+
+      '<div style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:0.5px">Rabattierte Bons</div>'+
+      '<div style="font-size:24px;font-weight:700;color:#FF8000;margin:4px 0">'+uniqueRabBons+'</div>'+
+      '<div style="font-size:11px;color:#94a3b8">von '+allBons.length+' gesamt ('+(allBons.length>0?(uniqueRabBons/allBons.length*100).toFixed(1):0)+'%)</div>'+
+    '</div>'+
+    '<div style="flex:1;background:#111827;border-radius:10px;padding:14px;border:1px solid #1e2d40;border-left:3px solid #40F0FF">'+
+      '<div style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:0.5px">Rabattierte Artikel</div>'+
+      '<div style="font-size:24px;font-weight:700;color:#40F0FF;margin:4px 0">'+totalRabattArt+'</div>'+
+      '<div style="font-size:11px;color:#94a3b8">Ø '+(uniqueRabBons>0?(totalRabattArt/uniqueRabBons).toFixed(1):0)+' Artikel pro Bon</div>'+
+    '</div>'+
+    '<div style="flex:1;background:#111827;border-radius:10px;padding:14px;border:1px solid #1e2d40;border-left:3px solid #22c55e">'+
+      '<div style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:0.5px">MA-Tische</div>'+
+      '<div style="font-size:24px;font-weight:700;color:#22c55e;margin:4px 0">'+maTischSummary.length+'</div>'+
+      '<div style="font-size:11px;color:#94a3b8">'+maTischArt.length+' Positionen</div>'+
+    '</div>'+
+  '</div>';
+
+  // === MITARBEITER-ESSEN MONITOR ===
+  html+='<div class="box">'+
+    '<div class="box-title">🍜 Mitarbeiter-Essen Monitor</div>'+
+    '<div class="box-sub">Erlaubt: 1× Bang Bang Minced Beef / Soja pro Tag · Getränke 70% off · Über Mitarbeiter-Tisch</div>';
+
+  if(maTischSummary.length>0){
+    html+='<div style="margin-bottom:14px">';
+    maTischSummary.forEach(function(m){
+      var hasViolation=violations.some(function(v){return v.tisch===m.tisch;});
+      var borderCol=hasViolation?"#ef4444":"#22c55e";
+      html+='<div style="background:#0d1f2d;border-radius:8px;padding:12px;margin-bottom:8px;border-left:3px solid '+borderCol+'">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center">'+
+          '<div>'+
+            '<span style="font-weight:600;color:#f1f5f9;font-size:13px">'+m.tisch+'</span>'+
+            (hasViolation?' <span style="color:#ef4444;font-size:11px;font-weight:600">⚠️ Verstöße</span>':' <span style="color:#22c55e;font-size:11px">✓ OK</span>')+
+          '</div>'+
+          '<span style="color:#E84393;font-weight:700">'+fmt(m.totalRab)+'</span>'+
+        '</div>'+
+        '<div style="display:flex;gap:16px;margin-top:6px;font-size:11px;color:#94a3b8">'+
+          '<span>'+m.tage+' Tage</span>'+
+          '<span>'+m.haupt+'× Hauptspeise</span>'+
+          '<span>'+m.getraenke+'× Getränke</span>'+
+          (m.andere>0?'<span style="color:#ef4444">'+m.andere+'× Andere ⚠️</span>':'')+
+          '<span>'+m.totalItems+' Pos. gesamt</span>'+
+        '</div>'+
+      '</div>';
+    });
+    html+='</div>';
+
+    // Violations Detail
+    if(violations.length>0){
+      html+='<div style="background:#1a0f0f;border:1px solid #7f1d1d;border-radius:8px;padding:12px;margin-bottom:12px">'+
+        '<div style="font-weight:600;color:#ef4444;font-size:12px;margin-bottom:8px">⚠️ Verstöße ('+violations.length+')</div>';
+      violations.slice(0,15).forEach(function(v){
+        var datParts=v.datum.split("-");
+        var datStr=datParts[2]+"."+datParts[1]+"."+datParts[0];
+        html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #2d1515;font-size:12px">'+
+          '<div>'+
+            '<span style="color:#ef4444;font-weight:500">'+datStr+'</span>'+
+            '<span style="color:#64748b;margin:0 8px">·</span>'+
+            '<span style="color:#cbd5e1">'+v.tisch+'</span>'+
+            '<span style="color:#64748b;margin:0 8px">·</span>'+
+            '<span style="color:#FF8000">'+v.typ+'</span>'+
+          '</div>'+
+          '<span style="color:#94a3b8;font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+v.artikel+'</span>'+
+        '</div>';
+      });
+      if(violations.length>15) html+='<div style="color:#64748b;font-size:11px;padding-top:6px">+ '+(violations.length-15)+' weitere...</div>';
+      html+='</div>';
+    }
+  } else {
+    html+='<div style="color:#475569;font-size:12px;padding:16px 0;text-align:center">Keine Mitarbeiter-Tische im Zeitraum erkannt.<br><span style="font-size:11px">Tische müssen "Mitarbeiter" im Namen enthalten.</span></div>';
+  }
+  html+='</div>';
+
+  // === GRID: Top Artikel + Rabatte nach MA ===
+  html+='<div class="grid2">';
+
+  // Top rabattierte Artikel
+  html+='<div class="box">'+
+    '<div class="box-title">🏷️ Top rabattierte Artikel</div>'+
+    '<div class="box-sub">Nach Rabattwert</div>';
+  artRabList.forEach(function(e){
+    var name=e[0],d=e[1];
+    var pct=maxArtRab>0?Math.round(d.betrag/maxArtRab*100):0;
+    html+='<div style="margin-bottom:8px">'+
+      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'+
+        '<span style="color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">'+name+'</span>'+
+        '<span style="color:#E84393;white-space:nowrap;margin-left:8px">'+d.count+'× · '+fmt(d.betrag)+'</span>'+
+      '</div>'+
+      '<div style="height:3px;background:#1e2d40;border-radius:2px">'+
+        '<div style="height:100%;background:#E84393;border-radius:2px;width:'+pct+'%"></div>'+
+      '</div>'+
+    '</div>';
+  });
+  html+='</div>';
+
+  // Rabatte nach Mitarbeiter
+  html+='<div class="box">'+
+    '<div class="box-title">👤 Rabatte nach Mitarbeiter</div>'+
+    '<div class="box-sub">Wer hat Rabatte gewährt</div>';
+  maRabList.forEach(function(e){
+    var name=e[0],d=e[1];
+    var bonCount=Object.keys(d.bons).length;
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:6px 0;border-bottom:1px solid #1e2d40">'+
+      '<span style="color:#cbd5e1">'+name+'</span>'+
+      '<span style="display:flex;gap:8px;align-items:center">'+
+        '<span style="color:#94a3b8;font-size:11px">'+bonCount+' Bons</span>'+
+        '<span style="color:#FF8000;font-weight:600">'+d.count+' Pos.</span>'+
+        '<span style="color:#E84393;font-weight:600">'+fmt(d.betrag)+'</span>'+
+      '</span>'+
+    '</div>';
+  });
+  html+='</div>';
+  html+='</div>'; // grid2 end
+
+  // === GRID: Tische + Standort ===
+  html+='<div class="grid2">';
+
+  // Nach Tisch
+  html+='<div class="box">'+
+    '<div class="box-title">🪑 Rabatte nach Tisch</div>'+
+    '<div class="box-sub">Top '+tischList.length+' Tische nach Rabattwert</div>';
+  var maxTischRab=tischList.length>0?tischList[0][1].betrag:1;
+  tischList.forEach(function(e){
+    var name=e[0],d=e[1];
+    var bonCount=Object.keys(d.bons).length;
+    var isMa=(name.toLowerCase().indexOf("mitarbeiter")!==-1);
+    var pct=maxTischRab>0?Math.round(d.betrag/maxTischRab*100):0;
+    html+='<div style="margin-bottom:8px">'+
+      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'+
+        '<span style="color:'+(isMa?"#22c55e":"#cbd5e1")+'">'+name+(isMa?" 🍜":"")+'</span>'+
+        '<span style="color:#E84393;white-space:nowrap">'+bonCount+' Bons · '+fmt(d.betrag)+'</span>'+
+      '</div>'+
+      '<div style="height:3px;background:#1e2d40;border-radius:2px">'+
+        '<div style="height:100%;background:'+(isMa?"#22c55e":"#E84393")+';border-radius:2px;width:'+pct+'%"></div>'+
+      '</div>'+
+    '</div>';
+  });
+  html+='</div>';
+
+  // Per Standort
+  html+='<div class="box">'+
+    '<div class="box-title">📍 Per Standort</div>'+
+    '<div class="box-sub">Rabattverteilung</div>';
+  if(st==="Alle Standorte"){
+    var mdPct=totalRabatt>0?(mdBetrag/totalRabatt*100):0;
+    var rsPct=totalRabatt>0?(rsBetrag/totalRabatt*100):0;
+    html+='<div style="background:#0d1f2d;border-radius:8px;padding:14px;margin-bottom:10px">'+
+      '<div style="display:flex;justify-content:space-between;margin-bottom:6px">'+
+        '<span style="color:#f1f5f9;font-weight:600">Mehringdamm</span>'+
+        '<span style="color:#E84393;font-weight:700">'+fmt(mdBetrag)+'</span>'+
+      '</div>'+
+      '<div style="display:flex;gap:14px;font-size:11px;color:#94a3b8">'+
+        '<span>'+Object.keys(mdBonIds).length+' Bons</span>'+
+        '<span>'+mdRab.length+' Positionen</span>'+
+        '<span>'+mdPct.toFixed(0)+'% Anteil</span>'+
+      '</div>'+
+      '<div style="height:3px;background:#1e2d40;border-radius:2px;margin-top:6px"><div style="height:100%;background:#E84393;border-radius:2px;width:'+mdPct+'%"></div></div>'+
+    '</div>'+
+    '<div style="background:#0d1f2d;border-radius:8px;padding:14px">'+
+      '<div style="display:flex;justify-content:space-between;margin-bottom:6px">'+
+        '<span style="color:#f1f5f9;font-weight:600">Rosenthaler Straße</span>'+
+        '<span style="color:#E84393;font-weight:700">'+fmt(rsBetrag)+'</span>'+
+      '</div>'+
+      '<div style="display:flex;gap:14px;font-size:11px;color:#94a3b8">'+
+        '<span>'+Object.keys(rsBonIds).length+' Bons</span>'+
+        '<span>'+rsRab.length+' Positionen</span>'+
+        '<span>'+rsPct.toFixed(0)+'% Anteil</span>'+
+      '</div>'+
+      '<div style="height:3px;background:#1e2d40;border-radius:2px;margin-top:6px"><div style="height:100%;background:#E84393;border-radius:2px;width:'+rsPct+'%"></div></div>'+
+    '</div>';
+  } else {
+    html+='<div style="color:#475569;font-size:12px;padding:12px 0">Einzelner Standort ausgewählt: <b style="color:#f1f5f9">'+st+'</b></div>'+
+      '<div class="drill-row"><span>Rabattierte Bons</span><span style="color:#E84393;font-weight:600">'+uniqueRabBons+'</span></div>'+
+      '<div class="drill-row"><span>Rabattierte Positionen</span><span style="color:#FF8000;font-weight:600">'+totalRabattArt+'</span></div>'+
+      '<div class="drill-row"><span>Rabattwert gesamt</span><span style="color:#E84393;font-weight:700">'+fmt(totalRabatt)+'</span></div>';
+  }
+
+  // Rabatte nach Stunde (mini chart)
+  var stdKeys=Object.keys(stdMap).sort(function(a,b){return parseInt(a)-parseInt(b);});
+  if(stdKeys.length>0){
+    html+='<div style="margin-top:14px"><canvas id="c-rabatt-std" style="max-height:100px"></canvas></div>'+
+      '<div style="font-size:10px;color:#475569;margin-top:2px">Rabatte nach Uhrzeit</div>';
+  }
+  html+='</div>';
+  html+='</div>'; // grid2 end
+
+  // AI Insight Box
+  var topArt=artRabList.length>0?artRabList[0][0]:"–";
+  var topMa=maRabList.length>0?maRabList[0][0]:"–";
+  var maViolCount=violations.length;
+  html+='<div class="ai-box" style="margin-bottom:14px">'+
+    'Rabattvolumen: '+fmt(totalRabatt)+' auf '+uniqueRabBons+' Bons ('+totalRabattArt+' Positionen). '+
+    'Meistrabattierter Artikel: '+topArt+'. '+
+    'Häufigster MA: '+topMa+' ('+fmt(maRabList.length>0?maRabList[0][1].betrag:0)+'). '+
+    (maTischSummary.length>0?maTischSummary.length+' MA-Tische erkannt. ':'')+
+    (maViolCount>0?'⚠️ '+maViolCount+' Compliance-Verstöße gefunden! ':'✓ Keine Compliance-Verstöße. ')+
+  '</div>';
+
+  // Wochen-Trend Chart
+  html+='<div class="box">'+
+    '<div class="box-title">📈 Rabatt-Trend</div>'+
+    '<div class="box-sub">Wöchentliche Entwicklung</div>'+
+    '<canvas id="c-rabatt-trend" style="max-height:180px"></canvas>'+
+  '</div>';
+
+  document.getElementById("t-rabatte").innerHTML=html;
+
+  // === CHARTS ===
+  // Stunden-Chart
+  if(stdKeys.length>0&&document.getElementById("c-rabatt-std")){
+    new Chart(document.getElementById("c-rabatt-std"),{
+      type:"bar",
+      data:{
+        labels:stdKeys.map(function(k){return k+":00";}),
+        datasets:[{
+          data:stdKeys.map(function(k){return stdMap[k].betrag;}),
+          backgroundColor:"#E8439340",borderColor:"#E84393",borderWidth:1
+        }]
+      },
+      options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#64748b",font:{size:10}},grid:{display:false}},y:{ticks:{color:"#64748b",font:{size:10},callback:function(v){return"€"+v;}},grid:{color:"#1e2d4030"}}}}
+    });
+  }
+
+  // Wochen-Trend Chart
+  if(wKeys.length>0&&document.getElementById("c-rabatt-trend")){
+    new Chart(document.getElementById("c-rabatt-trend"),{
+      type:"bar",
+      data:{
+        labels:wKeys.map(function(k){var p=k.split("-");return p[2]+"."+p[1];}),
+        datasets:[
+          {type:"bar",label:"Rabattwert",data:wKeys.map(function(k){return wMap[k].betrag;}),backgroundColor:"#E8439330",borderColor:"#E84393",borderWidth:1,yAxisID:"y"},
+          {type:"line",label:"Positionen",data:wKeys.map(function(k){return wMap[k].count;}),borderColor:"#40F0FF",borderWidth:2,pointRadius:3,pointBackgroundColor:"#40F0FF",tension:0.3,yAxisID:"y1"}
+        ]
+      },
+      options:{
+        plugins:{legend:{labels:{color:"#94a3b8",font:{size:11}}}},
+        scales:{
+          x:{ticks:{color:"#64748b",font:{size:10}},grid:{display:false}},
+          y:{position:"left",ticks:{color:"#E84393",font:{size:10},callback:function(v){return"€"+v;}},grid:{color:"#1e2d4020"}},
+          y1:{position:"right",ticks:{color:"#40F0FF",font:{size:10}},grid:{display:false}}
+        }
+      }
+    });
   }
 }
 
