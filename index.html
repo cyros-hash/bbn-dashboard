@@ -5008,10 +5008,11 @@ function renderRabatte(){
   // Nur rabattierte Artikel auf normalen Tischen (nicht MA, nicht Online)
   var normalTischRab=rabArt.filter(function(r){ var typ=tischTyp(r.tisch); return typ==="tisch"||typ==="andere"; });
 
-  // === FIFO STORNO-MATCHING ===
+  // === FIFO STORNO-MATCHING mit versteckter Rabatt-Erkennung ===
   // Lightspeed-Stornos (menge=-1) kommen bei echten Stornos UND bei Umbuchungen/Neudrucken.
   // FIFO: Positive Einträge chronologisch aufbauen, negative verrechnen den ältesten positiven.
-  // Was übrig bleibt = tatsächlich konsumiert. Verwaiste Stornos (ohne passendes +1) werden ignoriert.
+  // Versteckte Rabatte: Wenn ein verwaister Storno (€-7) von einer Neubuchung (€0) gefolgt wird,
+  // ist die Differenz ein impliziter Rabatt der das normale Rabatt-System umgeht.
   var fifoMap={};// key: tisch|datum|artikelname → [entries]
   maTischRaw.forEach(function(r){
     var key=r.tisch+"|"+r.datum+"|"+r.name;
@@ -5023,13 +5024,28 @@ function renderRabatte(){
     // Sortiere nach BonNr (chronologisch)
     var entries=fifoMap[key].sort(function(a,b){return (a.bonNr||"").localeCompare(b.bonNr||"");});
     var pending=[];// Queue: positive Einträge die noch nicht storniert wurden
+    var orphanStornoPrices=[];// Preise verwaister Stornos (kein passendes +1 vorher)
     entries.forEach(function(r){
       if(r.menge>0){
+        // Prüfe ob ein verwaister Storno davor lag → versteckter Rabatt
+        if(orphanStornoPrices.length>0){
+          var stornoPreis=orphanStornoPrices.shift();
+          var aktuellerPreis=r.preis;
+          if(stornoPreis>aktuellerPreis){
+            // Versteckter Rabatt erkannt! Original teurer als Neubuchung.
+            r._implicitRabatt=stornoPreis-aktuellerPreis;
+            r._originalPreis=stornoPreis;
+          }
+        }
         pending.push(r);
       } else if(r.menge<0){
         // FIFO: ältesten positiven Eintrag verrechnen
-        if(pending.length>0) pending.shift();
-        // Kein passender positiver → verwaister Storno → ignorieren
+        if(pending.length>0){
+          pending.shift();
+        } else {
+          // Verwaister Storno → Preis merken für versteckte Rabatt-Erkennung
+          orphanStornoPrices.push(Math.abs(r.preis));
+        }
       }
     });
     // Übrige positive Einträge = tatsächlich konsumiert
@@ -5052,11 +5068,11 @@ function renderRabatte(){
     else if(isGetraenk) maEssenMap[tisch][tag].getraenke.push(r);
     else maEssenMap[tisch][tag].andere.push(r);
     maEssenMap[tisch][tag].total+=r.preis;
-    maEssenMap[tisch][tag].rabattTotal+=Math.abs(r.rabatt)+Math.abs(r.gratis);
+    maEssenMap[tisch][tag].rabattTotal+=Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);
   });
 
   // Compliance-Auswertung
-  // Regeln: Nur RABATTIERTE Hauptspeisen sind auf 1×/Tag limitiert.
+  // Regeln: Nur RABATTIERTE Hauptspeisen sind auf 1×/Tag limitiert (inkl. versteckte Storno-Rabatte).
   // Vollpreis-Bestellungen sind KEIN Verstoß.
   // Getränke sind KEIN Verstoß (egal wie viele).
   // "Andere" Artikel mit Rabatt = Verstoß.
@@ -5065,15 +5081,15 @@ function renderRabatte(){
   Object.keys(maEssenMap).forEach(function(tisch){
     Object.keys(maEssenMap[tisch]).forEach(function(tag){
       var d=maEssenMap[tisch][tag];
-      // Nur rabattierte Hauptspeisen zählen fürs Limit (Rabatt oder Gratis != 0)
-      var hauptRabattiert=d.hauptspeisen.filter(function(r){return Math.abs(r.rabatt)+Math.abs(r.gratis)>0;});
+      // Nur rabattierte Hauptspeisen zählen fürs Limit (explizite + implizite Storno-Rabatte)
+      var hauptRabattiert=d.hauptspeisen.filter(function(r){return Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0)>0;});
       var hauptRabMenge=hauptRabattiert.reduce(function(s,r){return s+r.menge;},0);
       if(hauptRabMenge>1){
         violations.push({tisch:tisch,datum:tag,typ:"Hauptspeise",detail:hauptRabMenge+"× rabattierte Hauptspeise statt max 1×",artikel:hauptRabattiert.map(function(r){return r.name;}).join(", ")});
         complianceStats.warn++;
       } else { complianceStats.ok++; }
-      // "Andere" Artikel MIT Rabatt = nicht erlaubt (ohne Rabatt = Vollpreis = OK)
-      var andereRabattiert=d.andere.filter(function(r){return Math.abs(r.rabatt)+Math.abs(r.gratis)>0;});
+      // "Andere" Artikel MIT Rabatt = nicht erlaubt (inkl. versteckte Storno-Rabatte)
+      var andereRabattiert=d.andere.filter(function(r){return Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0)>0;});
       if(andereRabattiert.length>0){
         violations.push({tisch:tisch,datum:tag,typ:"Nicht erlaubt",detail:andereRabattiert.length+"× nicht erlaubte Artikel rabattiert",artikel:andereRabattiert.map(function(r){return r.name;}).join(", ")});
       }
@@ -5260,20 +5276,22 @@ function renderRabatte(){
 
       tagKeys.forEach(function(tag,tIdx){
         var items=tage[tag];
-        // Zähle nur RABATTIERTE Hauptspeisen für Verstoß-Check
+        // Zähle nur RABATTIERTE Hauptspeisen für Verstoß-Check (inkl. versteckte Storno-Rabatte)
         var hauptAnTag=items.filter(function(r){return artikelKat(r.name,r.gruppe)==="haupt";});
-        var hauptRabAnTag=hauptAnTag.filter(function(r){return Math.abs(r.rabatt)+Math.abs(r.gratis)>0;});
+        var hauptRabAnTag=hauptAnTag.filter(function(r){return Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0)>0;});
         var hauptRabMenge=hauptRabAnTag.reduce(function(s,r){return s+r.menge;},0);
         var tagBg=tIdx%2===0?"transparent":"#0a1520";
 
         items.forEach(function(r,rIdx){
           var kat=artikelKat(r.name,r.gruppe);
-          var rabBetrag=Math.abs(r.rabatt)+Math.abs(r.gratis);
-          var original=r.preis+rabBetrag;
+          var explicitRab=Math.abs(r.rabatt)+Math.abs(r.gratis);
+          var implicitRab=r._implicitRabatt||0;// Preisdifferenz durch Storno+Neubuchung
+          var rabBetrag=explicitRab+implicitRab;
+          var original=r._originalPreis||(r.preis+explicitRab);// Originalpreis
           var bezahlt=r.preis;
           var hatRabatt=rabBetrag>0;
-          // Verstoß bestimmen (basiert auf Netto-Werten):
-          // - Haupt MIT Rabatt und >1× rabattiert am Tag (netto) → Verstoß
+          // Status bestimmen:
+          // - Haupt MIT Rabatt und >1× rabattiert am Tag → Verstoß
           // - Haupt OHNE Rabatt (Vollpreis) → OK
           // - Getränke → immer OK
           // - Andere MIT Rabatt → Verstoß
@@ -5284,23 +5302,26 @@ function renderRabatte(){
           else if(kat==="andere"&&hatRabatt) verstoss="🚫 Nicht erlaubt";
           else if(kat==="andere"&&!hatRabatt) verstoss="💰 Vollpreis";
           else verstoss="✓";
-          var verstossCol=verstoss.indexOf("⚠️")!==-1?"#ef4444":verstoss.indexOf("🚫")!==-1?"#FF8000":verstoss.indexOf("💰")!==-1?"#94a3b8":"#22c55e";
+          // Weicher Hinweis bei Preisdifferenz durch Storno+Neubuchung
+          if(implicitRab>0) verstoss="👁 Prüfen";
+          var verstossCol=verstoss.indexOf("⚠️")!==-1?"#ef4444":verstoss.indexOf("🚫")!==-1?"#FF8000":verstoss.indexOf("👁")!==-1?"#f59e0b":verstoss.indexOf("💰")!==-1?"#94a3b8":"#22c55e";
+          var rabCol=implicitRab>0?"#f59e0b":"#E84393";// Gelb=Storno-Neubuchung, Pink=normaler Rabatt
 
           html+='<tr style="border-bottom:1px solid #1e2d4060;background:'+tagBg+'">'+
             '<td style="padding:5px 4px;color:#94a3b8;white-space:nowrap">'+(rIdx===0?fmtWday(tag)+' '+fmtDat(tag):'')+'</td>'+
             '<td style="padding:5px 4px;color:'+(kat==="haupt"?"#f1f5f9":kat==="getraenk"?"#40F0FF":"#FF8000")+'">'+r.name+'</td>'+
             '<td style="padding:5px 4px;text-align:right;color:#cbd5e1">'+r.menge+'</td>'+
             '<td style="padding:5px 4px;text-align:right;color:#64748b">'+fmtD(original)+'</td>'+
-            '<td style="padding:5px 4px;text-align:right;color:#E84393;font-weight:600">'+(rabBetrag>0?'-'+fmtD(rabBetrag):'–')+'</td>'+
+            '<td style="padding:5px 4px;text-align:right;color:'+rabCol+';font-weight:600">'+(rabBetrag>0?'-'+fmtD(rabBetrag):'–')+'</td>'+
             '<td style="padding:5px 4px;text-align:right;color:#f1f5f9;font-weight:600">'+fmtD(bezahlt)+'</td>'+
             '<td style="padding:5px 4px;text-align:center;color:'+verstossCol+';font-weight:600">'+verstoss+'</td>'+
           '</tr>';
         });
       });
 
-      // Summenzeile
-      var sumOrig=tischArtikel.reduce(function(s,r){return s+r.preis+Math.abs(r.rabatt)+Math.abs(r.gratis);},0);
-      var sumRab=tischArtikel.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis);},0);
+      // Summenzeile (inkl. versteckte Storno-Rabatte)
+      var sumOrig=tischArtikel.reduce(function(s,r){return s+(r._originalPreis||(r.preis+Math.abs(r.rabatt)+Math.abs(r.gratis)));},0);
+      var sumRab=tischArtikel.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);},0);
       var sumBez=tischArtikel.reduce(function(s,r){return s+r.preis;},0);
       html+='<tr style="border-top:2px solid #1e2d40;font-weight:700">'+
         '<td style="padding:6px 4px;color:#f1f5f9" colspan="2">Gesamt ('+tischArtikel.length+' Positionen)</td>'+
@@ -5448,7 +5469,7 @@ function renderRabatte(){
   var topArt=artRabList.length>0?artRabList[0][0]:"–";
   var topMa=maRabList.length>0?maRabList[0][0]:"–";
   var maViolCount=violations.length;
-  var maBetrag=maTischArt.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis);},0);
+  var maBetrag=maTischArt.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);},0);
   html+='<div class="ai-box" style="margin-bottom:14px">'+
     'Rabattvolumen: '+fmt(totalRabatt)+' auf '+uniqueRabBons+' Bons ('+totalRabattArt+' Positionen). '+
     (maTischSummary.length>0?'MA-Tische: '+fmt(maBetrag)+' ('+maTischSummary.length+' Tische). ':'Keine MA-Tische erkannt. ')+
