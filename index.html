@@ -412,7 +412,8 @@ var CSV = {
   waste:   "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=1076995386",
   itemSales: "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=904654095",
   fcReal:  "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=PLACEHOLDER_FC_REAL",
-  bestand: "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=1296587739"
+  bestand: "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=1296587739",
+  stornos: "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=14074857"
 };
 
 // ============================================================
@@ -423,6 +424,7 @@ var itemSales=[]; // FC pro Artikel (Apicbase Item Sales)
 var gefiltert=[];
 var fcReal=[]; // Reale FC: Inventuren + Bestellungen
 var bestandDaten=[]; // Bestandsbericht (Sheet 18)
+var stornoDetails=[]; // Storno-Rohdaten mit Gründen (Sheet 15)
 var stundeVon=-1, stundeBis=-1; // -1 = kein Stundenfilter
 var aktivWT=new Set([0,1,2,3,4,5,6]); // aktive Wochentage (0=So...6=Sa)
 var charts={}, simV={p:0,v:0,f:0,a:0}, aktQ="gestern";
@@ -983,6 +985,24 @@ async function ladeDaten(){
         };
       }).filter(function(r){return r.datum&&r.artikel;});
     } catch(e) { console.warn('Item Sales nicht geladen: '+e.message); itemSales=[]; }
+
+    // STORNO-DETAILS (15_ls_stornos)
+    try {
+      var r17=await fetch(CSV.stornos);var t17=await r17.text();
+      if(t17&&t17.trim().length>10&&!t17.includes('DOCTYPE')) {
+        stornoDetails=t17.trim().split("\n").slice(1).map(function(l){
+          var v=pCSV(l);
+          return{
+            datum:pDat(v[0]),standort:v[1]||"",eroeffnetVon:v[2]||"",
+            storniertVon:v[3]||"",quittungsId:v[4]||"",konto:v[5]||"",
+            kontoName:v[6]||"",artikel:v[7]||"",menge:pStd(v[8]),
+            betrag:pDE(v[9]),uhrzeit:v[10]||"",stunde:parseInt(v[11])||0,
+            stornodefinition:v[12]||"",grund:v[13]||""
+          };
+        }).filter(function(r){return r.datum&&r.artikel;});
+        console.log("✓ Storno-Details: "+stornoDetails.length+" Einträge");
+      }
+    } catch(e) { console.warn('Storno-Details nicht geladen: '+e.message); stornoDetails=[]; }
 
     // SET FILTER
     var daten=alle.map(function(r){return r.datum;}).sort();
@@ -4437,6 +4457,137 @@ window.drillSpeise=function(i){
 };
 
 // ============================================================
+// STORNO-DETAIL-ANALYSE (aus 15_ls_stornos)
+// ============================================================
+function renderStornoAnalyse(von,bis,st){
+  var sd=stornoDetails.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);
+  });
+  if(sd.length===0) return '';
+
+  // Nur Artikel mit echtem Betrag (negativ = Stornowert)
+  var sdMitBetrag=sd.filter(function(r){return r.betrag<0;});
+  var totalWert=sdMitBetrag.reduce(function(s,r){return s+r.betrag;},0);
+
+  // Nach Stornodefinition
+  var defMap={};
+  sd.forEach(function(r){
+    var d=r.stornodefinition||"Unbekannt";
+    if(!defMap[d])defMap[d]={count:0,betrag:0};
+    defMap[d].count++;
+    if(r.betrag<0)defMap[d].betrag+=r.betrag;
+  });
+  var defList=Object.entries(defMap).sort(function(a,b){return b[1].count-a[1].count;});
+  var defColors={"Fehleintrag":"#FF8000","Bruch":"#ef4444","Unzufriedener Gast":"#E84393","Andere":"#64748b"};
+
+  // Nach Artikel (Top 8)
+  var artMap={};
+  sdMitBetrag.forEach(function(r){
+    if(!artMap[r.artikel])artMap[r.artikel]={count:0,betrag:0};
+    artMap[r.artikel].count++;
+    artMap[r.artikel].betrag+=r.betrag;
+  });
+  var artList=Object.entries(artMap).sort(function(a,b){return b[1].count-a[1].count;}).slice(0,8);
+  var maxArt=artList.length>0?artList[0][1].count:1;
+
+  // Nach Mitarbeiter (Storniert von)
+  var maMap={};
+  sd.forEach(function(r){
+    var ma=r.storniertVon||r.eroeffnetVon||"Unbekannt";
+    if(!maMap[ma])maMap[ma]={count:0,betrag:0};
+    maMap[ma].count++;
+    if(r.betrag<0)maMap[ma].betrag+=r.betrag;
+  });
+  var maList=Object.entries(maMap).sort(function(a,b){return b[1].count-a[1].count;});
+
+  // Trend (pro Woche)
+  var wochenMap={};
+  sd.forEach(function(r){
+    var d=new Date(r.datum+"T12:00:00");
+    var wStart=new Date(d);wStart.setDate(d.getDate()-d.getDay()+1);
+    var wKey=wStart.toISOString().split("T")[0];
+    if(!wochenMap[wKey])wochenMap[wKey]={count:0,betrag:0};
+    wochenMap[wKey].count++;
+    if(r.betrag<0)wochenMap[wKey].betrag+=r.betrag;
+  });
+
+  // Per Standort
+  var mdCount=sd.filter(function(r){return r.standort==="Mehringdamm";}).length;
+  var rsCount=sd.filter(function(r){return r.standort==="Rosenthaler Straße";}).length;
+  var mdBetrag=sd.filter(function(r){return r.standort==="Mehringdamm"&&r.betrag<0;}).reduce(function(s,r){return s+r.betrag;},0);
+  var rsBetrag=sd.filter(function(r){return r.standort==="Rosenthaler Straße"&&r.betrag<0;}).reduce(function(s,r){return s+r.betrag;},0);
+
+  return '<div class="box" style="margin-top:14px">'+
+    '<div class="box-title">📋 Storno-Analyse nach Grund</div>'+
+    '<div class="box-sub">Detaillierte Aufschlüsselung aus Lightspeed Stornierungen-Bericht · '+sd.length+' Einträge · Wert: '+fmt(totalWert)+'</div>'+
+
+    '<div class="kpi-grid" style="margin:14px 0">'+
+      defList.map(function(e){
+        var name=e[0],d=e[1];
+        var col=defColors[name]||"#94a3b8";
+        var pct=sd.length>0?(d.count/sd.length*100).toFixed(0):0;
+        return '<div class="kpi-card" style="border-left:3px solid '+col+'">'+
+          '<div class="kpi-label">'+name+'</div>'+
+          '<div class="kpi-val" style="color:'+col+'">'+d.count+'×</div>'+
+          '<div class="kpi-delta delta-neu">'+pct+'% aller Stornos</div>'+
+          '<div class="kpi-ai">Wert: '+fmt(d.betrag)+'</div>'+
+        '</div>';
+      }).join("")+
+    '</div>'+
+
+    '<canvas id="c-storno-def" style="max-height:140px;margin-bottom:14px"></canvas>'+
+
+    '<div class="grid2">'+
+      '<div>'+
+        '<div style="font-weight:600;color:#f1f5f9;font-size:13px;margin-bottom:10px">Top stornierte Artikel</div>'+
+        artList.map(function(e){
+          var name=e[0],d=e[1];
+          var pct=maxArt>0?Math.round(d.count/maxArt*100):0;
+          return '<div style="margin-bottom:8px">'+
+            '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'+
+              '<span style="color:#cbd5e1">'+name+'</span>'+
+              '<span style="color:#ef4444">'+d.count+'× · '+fmt(d.betrag)+'</span>'+
+            '</div>'+
+            '<div style="height:3px;background:#1e2d40;border-radius:2px">'+
+              '<div style="height:100%;background:#ef4444;border-radius:2px;width:'+pct+'%"></div>'+
+            '</div>'+
+          '</div>';
+        }).join("")+
+      '</div>'+
+
+      '<div>'+
+        '<div style="font-weight:600;color:#f1f5f9;font-size:13px;margin-bottom:10px">Storniert von (Mitarbeiter)</div>'+
+        maList.map(function(e){
+          var name=e[0],d=e[1];
+          return '<div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid #1e2d40">'+
+            '<span style="color:#cbd5e1">'+name+'</span>'+
+            '<span><span style="color:#ef4444;font-weight:600">'+d.count+'×</span> <span style="color:#64748b">'+fmt(d.betrag)+'</span></span>'+
+          '</div>';
+        }).join("")+
+        (st==="Alle Standorte"&&(mdCount>0||rsCount>0)?
+          '<div style="margin-top:12px;padding-top:10px;border-top:1px solid #0a3545">'+
+            '<div style="font-weight:600;color:#f1f5f9;font-size:12px;margin-bottom:6px">Pro Standort</div>'+
+            '<div style="display:flex;justify-content:space-between;font-size:12px;color:#cbd5e1;padding:3px 0">'+
+              '<span>Mehringdamm</span><span>'+mdCount+'× · '+fmt(mdBetrag)+'</span></div>'+
+            '<div style="display:flex;justify-content:space-between;font-size:12px;color:#cbd5e1;padding:3px 0">'+
+              '<span>Rosenthaler Straße</span><span>'+rsCount+'× · '+fmt(rsBetrag)+'</span></div>'+
+          '</div>'
+        :'')+
+      '</div>'+
+    '</div>'+
+
+    '<div class="ai-box" style="margin-top:12px">'+
+      (defMap["Andere"]&&defMap["Andere"].count/sd.length>0.5?
+        '⚠️ '+((defMap["Andere"].count/sd.length*100).toFixed(0))+'% der Stornos haben den Grund "Andere". Team anweisen, spezifische Gründe zu wählen (Fehleintrag, Bruch, Unzufriedener Gast) für bessere Analyse. ':'')+
+      (artList.length>0?'Meiste Stornos: '+artList[0][0]+' ('+artList[0][1].count+'×). ':'')+
+      (maList.length>0?'Häufigster Storno-MA: '+maList[0][0]+' ('+maList[0][1].count+'×).':'')+
+    '</div>'+
+
+    '<canvas id="c-storno-trend" style="max-height:120px;margin-top:14px"></canvas>'+
+    '<div style="font-size:11px;color:#475569;margin-top:4px">Storno-Trend pro Woche (Anzahl + Wert)</div>'+
+  '</div>';
+}
+
 // TRINKGELD & STORNOS
 // ============================================================
 function renderTrinkgeld(){
@@ -4621,6 +4772,8 @@ function renderTrinkgeld(){
         '<div style="color:#475569;font-size:12px;padding:12px">Keine Stornierungen im Zeitraum ✓</div>'}
     </div>
 
+    ${renderStornoAnalyse(von,bis,st)}
+
     <div class="box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: Trinkgeld & Stornos</div><div class="box-sub">Automatische Bewertung der Servicequalität</div></div>
@@ -4688,6 +4841,63 @@ function renderTrinkgeld(){
       data:{labels:stornoStdKeys.map(function(h){return h+":00";}),datasets:[{label:"Stornos",data:stornoStdKeys.map(function(h){return stornoStd[h];}),backgroundColor:"#ef4444",borderRadius:3}]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#475569",font:{size:10}},grid:{color:"#1e2d40"}},y:{ticks:{color:"#475569",font:{size:10}},grid:{color:"#1e2d40"}}}}
     });
+  }
+
+  // Storno-Detail Charts (aus 15_ls_stornos)
+  var sdChart=stornoDetails.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);
+  });
+  if(sdChart.length>0){
+    // Donut: Stornodefinition
+    var defMapC={};
+    sdChart.forEach(function(r){
+      var d=r.stornodefinition||"Unbekannt";
+      defMapC[d]=(defMapC[d]||0)+1;
+    });
+    var defLabels=Object.keys(defMapC).sort(function(a,b){return defMapC[b]-defMapC[a];});
+    var defVals=defLabels.map(function(k){return defMapC[k];});
+    var defColMap={"Fehleintrag":"#FF8000","Bruch":"#ef4444","Unzufriedener Gast":"#E84393","Andere":"#64748b"};
+    var defCols=defLabels.map(function(k){return defColMap[k]||"#94a3b8";});
+
+    dc("c-storno-def");
+    var cDef=document.getElementById("c-storno-def");
+    if(cDef)charts["c-storno-def"]=new Chart(cDef,{
+      type:"doughnut",
+      data:{labels:defLabels,datasets:[{data:defVals,backgroundColor:defCols,borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:"55%",
+        plugins:{legend:{position:"right",labels:{color:"#cbd5e1",font:{size:11},padding:12,usePointStyle:true,pointStyle:"circle"}}}}
+    });
+
+    // Trend: Stornos pro Woche
+    var wMap={};
+    sdChart.forEach(function(r){
+      var d=new Date(r.datum+"T12:00:00");
+      var wStart=new Date(d);wStart.setDate(d.getDate()-d.getDay()+1);
+      var wKey=wStart.toISOString().split("T")[0];
+      if(!wMap[wKey])wMap[wKey]={count:0,betrag:0};
+      wMap[wKey].count++;
+      if(r.betrag<0)wMap[wKey].betrag+=r.betrag;
+    });
+    var wKeys=Object.keys(wMap).sort();
+    if(wKeys.length>1){
+      dc("c-storno-trend");
+      var cTrend=document.getElementById("c-storno-trend");
+      if(cTrend)charts["c-storno-trend"]=new Chart(cTrend,{
+        type:"bar",
+        data:{labels:wKeys.map(function(k){var p=k.split("-");return p[2]+"."+p[1];}),
+          datasets:[
+            {label:"Anzahl",data:wKeys.map(function(k){return wMap[k].count;}),backgroundColor:"#ef4444",borderRadius:3,yAxisID:"y"},
+            {label:"Wert (€)",data:wKeys.map(function(k){return Math.abs(wMap[k].betrag);}),type:"line",borderColor:"#FF8000",backgroundColor:"rgba(255,128,0,0.1)",pointRadius:2,borderWidth:2,fill:true,yAxisID:"y1"}
+          ]},
+        options:{responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{labels:{color:"#cbd5e1",font:{size:10}}}},
+          scales:{
+            x:{ticks:{color:"#475569",font:{size:10}},grid:{color:"#1e2d40"}},
+            y:{position:"left",ticks:{color:"#ef4444",font:{size:10}},grid:{color:"#1e2d40"}},
+            y1:{position:"right",ticks:{color:"#FF8000",font:{size:10},callback:function(v){return v+"€";}},grid:{display:false}}
+          }}
+      });
+    }
   }
 }
 
@@ -5345,7 +5555,19 @@ function buildTagesberichtContext() {
     var bTK = bestTK[0];
     ctx += "Bester Service-MA: "+bTK[0]+" ("+fmtP(bTK[1].total>0?bTK[1].tk/bTK[1].total:0)+" Quote, "+fmt(bTK[1].tk)+" TK)\n";
   }
-  ctx += "Stornos: "+stornosG+" (Ø letzte 7 Tage: "+stornosW.toFixed(1)+"/Tag)\n\n";
+  ctx += "Stornos: "+stornosG+" (Ø letzte 7 Tage: "+stornosW.toFixed(1)+"/Tag)\n";
+  // Storno-Details (Gründe) wenn vorhanden
+  var sdCtx=stornoDetails.filter(function(r){return r.datum===gestern;});
+  if(sdCtx.length>0){
+    var sdDefMap={};
+    sdCtx.forEach(function(r){var d=r.stornodefinition||"Unbekannt";sdDefMap[d]=(sdDefMap[d]||0)+1;});
+    ctx += "Storno-Gründe gestern: "+Object.entries(sdDefMap).map(function(e){return e[0]+" "+e[1]+"x";}).join(", ")+"\n";
+    var sdArtMap={};
+    sdCtx.filter(function(r){return r.betrag<0;}).forEach(function(r){sdArtMap[r.artikel]=(sdArtMap[r.artikel]||0)+1;});
+    var sdTopArt=Object.entries(sdArtMap).sort(function(a,b){return b[1]-a[1];}).slice(0,3);
+    if(sdTopArt.length>0) ctx += "Stornierte Artikel: "+sdTopArt.map(function(e){return e[0]+" "+e[1]+"x";}).join(", ")+"\n";
+  }
+  ctx += "\n";
 
   ctx += "=== TOP 5 ARTIKEL GESTERN ===\n";
   topArtG.forEach(function(e){
