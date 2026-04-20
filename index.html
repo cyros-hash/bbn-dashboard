@@ -5160,56 +5160,109 @@ function renderRabatte(){
     '</div>'+
   '</div>';
 
-  // === MITARBEITER-ESSEN MONITOR ===
+  // === MITARBEITER-ESSEN MONITOR (klickbar mit Detail-Tabelle) ===
   html+='<div class="box">'+
     '<div class="box-title">🍜 Mitarbeiter-Essen Monitor</div>'+
-    '<div class="box-sub">Erlaubt: 1× Bang Bang Minced Beef / Soja pro Tag · Getränke 70% off · Über Mitarbeiter-Tisch</div>';
+    '<div class="box-sub">Erlaubt: 1× Bang Bang Minced Beef / Soja pro Tag · Getränke 70% off · Über Mitarbeiter-Tisch · Klick für Details</div>';
 
   if(maTischSummary.length>0){
-    html+='<div style="margin-bottom:14px">';
-    maTischSummary.forEach(function(m){
+    // Hilfsfunktion: Kategorie + Verstoß pro Artikel bestimmen
+    function artikelKat(name,gruppe){
+      var n=(name||"").toLowerCase();
+      if(n.indexOf("minced beef")!==-1||n.indexOf("minced soja")!==-1||n.indexOf("biang biang")!==-1||n.indexOf("bang bang minced")!==-1) return "haupt";
+      var g=(gruppe||"").toLowerCase();
+      if(g.indexOf("getränk")!==-1||g.indexOf("drink")!==-1||n.indexOf("cola")!==-1||n.indexOf("wasser")!==-1||n.indexOf("limo")!==-1||n.indexOf("bier")!==-1||n.indexOf("mate")!==-1||n.indexOf("saft")!==-1||n.indexOf("tee")!==-1||n.indexOf("kaffee")!==-1||n.indexOf("espresso")!==-1) return "getraenk";
+      return "andere";
+    }
+    function fmtDat(d){if(!d)return"–";var p=d.split("-");return p[2]+"."+p[1]+"."+p[0];}
+    function fmtWday(d){if(!d)return"";var wd=["So","Mo","Di","Mi","Do","Fr","Sa"];return wd[new Date(d).getDay()]||"";}
+
+    maTischSummary.forEach(function(m,idx){
       var hasViolation=violations.some(function(v){return v.tisch===m.tisch;});
       var borderCol=hasViolation?"#ef4444":"#22c55e";
-      html+='<div style="background:#0d1f2d;border-radius:8px;padding:12px;margin-bottom:8px;border-left:3px solid '+borderCol+'">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center">'+
-          '<div>'+
-            '<span style="font-weight:600;color:#f1f5f9;font-size:13px">'+m.tisch+'</span>'+
-            (hasViolation?' <span style="color:#ef4444;font-size:11px;font-weight:600">⚠️ Verstöße</span>':' <span style="color:#22c55e;font-size:11px">✓ OK</span>')+
-          '</div>'+
-          '<span style="color:#E84393;font-weight:700">'+fmt(m.totalRab)+'</span>'+
-        '</div>'+
-        '<div style="display:flex;gap:16px;margin-top:6px;font-size:11px;color:#94a3b8">'+
-          '<span>'+m.tage+' Tage</span>'+
-          '<span>'+m.haupt+'× Hauptspeise</span>'+
-          '<span>'+m.getraenke+'× Getränke</span>'+
-          (m.andere>0?'<span style="color:#ef4444">'+m.andere+'× Andere ⚠️</span>':'')+
-          '<span>'+m.totalItems+' Pos. gesamt</span>'+
-        '</div>'+
-      '</div>';
-    });
-    html+='</div>';
+      var maName=m.tisch.replace("Mitarbeiter, Table ","").replace("Mitarbeiter, ","");
 
-    // Violations Detail
-    if(violations.length>0){
-      html+='<div style="background:#1a0f0f;border:1px solid #7f1d1d;border-radius:8px;padding:12px;margin-bottom:12px">'+
-        '<div style="font-weight:600;color:#ef4444;font-size:12px;margin-bottom:8px">⚠️ Verstöße ('+violations.length+')</div>';
-      violations.slice(0,15).forEach(function(v){
-        var datParts=v.datum.split("-");
-        var datStr=datParts[2]+"."+datParts[1]+"."+datParts[0];
-        html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #2d1515;font-size:12px">'+
+      // Summary-Zeile (klickbar)
+      html+='<div style="background:#0d1f2d;border-radius:8px;margin-bottom:8px;border-left:3px solid '+borderCol+';overflow:hidden">'+
+        '<div onclick="var d=document.getElementById(\'ma-detail-'+idx+'\');d.style.display=d.style.display===\'none\'?\'block\':\'none\'" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">'+
           '<div>'+
-            '<span style="color:#ef4444;font-weight:500">'+datStr+'</span>'+
-            '<span style="color:#64748b;margin:0 8px">·</span>'+
-            '<span style="color:#cbd5e1">'+v.tisch+'</span>'+
-            '<span style="color:#64748b;margin:0 8px">·</span>'+
-            '<span style="color:#FF8000">'+v.typ+'</span>'+
+            '<span style="font-weight:600;color:#f1f5f9;font-size:13px">🍜 '+maName.toUpperCase()+'</span>'+
+            (hasViolation?' <span style="color:#ef4444;font-size:11px;font-weight:600">⚠️ '+violations.filter(function(v){return v.tisch===m.tisch;}).length+' Verstöße</span>':' <span style="color:#22c55e;font-size:11px">✓ OK</span>')+
+            '<span style="color:#64748b;font-size:11px;margin-left:12px">'+m.tage+' Tage · '+m.totalItems+' Pos. · ▼ Details</span>'+
           '</div>'+
-          '<span style="color:#94a3b8;font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+v.artikel+'</span>'+
+          '<span style="color:#E84393;font-weight:700;font-size:15px">'+fmt(m.totalRab)+'</span>'+
         '</div>';
+
+      // Detail-Tabelle (initial versteckt)
+      html+='<div id="ma-detail-'+idx+'" style="display:none;padding:0 12px 12px">'+
+        '<table style="width:100%;border-collapse:collapse;font-size:11px">'+
+        '<thead><tr style="border-bottom:2px solid #1e2d40">'+
+          '<th style="text-align:left;padding:6px 4px;color:#64748b;font-weight:600">Datum</th>'+
+          '<th style="text-align:left;padding:6px 4px;color:#64748b;font-weight:600">Artikel</th>'+
+          '<th style="text-align:right;padding:6px 4px;color:#64748b;font-weight:600">Mng</th>'+
+          '<th style="text-align:right;padding:6px 4px;color:#64748b;font-weight:600">Original</th>'+
+          '<th style="text-align:right;padding:6px 4px;color:#64748b;font-weight:600">Rabatt</th>'+
+          '<th style="text-align:right;padding:6px 4px;color:#64748b;font-weight:600">Bezahlt</th>'+
+          '<th style="text-align:center;padding:6px 4px;color:#64748b;font-weight:600">Status</th>'+
+        '</tr></thead><tbody>';
+
+      // Alle Artikel dieses Tisches, gruppiert nach Datum
+      var tischArtikel=maTischArt.filter(function(r){return r.tisch===m.tisch;});
+      var tage={};
+      tischArtikel.forEach(function(r){
+        if(!tage[r.datum])tage[r.datum]=[];
+        tage[r.datum].push(r);
       });
-      if(violations.length>15) html+='<div style="color:#64748b;font-size:11px;padding-top:6px">+ '+(violations.length-15)+' weitere...</div>';
-      html+='</div>';
-    }
+      var tagKeys=Object.keys(tage).sort().reverse();
+
+      tagKeys.forEach(function(tag,tIdx){
+        var items=tage[tag];
+        // Zähle Hauptspeisen an diesem Tag für Verstoß-Check
+        var hauptAnTag=items.filter(function(r){return artikelKat(r.name,r.gruppe)==="haupt";});
+        var hauptMenge=hauptAnTag.reduce(function(s,r){return s+r.menge;},0);
+        var tagBg=tIdx%2===0?"transparent":"#0a1520";
+
+        items.forEach(function(r,rIdx){
+          var kat=artikelKat(r.name,r.gruppe);
+          var rabBetrag=Math.abs(r.rabatt)+Math.abs(r.gratis);
+          var original=r.preis+rabBetrag;
+          var bezahlt=r.preis;
+          // Verstoß bestimmen
+          var verstoss="";
+          if(kat==="haupt"&&hauptMenge>1) verstoss="⚠️ "+hauptMenge+"× Haupt";
+          else if(kat==="andere") verstoss="🚫 Nicht erlaubt";
+          else if(kat==="haupt") verstoss="✓";
+          else verstoss="✓";
+          var verstossCol=verstoss.indexOf("⚠️")!==-1?"#ef4444":verstoss.indexOf("🚫")!==-1?"#FF8000":"#22c55e";
+
+          html+='<tr style="border-bottom:1px solid #1e2d4060;background:'+tagBg+'">'+
+            '<td style="padding:5px 4px;color:#94a3b8;white-space:nowrap">'+(rIdx===0?fmtWday(tag)+' '+fmtDat(tag):'')+'</td>'+
+            '<td style="padding:5px 4px;color:'+(kat==="haupt"?"#f1f5f9":kat==="getraenk"?"#40F0FF":"#FF8000")+'">'+r.name+'</td>'+
+            '<td style="padding:5px 4px;text-align:right;color:#cbd5e1">'+r.menge+'</td>'+
+            '<td style="padding:5px 4px;text-align:right;color:#64748b">'+fmtD(original)+'</td>'+
+            '<td style="padding:5px 4px;text-align:right;color:#E84393;font-weight:600">'+(rabBetrag>0?'-'+fmtD(rabBetrag):'–')+'</td>'+
+            '<td style="padding:5px 4px;text-align:right;color:#f1f5f9;font-weight:600">'+fmtD(bezahlt)+'</td>'+
+            '<td style="padding:5px 4px;text-align:center;color:'+verstossCol+';font-weight:600">'+verstoss+'</td>'+
+          '</tr>';
+        });
+      });
+
+      // Summenzeile
+      var sumOrig=tischArtikel.reduce(function(s,r){return s+r.preis+Math.abs(r.rabatt)+Math.abs(r.gratis);},0);
+      var sumRab=tischArtikel.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis);},0);
+      var sumBez=tischArtikel.reduce(function(s,r){return s+r.preis;},0);
+      html+='<tr style="border-top:2px solid #1e2d40;font-weight:700">'+
+        '<td style="padding:6px 4px;color:#f1f5f9" colspan="2">Gesamt ('+tischArtikel.length+' Positionen)</td>'+
+        '<td></td>'+
+        '<td style="padding:6px 4px;text-align:right;color:#94a3b8">'+fmtD(sumOrig)+'</td>'+
+        '<td style="padding:6px 4px;text-align:right;color:#E84393">-'+fmtD(sumRab)+'</td>'+
+        '<td style="padding:6px 4px;text-align:right;color:#f1f5f9">'+fmtD(sumBez)+'</td>'+
+        '<td></td>'+
+      '</tr>';
+
+      html+='</tbody></table></div></div>';
+    });
+
   } else {
     html+='<div style="color:#475569;font-size:12px;padding:16px 0;text-align:center">Keine Mitarbeiter-Tische im Zeitraum erkannt.<br><span style="font-size:11px">Tische müssen "Mitarbeiter" im Namen enthalten.</span></div>';
   }
