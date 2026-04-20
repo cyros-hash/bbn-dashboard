@@ -5042,19 +5042,26 @@ function renderRabatte(){
   });
 
   // Compliance-Auswertung
+  // Regeln: Nur RABATTIERTE Hauptspeisen sind auf 1×/Tag limitiert.
+  // Vollpreis-Bestellungen sind KEIN Verstoß.
+  // Getränke sind KEIN Verstoß (egal wie viele).
+  // "Andere" Artikel mit Rabatt = Verstoß.
   var violations=[];
   var complianceStats={ok:0,warn:0};
   Object.keys(maEssenMap).forEach(function(tisch){
     Object.keys(maEssenMap[tisch]).forEach(function(tag){
       var d=maEssenMap[tisch][tag];
-      var hauptCount=d.hauptspeisen.reduce(function(s,r){return s+r.menge;},0);
-      if(hauptCount>1){
-        violations.push({tisch:tisch,datum:tag,typ:"Hauptspeise",detail:hauptCount+"× Hauptspeise statt 1× erlaubt",artikel:d.hauptspeisen.map(function(r){return r.name;}).join(", ")});
+      // Nur rabattierte Hauptspeisen zählen fürs Limit (Rabatt oder Gratis != 0)
+      var hauptRabattiert=d.hauptspeisen.filter(function(r){return Math.abs(r.rabatt)+Math.abs(r.gratis)>0;});
+      var hauptRabMenge=hauptRabattiert.reduce(function(s,r){return s+r.menge;},0);
+      if(hauptRabMenge>1){
+        violations.push({tisch:tisch,datum:tag,typ:"Hauptspeise",detail:hauptRabMenge+"× rabattierte Hauptspeise statt max 1×",artikel:hauptRabattiert.map(function(r){return r.name;}).join(", ")});
         complianceStats.warn++;
       } else { complianceStats.ok++; }
-      // Andere Artikel (nicht Hauptspeise, nicht Getränk) = nicht erlaubt
-      if(d.andere.length>0){
-        violations.push({tisch:tisch,datum:tag,typ:"Nicht erlaubt",detail:d.andere.length+"× nicht erlaubte Artikel",artikel:d.andere.map(function(r){return r.name;}).join(", ")});
+      // "Andere" Artikel MIT Rabatt = nicht erlaubt (ohne Rabatt = Vollpreis = OK)
+      var andereRabattiert=d.andere.filter(function(r){return Math.abs(r.rabatt)+Math.abs(r.gratis)>0;});
+      if(andereRabattiert.length>0){
+        violations.push({tisch:tisch,datum:tag,typ:"Nicht erlaubt",detail:andereRabattiert.length+"× nicht erlaubte Artikel rabattiert",artikel:andereRabattiert.map(function(r){return r.name;}).join(", ")});
       }
     });
   });
@@ -5211,12 +5218,12 @@ function renderRabatte(){
           '</div>'+
           '<div style="display:flex;align-items:center;gap:10px">'+
             '<span style="color:#E84393;font-weight:700;font-size:15px">'+fmt(m.totalRab)+'</span>'+
-            '<span id="ma-arrow-'+idx+'" style="color:#64748b;font-size:12px">▲</span>'+
+            '<span id="ma-arrow-'+idx+'" style="color:#64748b;font-size:12px">▼</span>'+
           '</div>'+
         '</div>';
 
-      // Detail-Tabelle (standardmäßig OFFEN)
-      html+='<div id="ma-detail-'+idx+'" style="display:block;padding:0 12px 12px">'+
+      // Detail-Tabelle (standardmäßig ZU)
+      html+='<div id="ma-detail-'+idx+'" style="display:none;padding:0 12px 12px">'+
         '<table style="width:100%;border-collapse:collapse;font-size:11px">'+
         '<thead><tr style="border-bottom:2px solid #1e2d40">'+
           '<th style="text-align:left;padding:6px 4px;color:#64748b;font-weight:600">Datum</th>'+
@@ -5239,9 +5246,10 @@ function renderRabatte(){
 
       tagKeys.forEach(function(tag,tIdx){
         var items=tage[tag];
-        // Zähle Hauptspeisen an diesem Tag für Verstoß-Check
+        // Zähle nur RABATTIERTE Hauptspeisen für Verstoß-Check
         var hauptAnTag=items.filter(function(r){return artikelKat(r.name,r.gruppe)==="haupt";});
-        var hauptMenge=hauptAnTag.reduce(function(s,r){return s+r.menge;},0);
+        var hauptRabAnTag=hauptAnTag.filter(function(r){return Math.abs(r.rabatt)+Math.abs(r.gratis)>0;});
+        var hauptRabMenge=hauptRabAnTag.reduce(function(s,r){return s+r.menge;},0);
         var tagBg=tIdx%2===0?"transparent":"#0a1520";
 
         items.forEach(function(r,rIdx){
@@ -5249,13 +5257,20 @@ function renderRabatte(){
           var rabBetrag=Math.abs(r.rabatt)+Math.abs(r.gratis);
           var original=r.preis+rabBetrag;
           var bezahlt=r.preis;
-          // Verstoß bestimmen
+          var hatRabatt=rabBetrag>0;
+          // Verstoß bestimmen:
+          // - Haupt MIT Rabatt und >1× rabattiert am Tag → Verstoß
+          // - Haupt OHNE Rabatt (Vollpreis) → OK (Vollpreis = kein Verstoß)
+          // - Getränke → immer OK
+          // - Andere MIT Rabatt → Verstoß
+          // - Andere OHNE Rabatt → OK (Vollpreis)
           var verstoss="";
-          if(kat==="haupt"&&hauptMenge>1) verstoss="⚠️ "+hauptMenge+"× Haupt";
-          else if(kat==="andere") verstoss="🚫 Nicht erlaubt";
-          else if(kat==="haupt") verstoss="✓";
+          if(kat==="haupt"&&hatRabatt&&hauptRabMenge>1) verstoss="⚠️ "+hauptRabMenge+"× rab.";
+          else if(kat==="haupt"&&!hatRabatt) verstoss="💰 Vollpreis";
+          else if(kat==="andere"&&hatRabatt) verstoss="🚫 Nicht erlaubt";
+          else if(kat==="andere"&&!hatRabatt) verstoss="💰 Vollpreis";
           else verstoss="✓";
-          var verstossCol=verstoss.indexOf("⚠️")!==-1?"#ef4444":verstoss.indexOf("🚫")!==-1?"#FF8000":"#22c55e";
+          var verstossCol=verstoss.indexOf("⚠️")!==-1?"#ef4444":verstoss.indexOf("🚫")!==-1?"#FF8000":verstoss.indexOf("💰")!==-1?"#94a3b8":"#22c55e";
 
           html+='<tr style="border-bottom:1px solid #1e2d4060;background:'+tagBg+'">'+
             '<td style="padding:5px 4px;color:#94a3b8;white-space:nowrap">'+(rIdx===0?fmtWday(tag)+' '+fmtDat(tag):'')+'</td>'+
