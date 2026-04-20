@@ -308,7 +308,10 @@ if(sessionStorage.getItem("bbn_unlocked")==="1"){document.getElementById("lock-s
 <div class="header">
   <div>
     <h1>🍜 Bang Bang Noodles — Intelligence Dashboard</h1>
-    <div class="status" id="status">● Lade Daten...</div>
+    <div style="display:flex;align-items:center;gap:0">
+      <span id="status-dot" onclick="var el=document.getElementById('status-detail');el.style.display=el.style.display==='none'?'inline':'none';" style="cursor:pointer;font-size:13px;color:#22c55e">● Live</span>
+      <span id="status-detail" class="status" style="display:none;margin-left:6px"></span>
+    </div>
   </div>
   <div style="display:flex;gap:8px;align-items:center">
     <select id="standort" onchange="applyFilter()">
@@ -817,8 +820,8 @@ function prevPeriod(von,bis){
 // LOAD DATA
 // ============================================================
 async function ladeDaten(){
-  document.getElementById("status").textContent="● Lade Daten...";
-  document.getElementById("status").style.color="#E84393";
+  document.getElementById("status-dot").textContent="● Laden...";document.getElementById("status-dot").style.color="#FF8000";document.getElementById("status-detail").style.display="none";
+  document.getElementById("status-dot").style.color="#E84393";
   try{
     // APICBASE — nur für Food Cost
     var r=await fetch(CSV.apic);var t=await r.text();
@@ -1017,11 +1020,11 @@ async function ladeDaten(){
     // Standard: Gestern (Daten kommen immer einen Tag später)
     setQuick("gestern");
     applyFilter();
-    document.getElementById("status").textContent="● Live · "+alle.length+" Tage (LS-Umsatz) · "+apicData.length+" Apicbase (FC) · "+itemSales.length+" Item-FC · "+ordio.length+" Ordio · "+artikel.length+" Artikel · "+bons.length+" Bons · "+waste.length+" Waste";
-    document.getElementById("status").style.color="#22c55e";
+    document.getElementById("status-dot").textContent="● Live";document.getElementById("status-dot").style.color="#22c55e";
+    document.getElementById("status-detail").textContent=alle.length+" Tage (LS-Umsatz) · "+apicData.length+" Apicbase (FC) · "+itemSales.length+" Item-FC · "+ordio.length+" Ordio · "+artikel.length+" Artikel · "+bons.length+" Bons · "+waste.length+" Waste";
   }catch(e){
-    document.getElementById("status").textContent="⚠️ "+e.message;
-    document.getElementById("status").style.color="#ef4444";
+    document.getElementById("status-dot").textContent="● Fehler";document.getElementById("status-dot").style.color="#ef4444";
+    document.getElementById("status-detail").textContent=e.message;document.getElementById("status-detail").style.display="inline";
   }
 }
 
