@@ -5059,6 +5059,15 @@ function renderRabatte(){
     pending.forEach(function(r){ maTischArt.push(r); });
   });
 
+  // rabArt nach FIFO neu berechnen — jetzt inkl. versteckter Storno-Rabatte (_implicitRabatt)
+  rabArt=allArt.filter(function(r){return r.rabatt!==0||r.gratis!==0||(r._implicitRabatt||0)>0;});
+  // KPIs neu berechnen mit vollständigen Rabatt-Daten
+  totalRabatt=rabArt.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);},0);
+  totalRabattArt=rabArt.length;
+  avgPerBon=totalRabattBons>0?totalRabatt/totalRabattBons:0;
+  rabBonIds={};rabArt.forEach(function(r){rabBonIds[r.bonNr]=1;});
+  uniqueRabBons=Object.keys(rabBonIds).length;
+
   // === MITARBEITER-ESSEN pro Tag (basierend auf positiven Einträgen) ===
   // Erlaubt: 1x Bang Bang Minced Beef ODER Minced Soja pro Tag + Getränke 70% off
   // Positive Einträge = bestellt & konsumiert (Storno-Zeilen menge<0 ausgeblendet)
@@ -5110,7 +5119,7 @@ function renderRabatte(){
     var ma=r.mitarbeiter||"Unbekannt";
     if(!maRabMap[ma])maRabMap[ma]={count:0,betrag:0,bons:{},artikel:[]};
     maRabMap[ma].count++;
-    maRabMap[ma].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis);
+    maRabMap[ma].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);
     maRabMap[ma].bons[r.bonNr]=1;
     maRabMap[ma].artikel.push(r);
   });
@@ -5122,7 +5131,7 @@ function renderRabatte(){
     var n=r.name||"Unbekannt";
     if(!artRabMap[n])artRabMap[n]={count:0,betrag:0,menge:0};
     artRabMap[n].count++;
-    artRabMap[n].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis);
+    artRabMap[n].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);
     artRabMap[n].menge+=r.menge;
   });
   var artRabList=Object.entries(artRabMap).sort(function(a,b){return b[1].betrag-a[1].betrag;}).slice(0,10);
@@ -5136,7 +5145,7 @@ function renderRabatte(){
     if(typ==="online") return; // Takeaway/Order rausfiltern
     if(!tischMap[t])tischMap[t]={count:0,betrag:0,bons:{},typ:typ};
     tischMap[t].count++;
-    tischMap[t].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis);
+    tischMap[t].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);
     tischMap[t].bons[r.bonNr]=1;
   });
   var tischList=Object.entries(tischMap).sort(function(a,b){return b[1].betrag-a[1].betrag;}).slice(0,15);
@@ -5148,8 +5157,8 @@ function renderRabatte(){
   // === PER STANDORT ===
   var mdRab=rabArt.filter(function(r){return r.standort==="Mehringdamm";});
   var rsRab=rabArt.filter(function(r){return r.standort==="Rosenthaler Straße";});
-  var mdBetrag=mdRab.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis);},0);
-  var rsBetrag=rsRab.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis);},0);
+  var mdBetrag=mdRab.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);},0);
+  var rsBetrag=rsRab.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);},0);
   var mdBonIds={};mdRab.forEach(function(r){mdBonIds[r.bonNr]=1;});
   var rsBonIds={};rsRab.forEach(function(r){rsBonIds[r.bonNr]=1;});
 
@@ -5159,7 +5168,7 @@ function renderRabatte(){
     if(r.stunde>=0){
       if(!stdMap[r.stunde])stdMap[r.stunde]={count:0,betrag:0};
       stdMap[r.stunde].count++;
-      stdMap[r.stunde].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis);
+      stdMap[r.stunde].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);
     }
   });
 
@@ -5172,7 +5181,7 @@ function renderRabatte(){
     var wk=mon.toISOString().slice(0,10);
     if(!wMap[wk])wMap[wk]={count:0,betrag:0};
     wMap[wk].count++;
-    wMap[wk].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis);
+    wMap[wk].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);
   });
   var wKeys=Object.keys(wMap).sort();
 
@@ -5219,6 +5228,9 @@ function renderRabatte(){
       '<div style="font-size:11px;color:#94a3b8">'+maTischArt.length+' Positionen</div>'+
     '</div>'+
   '</div>';
+
+  // === GRID: MA-Essen Monitor + Rabatte nach MA ===
+  html+='<div class="grid2" style="align-items:start">';
 
   // === MITARBEITER-ESSEN MONITOR (klickbar mit Detail-Tabelle) ===
   html+='<div class="box">'+
@@ -5357,30 +5369,7 @@ function renderRabatte(){
   }
   html+='</div>';
 
-  // === GRID: Top Artikel + Rabatte nach MA ===
-  html+='<div class="grid2">';
-
-  // Top rabattierte Artikel
-  html+='<div class="box">'+
-    '<div class="box-title">🏷️ Top rabattierte Artikel</div>'+
-    '<div class="box-sub">Nach Rabattwert</div>';
-  artRabList.forEach(function(e){
-    var name=e[0],d=e[1];
-    var pct=maxArtRab>0?Math.round(d.betrag/maxArtRab*100):0;
-    html+='<div style="margin-bottom:8px">'+
-      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'+
-        '<span style="color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">'+name+'</span>'+
-        '<span style="color:#E84393;white-space:nowrap;margin-left:8px">'+d.count+'× · '+fmt(d.betrag)+'</span>'+
-      '</div>'+
-      '<div style="height:3px;background:#1e2d40;border-radius:2px">'+
-        '<div style="height:100%;background:#E84393;border-radius:2px;width:'+pct+'%"></div>'+
-      '</div>'+
-    '</div>';
-  });
-  html+='</div>';
-  html+='</div>'; // grid2 end (Top Artikel steht allein)
-
-  // Rabatte nach Mitarbeiter (aufklappbare Detail-Tabelle — volle Breite)
+  // Rabatte nach Mitarbeiter (aufklappbare Detail-Tabelle)
   html+='<div class="box">'+
     '<div class="box-title">👤 Rabatte nach Mitarbeiter</div>'+
     '<div class="box-sub">Wer hat Rabatte gewährt · Klick für Details</div>';
@@ -5426,8 +5415,8 @@ function renderRabatte(){
     var items=d.artikel.slice().sort(function(a,b){return b.datum>a.datum?1:b.datum<a.datum?-1:0;});
 
     items.forEach(function(r,rIdx){
-      var rabBetrag=Math.abs(r.rabatt)+Math.abs(r.gratis);
-      var original=r.preis+rabBetrag;
+      var rabBetrag=Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);
+      var original=r._originalPreis||(r.preis+rabBetrag);
       var bezahlt=r.preis;
       var tischKurz=(r.tisch||"–").replace("Inside 2026, ","⬛ ").replace("Outside 2026, ","🟫 ").replace("Mitarbeiter, ","🍜 MA ");
       var tagBg=rIdx%2===0?"transparent":"#0a1520";
@@ -5448,8 +5437,8 @@ function renderRabatte(){
     });
 
     // Summenzeile
-    var sumOrig=items.reduce(function(s,r){return s+r.preis+Math.abs(r.rabatt)+Math.abs(r.gratis);},0);
-    var sumRab=items.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis);},0);
+    var sumOrig=items.reduce(function(s,r){return s+(r._originalPreis||(r.preis+Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0)));},0);
+    var sumRab=items.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);},0);
     var sumBez=items.reduce(function(s,r){return s+r.preis;},0);
     html+='<tr style="border-top:2px solid #1e2d40;font-weight:700">'+
       '<td style="padding:6px 4px;color:#f1f5f9" colspan="2">Gesamt ('+items.length+' Positionen)</td>'+
@@ -5464,9 +5453,10 @@ function renderRabatte(){
   });
 
   html+='</div>';
+  html+='</div>'; // grid2 end (MA-Essen + Rabatte nach MA)
 
-  // === GRID: Tische + Standort ===
-  html+='<div class="grid2">';
+  // === GRID: Rabatte nach Tisch + Top rabattierte Artikel ===
+  html+='<div class="grid2" style="align-items:start">';
 
   // Nach Tisch
   html+='<div class="box">'+
@@ -5491,10 +5481,53 @@ function renderRabatte(){
   });
   html+='</div>';
 
-  // Per Standort
+  // Top rabattierte Artikel
   html+='<div class="box">'+
-    '<div class="box-title">📍 Per Standort</div>'+
-    '<div class="box-sub">Rabattverteilung</div>';
+    '<div class="box-title">🏷️ Top rabattierte Artikel</div>'+
+    '<div class="box-sub">Nach Rabattwert</div>';
+  artRabList.forEach(function(e){
+    var name=e[0],d=e[1];
+    var pct=maxArtRab>0?Math.round(d.betrag/maxArtRab*100):0;
+    html+='<div style="margin-bottom:8px">'+
+      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'+
+        '<span style="color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">'+name+'</span>'+
+        '<span style="color:#E84393;white-space:nowrap;margin-left:8px">'+d.count+'× · '+fmt(d.betrag)+'</span>'+
+      '</div>'+
+      '<div style="height:3px;background:#1e2d40;border-radius:2px">'+
+        '<div style="height:100%;background:#E84393;border-radius:2px;width:'+pct+'%"></div>'+
+      '</div>'+
+    '</div>';
+  });
+  html+='</div>';
+  html+='</div>'; // grid2 end (Tisch + Top Artikel)
+
+  // === GRID: Rabatt-Trend (Liniendiagramm) + Per Standort nach Uhrzeit ===
+  html+='<div class="grid2" style="align-items:start">';
+
+  // Rabatt-Trend als Liniendiagramm (Tages-Trend statt Wochen-Trend)
+  var dayMap={};
+  rabArt.forEach(function(r){
+    var d=r.datum;
+    if(!dayMap[d])dayMap[d]={count:0,betrag:0};
+    dayMap[d].count++;
+    dayMap[d].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);
+  });
+  var dayKeys=Object.keys(dayMap).sort();
+
+  html+='<div class="box">'+
+    '<div class="box-title">📈 Rabatt-Trend nach Tag</div>'+
+    '<div class="box-sub">Anzahl Positionen + Rabattwert pro Tag</div>';
+  if(dayKeys.length>1){
+    html+='<canvas id="c-rabatt-trend-day" style="max-height:220px"></canvas>';
+  } else {
+    html+='<div style="color:#475569;font-size:12px;padding:12px 0">Zu wenige Tage für Trend-Darstellung</div>';
+  }
+  html+='</div>';
+
+  // Per Standort + Rabatte nach Uhrzeit
+  html+='<div class="box">'+
+    '<div class="box-title">📍 Per Standort & Uhrzeit</div>'+
+    '<div class="box-sub">Rabattverteilung + Uhrzeit-Chart</div>';
   if(st==="Alle Standorte"){
     var mdPct=totalRabatt>0?(mdBetrag/totalRabatt*100):0;
     var rsPct=totalRabatt>0?(rsBetrag/totalRabatt*100):0;
@@ -5536,7 +5569,7 @@ function renderRabatte(){
       '<div style="font-size:10px;color:#475569;margin-top:2px">Rabatte nach Uhrzeit</div>';
   }
   html+='</div>';
-  html+='</div>'; // grid2 end
+  html+='</div>'; // grid2 end (Trend + Standort/Uhrzeit)
 
   // Rabatte auf normalen Tischen (nicht MA, nicht Online) — Warnung wenn vorhanden
   var normalRabBetrag=normalTischRab.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis);},0);
@@ -5563,13 +5596,6 @@ function renderRabatte(){
     (maViolCount>0?'⚠️ '+maViolCount+' Compliance-Verstöße! ':'✓ Keine Compliance-Verstöße. ')+
   '</div>';
 
-  // Wochen-Trend Chart
-  html+='<div class="box">'+
-    '<div class="box-title">📈 Rabatt-Trend</div>'+
-    '<div class="box-sub">Wöchentliche Entwicklung</div>'+
-    '<canvas id="c-rabatt-trend" style="max-height:180px"></canvas>'+
-  '</div>';
-
   document.getElementById("t-rabatte").innerHTML=html;
 
   // === CHARTS ===
@@ -5588,21 +5614,21 @@ function renderRabatte(){
     });
   }
 
-  // Wochen-Trend Chart
-  if(wKeys.length>0&&document.getElementById("c-rabatt-trend")){
-    new Chart(document.getElementById("c-rabatt-trend"),{
-      type:"bar",
+  // Tages-Trend Liniendiagramm (Anzahl + €)
+  if(dayKeys.length>1&&document.getElementById("c-rabatt-trend-day")){
+    new Chart(document.getElementById("c-rabatt-trend-day"),{
+      type:"line",
       data:{
-        labels:wKeys.map(function(k){var p=k.split("-");return p[2]+"."+p[1];}),
+        labels:dayKeys.map(function(k){var p=k.split("-");return p[2]+"."+p[1];}),
         datasets:[
-          {type:"bar",label:"Rabattwert",data:wKeys.map(function(k){return wMap[k].betrag;}),backgroundColor:"#E8439330",borderColor:"#E84393",borderWidth:1,yAxisID:"y"},
-          {type:"line",label:"Positionen",data:wKeys.map(function(k){return wMap[k].count;}),borderColor:"#40F0FF",borderWidth:2,pointRadius:3,pointBackgroundColor:"#40F0FF",tension:0.3,yAxisID:"y1"}
+          {label:"Rabattwert (€)",data:dayKeys.map(function(k){return dayMap[k].betrag;}),borderColor:"#E84393",backgroundColor:"#E8439320",borderWidth:2,pointRadius:3,pointBackgroundColor:"#E84393",tension:0.3,fill:true,yAxisID:"y"},
+          {label:"Anzahl Positionen",data:dayKeys.map(function(k){return dayMap[k].count;}),borderColor:"#40F0FF",borderWidth:2,pointRadius:3,pointBackgroundColor:"#40F0FF",tension:0.3,yAxisID:"y1"}
         ]
       },
       options:{
         plugins:{legend:{labels:{color:"#94a3b8",font:{size:11}}}},
         scales:{
-          x:{ticks:{color:"#64748b",font:{size:10}},grid:{display:false}},
+          x:{ticks:{color:"#64748b",font:{size:10},maxRotation:45},grid:{display:false}},
           y:{position:"left",ticks:{color:"#E84393",font:{size:10},callback:function(v){return"€"+v;}},grid:{color:"#1e2d4020"}},
           y1:{position:"right",ticks:{color:"#40F0FF",font:{size:10}},grid:{display:false}}
         }
