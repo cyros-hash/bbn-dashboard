@@ -4992,14 +4992,21 @@ function renderRabatte(){
   var rabBonIds={};rabArt.forEach(function(r){rabBonIds[r.bonNr]=1;});
   var uniqueRabBons=Object.keys(rabBonIds).length;
 
-  // === MITARBEITER-TISCHE erkennen ===
-  // Tische die "mitarbeiter" oder "table" + Name enthalten
-  var maTischArt=allArt.filter(function(r){
-    var t=(r.tisch||"").toLowerCase();
-    return t.indexOf("mitarbeiter")!==-1||t.indexOf("ma ")===0||t.indexOf("staff")!==-1;
-  });
-  // Fallback: wenn keine Mitarbeiter-Tische gefunden, auch Bons mit rabatt > 50% des Totals prüfen
-  // Aber erstmal nur explizite Mitarbeiter-Tische
+  // === TISCH-KATEGORIEN ===
+  // Hilfsfunktion: Tisch-Typ erkennen
+  function tischTyp(t){
+    t=(t||"").toLowerCase();
+    if(t.indexOf("mitarbeiter")!==-1) return "ma";
+    if(t.indexOf("takeaway")!==-1||t.indexOf("order ")===0) return "online";
+    if(t.indexOf("inside")!==-1||t.indexOf("outside")!==-1) return "tisch";
+    if(t.match(/^\d+$/)) return "tisch";
+    if(t==="") return "leer";
+    return "andere";
+  }
+  // Mitarbeiter-Tische: "Mitarbeiter, Table xxx"
+  var maTischArt=allArt.filter(function(r){ return tischTyp(r.tisch)==="ma"; });
+  // Nur rabattierte Artikel auf normalen Tischen (nicht MA, nicht Online)
+  var normalTischRab=rabArt.filter(function(r){ var typ=tischTyp(r.tisch); return typ==="tisch"||typ==="andere"; });
 
   // === COMPLIANCE: Mitarbeiter-Essen pro Tag ===
   // Erlaubt: 1x Bang Bang Minced Beef ODER Minced Soja pro Tag + Getränke 70% off
@@ -5061,16 +5068,22 @@ function renderRabatte(){
   var artRabList=Object.entries(artRabMap).sort(function(a,b){return b[1].betrag-a[1].betrag;}).slice(0,10);
   var maxArtRab=artRabList.length>0?artRabList[0][1].betrag:1;
 
-  // === NACH TISCH ===
+  // === NACH TISCH (ohne Online-Orders) ===
   var tischMap={};
   rabArt.forEach(function(r){
     var t=r.tisch||"Kein Tisch";
-    if(!tischMap[t])tischMap[t]={count:0,betrag:0,bons:{}};
+    var typ=tischTyp(t);
+    if(typ==="online") return; // Takeaway/Order rausfiltern
+    if(!tischMap[t])tischMap[t]={count:0,betrag:0,bons:{},typ:typ};
     tischMap[t].count++;
     tischMap[t].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis);
     tischMap[t].bons[r.bonNr]=1;
   });
-  var tischList=Object.entries(tischMap).sort(function(a,b){return b[1].betrag-a[1].betrag;}).slice(0,12);
+  var tischList=Object.entries(tischMap).sort(function(a,b){return b[1].betrag-a[1].betrag;}).slice(0,15);
+  // Kürze Tischnamen für Anzeige
+  function kurzTisch(name){
+    return name.replace("Inside 2026, ","⬛ ").replace("Outside 2026, ","🟫 ").replace("Mitarbeiter, ","🍜 MA ");
+  }
 
   // === PER STANDORT ===
   var mdRab=rabArt.filter(function(r){return r.standort==="Mehringdamm";});
@@ -5249,20 +5262,21 @@ function renderRabatte(){
   // Nach Tisch
   html+='<div class="box">'+
     '<div class="box-title">🪑 Rabatte nach Tisch</div>'+
-    '<div class="box-sub">Top '+tischList.length+' Tische nach Rabattwert</div>';
+    '<div class="box-sub">Top '+tischList.length+' Tische nach Rabattwert (ohne Online-Orders)</div>';
   var maxTischRab=tischList.length>0?tischList[0][1].betrag:1;
   tischList.forEach(function(e){
     var name=e[0],d=e[1];
     var bonCount=Object.keys(d.bons).length;
-    var isMa=(name.toLowerCase().indexOf("mitarbeiter")!==-1);
+    var typ=d.typ||"andere";
+    var col=typ==="ma"?"#22c55e":typ==="tisch"?"#FF8000":"#E84393";
     var pct=maxTischRab>0?Math.round(d.betrag/maxTischRab*100):0;
     html+='<div style="margin-bottom:8px">'+
       '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'+
-        '<span style="color:'+(isMa?"#22c55e":"#cbd5e1")+'">'+name+(isMa?" 🍜":"")+'</span>'+
-        '<span style="color:#E84393;white-space:nowrap">'+bonCount+' Bons · '+fmt(d.betrag)+'</span>'+
+        '<span style="color:'+col+'">'+kurzTisch(name)+'</span>'+
+        '<span style="color:#E84393;white-space:nowrap">'+bonCount+' Bons · '+d.count+' Pos. · '+fmt(d.betrag)+'</span>'+
       '</div>'+
       '<div style="height:3px;background:#1e2d40;border-radius:2px">'+
-        '<div style="height:100%;background:'+(isMa?"#22c55e":"#E84393")+';border-radius:2px;width:'+pct+'%"></div>'+
+        '<div style="height:100%;background:'+col+';border-radius:2px;width:'+pct+'%"></div>'+
       '</div>'+
     '</div>';
   });
@@ -5315,16 +5329,29 @@ function renderRabatte(){
   html+='</div>';
   html+='</div>'; // grid2 end
 
+  // Rabatte auf normalen Tischen (nicht MA, nicht Online) — Warnung wenn vorhanden
+  var normalRabBetrag=normalTischRab.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis);},0);
+  var normalRabBonIds={};normalTischRab.forEach(function(r){normalRabBonIds[r.bonNr]=1;});
+  var normalRabBonCount=Object.keys(normalRabBonIds).length;
+  if(normalTischRab.length>0){
+    html+='<div style="background:#1a1a0e;border:1px solid #534d14;border-radius:8px;padding:12px;margin-bottom:14px">'+
+      '<div style="font-weight:600;color:#FF8000;font-size:12px;margin-bottom:6px">⚠️ Rabatte auf Gäste-Tischen: '+normalRabBonCount+' Bons · '+normalTischRab.length+' Positionen · '+fmt(normalRabBetrag)+'</div>'+
+      '<div style="font-size:11px;color:#94a3b8">Diese Rabatte wurden auf normalen Tischen (Inside/Outside) gewährt — nicht auf Mitarbeiter-Tischen.</div>'+
+    '</div>';
+  }
+
   // AI Insight Box
   var topArt=artRabList.length>0?artRabList[0][0]:"–";
   var topMa=maRabList.length>0?maRabList[0][0]:"–";
   var maViolCount=violations.length;
+  var maBetrag=maTischArt.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis);},0);
   html+='<div class="ai-box" style="margin-bottom:14px">'+
     'Rabattvolumen: '+fmt(totalRabatt)+' auf '+uniqueRabBons+' Bons ('+totalRabattArt+' Positionen). '+
-    'Meistrabattierter Artikel: '+topArt+'. '+
-    'Häufigster MA: '+topMa+' ('+fmt(maRabList.length>0?maRabList[0][1].betrag:0)+'). '+
-    (maTischSummary.length>0?maTischSummary.length+' MA-Tische erkannt. ':'')+
-    (maViolCount>0?'⚠️ '+maViolCount+' Compliance-Verstöße gefunden! ':'✓ Keine Compliance-Verstöße. ')+
+    (maTischSummary.length>0?'MA-Tische: '+fmt(maBetrag)+' ('+maTischSummary.length+' Tische). ':'Keine MA-Tische erkannt. ')+
+    (normalRabBonCount>0?'Gäste-Tische: '+fmt(normalRabBetrag)+' auf '+normalRabBonCount+' Bons. ':'')+
+    'Top Artikel: '+topArt+'. '+
+    'Häufigster MA: '+topMa+'. '+
+    (maViolCount>0?'⚠️ '+maViolCount+' Compliance-Verstöße! ':'✓ Keine Compliance-Verstöße. ')+
   '</div>';
 
   // Wochen-Trend Chart
