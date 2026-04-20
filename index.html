@@ -4472,24 +4472,6 @@ function renderStornoAnalyse(von,bis,st){
   });
   if(sd.length===0) return '';
 
-  // Artikel mit echtem Betrag (negativ = Stornowert)
-  var sdMitBetrag=sd.filter(function(r){return r.betrag<0;});
-  var totalWert=sdMitBetrag.reduce(function(s,r){return s+r.betrag;},0);
-  var artCount=sdMitBetrag.length;
-
-  // Bon-Ebene: eindeutige Quittungs-IDs
-  var bonIds={};sd.forEach(function(r){bonIds[r.quittungsId]=1;});
-  var betroffeneBons=Object.keys(bonIds).length;
-
-  // Komplett- vs. Teil-Stornos: Bon ist "komplett" wenn er auch in bons mit storniert===1 steht
-  // Hier approximieren: Bons mit "Konto storniert" im Grund = Komplett
-  var komplettBonIds={};
-  sd.forEach(function(r){
-    if(r.grund&&r.grund.indexOf("Konto storniert")!==-1) komplettBonIds[r.quittungsId]=1;
-  });
-  var komplettStornos=Object.keys(komplettBonIds).length;
-  var teilStornos=betroffeneBons-komplettStornos;
-
   // Nach Stornodefinition
   var defMap={};
   sd.forEach(function(r){
@@ -4502,16 +4484,6 @@ function renderStornoAnalyse(von,bis,st){
   var defList=Object.entries(defMap).sort(function(a,b){return b[1].count-a[1].count;});
   var defColors={"Fehleintrag":"#FF8000","Bruch":"#ef4444","Unzufriedener Gast":"#E84393","Andere":"#64748b"};
 
-  // Nach Artikel (Top 8)
-  var artMap={};
-  sdMitBetrag.forEach(function(r){
-    if(!artMap[r.artikel])artMap[r.artikel]={count:0,betrag:0};
-    artMap[r.artikel].count++;
-    artMap[r.artikel].betrag+=r.betrag;
-  });
-  var artList=Object.entries(artMap).sort(function(a,b){return b[1].count-a[1].count;}).slice(0,8);
-  var maxArt=artList.length>0?artList[0][1].count:1;
-
   // Nach Mitarbeiter (Storniert von)
   var maMap={};
   sd.forEach(function(r){
@@ -4523,119 +4495,87 @@ function renderStornoAnalyse(von,bis,st){
   });
   var maList=Object.entries(maMap).sort(function(a,b){return b[1].count-a[1].count;});
 
-  // Per Standort
-  var mdSd=sd.filter(function(r){return r.standort==="Mehringdamm";});
-  var rsSd=sd.filter(function(r){return r.standort==="Rosenthaler Straße";});
-  var mdBonIds={};mdSd.forEach(function(r){mdBonIds[r.quittungsId]=1;});
-  var rsBonIds={};rsSd.forEach(function(r){rsBonIds[r.quittungsId]=1;});
-  var mdBetrag=mdSd.filter(function(r){return r.betrag<0;}).reduce(function(s,r){return s+r.betrag;},0);
-  var rsBetrag=rsSd.filter(function(r){return r.betrag<0;}).reduce(function(s,r){return s+r.betrag;},0);
-
-  // Storno nach Stunde (aus Detail-Daten)
-  var stdMap={};
-  sd.forEach(function(r){
-    if(r.stunde>=0)stdMap[r.stunde]=(stdMap[r.stunde]||0)+1;
+  // Nach Artikel (Top 8)
+  var sdMitBetrag=sd.filter(function(r){return r.betrag<0;});
+  var artMap={};
+  sdMitBetrag.forEach(function(r){
+    if(!artMap[r.artikel])artMap[r.artikel]={count:0,betrag:0};
+    artMap[r.artikel].count++;
+    artMap[r.artikel].betrag+=r.betrag;
   });
+  var artList=Object.entries(artMap).sort(function(a,b){return b[1].count-a[1].count;}).slice(0,8);
+  var maxArt=artList.length>0?artList[0][1].count:1;
 
-  return '<div class="box" style="margin-top:14px">'+
-    '<div class="box-title">📋 Storno-Detailanalyse</div>'+
-    '<div class="box-sub">Lightspeed Stornierungen-Bericht · Wert: '+fmt(totalWert)+'</div>'+
+  // Layout: Stornogründe (links) + Storniert von (rechts)
+  return '<div class="grid2" style="align-items:start;margin-top:14px">'+
 
-    // Kompakt-KPIs: Bons vs Artikel
-    '<div style="display:flex;gap:12px;margin:14px 0">'+
-      '<div style="flex:1;background:#0d1f2d;border-radius:8px;padding:12px;border-left:3px solid #ef4444">'+
-        '<div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px">Betroffene Bons</div>'+
-        '<div style="font-size:24px;font-weight:700;color:#ef4444;margin:4px 0">'+betroffeneBons+'</div>'+
-        '<div style="font-size:11px;color:#94a3b8">'+komplettStornos+' komplett · '+teilStornos+' teilweise</div>'+
+    // LINKS: Stornogründe + Donut
+    '<div class="box">'+
+      '<div class="box-title">📋 Stornogründe</div>'+
+      '<div class="box-sub">Warum wurde storniert?</div>'+
+      '<div style="display:flex;gap:14px;align-items:center;margin-top:10px">'+
+        '<div style="flex:1">'+
+          defList.map(function(e){
+            var name=e[0],d=e[1];
+            var col=defColors[name]||"#94a3b8";
+            var pct=sd.length>0?(d.count/sd.length*100).toFixed(0):0;
+            var bonCount=Object.keys(d.bons).length;
+            return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1e2d40">'+
+              '<div style="width:10px;height:10px;border-radius:50%;background:'+col+';flex-shrink:0"></div>'+
+              '<span style="color:#f1f5f9;font-weight:500;flex:1;font-size:12px">'+name+'</span>'+
+              '<span style="color:'+col+';font-weight:600;font-size:12px">'+d.count+' Pos. · '+bonCount+' Bons</span>'+
+              '<span style="color:#64748b;font-size:11px;width:50px;text-align:right">'+pct+'%</span>'+
+            '</div>';
+          }).join("")+
+        '</div>'+
+        '<div style="width:140px;flex-shrink:0"><canvas id="c-storno-def" style="max-height:140px"></canvas></div>'+
       '</div>'+
-      '<div style="flex:1;background:#0d1f2d;border-radius:8px;padding:12px;border-left:3px solid #FF8000">'+
-        '<div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px">Stornierte Artikel</div>'+
-        '<div style="font-size:24px;font-weight:700;color:#FF8000;margin:4px 0">'+artCount+'</div>'+
-        '<div style="font-size:11px;color:#94a3b8">Ø '+(betroffeneBons>0?(artCount/betroffeneBons).toFixed(1):"0")+' Artikel pro Bon</div>'+
-      '</div>'+
-      '<div style="flex:1;background:#0d1f2d;border-radius:8px;padding:12px;border-left:3px solid #E84393">'+
-        '<div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px">Stornowert</div>'+
-        '<div style="font-size:24px;font-weight:700;color:#E84393;margin:4px 0">'+fmt(totalWert)+'</div>'+
-        '<div style="font-size:11px;color:#94a3b8">Ø '+(betroffeneBons>0?fmt(totalWert/betroffeneBons):"€ 0")+' pro Bon</div>'+
-      '</div>'+
-    '</div>'+
-
-    // Gründe als kompakte Leiste + Donut
-    '<div style="display:flex;gap:14px;align-items:center;margin-bottom:14px">'+
-      '<div style="flex:1">'+
-        '<div style="font-weight:600;color:#f1f5f9;font-size:13px;margin-bottom:8px">Stornogründe</div>'+
-        defList.map(function(e){
-          var name=e[0],d=e[1];
-          var col=defColors[name]||"#94a3b8";
-          var pct=sd.length>0?(d.count/sd.length*100).toFixed(0):0;
-          var bonCount=Object.keys(d.bons).length;
-          return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1e2d40">'+
-            '<div style="width:10px;height:10px;border-radius:50%;background:'+col+';flex-shrink:0"></div>'+
-            '<span style="color:#f1f5f9;font-weight:500;flex:1;font-size:12px">'+name+'</span>'+
-            '<span style="color:'+col+';font-weight:600;font-size:12px">'+d.count+' Pos. · '+bonCount+' Bons</span>'+
-            '<span style="color:#64748b;font-size:11px;width:50px;text-align:right">'+pct+'%</span>'+
-          '</div>';
-        }).join("")+
-      '</div>'+
-      '<div style="width:160px;flex-shrink:0"><canvas id="c-storno-def" style="max-height:160px"></canvas></div>'+
-    '</div>'+
-
-    // Grid: Artikel + Mitarbeiter
-    '<div class="grid2">'+
-      '<div>'+
-        '<div style="font-weight:600;color:#f1f5f9;font-size:13px;margin-bottom:10px">Top stornierte Artikel</div>'+
-        artList.map(function(e){
-          var name=e[0],d=e[1];
-          var pct=maxArt>0?Math.round(d.count/maxArt*100):0;
-          return '<div style="margin-bottom:8px">'+
-            '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'+
-              '<span style="color:#cbd5e1">'+name+'</span>'+
-              '<span style="color:#ef4444">'+d.count+'× · '+fmt(d.betrag)+'</span>'+
-            '</div>'+
-            '<div style="height:3px;background:#1e2d40;border-radius:2px">'+
-              '<div style="height:100%;background:#ef4444;border-radius:2px;width:'+pct+'%"></div>'+
-            '</div>'+
-          '</div>';
-        }).join("")+
-      '</div>'+
-
-      '<div>'+
-        '<div style="font-weight:600;color:#f1f5f9;font-size:13px;margin-bottom:10px">Storniert von</div>'+
-        maList.map(function(e){
-          var name=e[0],d=e[1];
-          var bonCount=Object.keys(d.bons).length;
-          return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0;border-bottom:1px solid #1e2d40">'+
-            '<span style="color:#cbd5e1">'+name+'</span>'+
-            '<span style="display:flex;gap:8px;align-items:center">'+
-              '<span style="color:#94a3b8;font-size:11px">'+bonCount+' Bons</span>'+
-              '<span style="color:#ef4444;font-weight:600">'+d.count+' Pos.</span>'+
-              '<span style="color:#64748b;font-size:11px">'+fmt(d.betrag)+'</span>'+
-            '</span>'+
-          '</div>';
-        }).join("")+
-        (st==="Alle Standorte"&&(Object.keys(mdBonIds).length>0||Object.keys(rsBonIds).length>0)?
-          '<div style="margin-top:12px;padding-top:10px;border-top:1px solid #0a3545">'+
-            '<div style="font-weight:600;color:#f1f5f9;font-size:12px;margin-bottom:6px">Pro Standort</div>'+
-            '<div style="display:flex;justify-content:space-between;font-size:12px;color:#cbd5e1;padding:3px 0">'+
-              '<span>Mehringdamm</span><span>'+Object.keys(mdBonIds).length+' Bons · '+mdSd.filter(function(r){return r.betrag<0;}).length+' Pos. · '+fmt(mdBetrag)+'</span></div>'+
-            '<div style="display:flex;justify-content:space-between;font-size:12px;color:#cbd5e1;padding:3px 0">'+
-              '<span>Rosenthaler Straße</span><span>'+Object.keys(rsBonIds).length+' Bons · '+rsSd.filter(function(r){return r.betrag<0;}).length+' Pos. · '+fmt(rsBetrag)+'</span></div>'+
-          '</div>'
-        :'')+
-      '</div>'+
-    '</div>'+
-
-    '<div class="ai-box" style="margin-top:12px">'+
       (defMap["Andere"]&&defMap["Andere"].count/sd.length>0.5?
-        '⚠️ '+((defMap["Andere"].count/sd.length*100).toFixed(0))+'% der Stornos haben den Grund "Andere" — Team sollte spezifische Gründe wählen. ':'')+
-      (komplettStornos>0?komplettStornos+' Bon'+(komplettStornos>1?'s':'')+' komplett storniert, '+teilStornos+' teilweise. ':'')+
-      (artList.length>0?'Meiste Stornos: '+artList[0][0]+' ('+artList[0][1].count+'×). ':'')+
-      (maList.length>0?'Häufigster Storno-MA: '+maList[0][0]+' ('+Object.keys(maList[0][1].bons).length+' Bons).':'')+
+        '<div class="ai-box" style="margin-top:10px">⚠️ '+((defMap["Andere"].count/sd.length*100).toFixed(0))+'% der Stornos haben den Grund "Andere" — Team sollte spezifische Gründe wählen.</div>':'')+
     '</div>'+
 
-    '<canvas id="c-storno-trend" style="max-height:120px;margin-top:14px"></canvas>'+
-    '<div style="font-size:11px;color:#475569;margin-top:4px">Storno-Trend pro Woche (Anzahl Positionen + Wert)</div>'+
-  '</div>';
+    // RECHTS: Storniert von (Mitarbeiter)
+    '<div class="box">'+
+      '<div class="box-title">👤 Storniert von</div>'+
+      '<div class="box-sub">Welche Mitarbeiter stornieren?</div>'+
+      maList.map(function(e){
+        var name=e[0],d=e[1];
+        var bonCount=Object.keys(d.bons).length;
+        return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:6px 0;border-bottom:1px solid #1e2d40">'+
+          '<span style="color:#cbd5e1;font-weight:500">'+name+'</span>'+
+          '<span style="display:flex;gap:8px;align-items:center">'+
+            '<span style="color:#94a3b8;font-size:11px">'+bonCount+' Bons</span>'+
+            '<span style="color:#ef4444;font-weight:600">'+d.count+' Pos.</span>'+
+            '<span style="color:#64748b;font-size:11px">'+fmt(d.betrag)+'</span>'+
+          '</span>'+
+        '</div>';
+      }).join("")+
+    '</div>'+
+
+  '</div>'+
+
+  // UNTEN: Top stornierte Artikel (volle Breite)
+  '<div class="box" style="margin-top:14px">'+
+    '<div class="box-title">🏷️ Top stornierte Artikel</div>'+
+    '<div class="box-sub">Die am häufigsten stornierten Positionen</div>'+
+    artList.map(function(e){
+      var name=e[0],d=e[1];
+      var pct=maxArt>0?Math.round(d.count/maxArt*100):0;
+      return '<div style="margin-bottom:8px">'+
+        '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'+
+          '<span style="color:#cbd5e1">'+name+'</span>'+
+          '<span style="color:#ef4444">'+d.count+'× · '+fmt(d.betrag)+'</span>'+
+        '</div>'+
+        '<div style="height:3px;background:#1e2d40;border-radius:2px">'+
+          '<div style="height:100%;background:#ef4444;border-radius:2px;width:'+pct+'%"></div>'+
+        '</div>'+
+      '</div>';
+    }).join("")+
+  '</div>'+
+
+  // Storno-Trend pro Woche
+  '<canvas id="c-storno-trend" style="max-height:120px;margin-top:14px"></canvas>'+
+  '<div style="font-size:11px;color:#475569;margin-top:4px">Storno-Trend pro Woche (Anzahl Positionen + Wert)</div>';
 }
 
 // TRINKGELD & STORNOS
@@ -4870,17 +4810,29 @@ function renderStornierungen(){
     return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);
   });
 
-  var totalStornos=bonsG.filter(function(r){return r.storniert===1;}).length;
-  var stornoRate=bonsG.length>0?totalStornos/bonsG.length:0;
+  // Storno-Daten aus stornoDetails (Single Source of Truth)
+  var sd=stornoDetails.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);
+  });
+  var sdMitBetrag=sd.filter(function(r){return r.betrag<0;});
+  var bonIds={};sd.forEach(function(r){bonIds[r.quittungsId]=1;});
+  var betroffeneBons=Object.keys(bonIds).length;
+  var komplettBonIds={};
+  sd.forEach(function(r){
+    if(r.grund&&r.grund.indexOf("Konto storniert")!==-1) komplettBonIds[r.quittungsId]=1;
+  });
+  var komplettStornos=Object.keys(komplettBonIds).length;
+  var teilStornos=betroffeneBons-komplettStornos;
+  var artCount=sdMitBetrag.length;
+  var totalWert=sdMitBetrag.reduce(function(s,r){return s+r.betrag;},0);
 
-  // Storno nach Stunde (aus Bons)
+  // Storno nach Stunde (aus Detail-Daten — konsistent mit stornoDetails)
   var stornoStd={};
-  bonsG.filter(function(r){return r.storniert===1;}).forEach(function(r){
-    if(r.stunde<0)return;
-    stornoStd[r.stunde]=(stornoStd[r.stunde]||0)+1;
+  sd.forEach(function(r){
+    if(r.stunde>=0)stornoStd[r.stunde]=(stornoStd[r.stunde]||0)+1;
   });
 
-  if(totalStornos===0&&stornoDetails.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);}).length===0){
+  if(sd.length===0){
     document.getElementById("t-stornierungen").innerHTML='<div class="box" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">❌</div><div style="color:#475569">Keine Stornierungen im Zeitraum.</div></div>';
     return;
   }
@@ -4888,39 +4840,38 @@ function renderStornierungen(){
   var html=`
     <div class="kpi-grid">
       <div class="kpi-card">
-        <div class="kpi-label">Stornierte Bons</div>
-        <div class="kpi-val" style="color:${totalStornos>0?'#ef4444':'#22c55e'}">${totalStornos}</div>
-        <div class="kpi-delta ${totalStornos>0?'delta-dn':'delta-up'}">${fmtP(stornoRate)} Storno-Rate</div>
+        <div class="kpi-label">Betroffene Bons</div>
+        <div class="kpi-val" style="color:#ef4444">${betroffeneBons}</div>
+        <div class="kpi-delta delta-dn">${komplettStornos} komplett · ${teilStornos} teilweise</div>
         <div class="kpi-ai">${bonsG.length} Bons gesamt</div>
       </div>
-      ${(function(){
-        var sdKpi=stornoDetails.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);});
-        if(sdKpi.length===0) return '';
-        var bonIds={};sdKpi.forEach(function(r){bonIds[r.quittungsId]=1;});
-        var teilStornos=Object.keys(bonIds).length-totalStornos;
-        var artCount=sdKpi.filter(function(r){return r.betrag<0;}).length;
-        var totalWert=sdKpi.filter(function(r){return r.betrag<0;}).reduce(function(s,r){return s+r.betrag;},0);
-        return '<div class="kpi-card">'+
-          '<div class="kpi-label">Teil-Stornierungen</div>'+
-          '<div class="kpi-val" style="color:#FF8000">'+(teilStornos>0?teilStornos:0)+'</div>'+
-          '<div class="kpi-delta delta-neu">Bons mit einzelnen Artikel-Stornos</div>'+
-          '<div class="kpi-ai">'+artCount+' stornierte Artikel</div>'+
-        '</div>'+
-        '<div class="kpi-card">'+
-          '<div class="kpi-label">Stornowert</div>'+
-          '<div class="kpi-val" style="color:#E84393">'+fmt(totalWert)+'</div>'+
-          '<div class="kpi-delta delta-dn">Entgangener Umsatz</div>'+
-          '<div class="kpi-ai">Ø '+(Object.keys(bonIds).length>0?fmt(totalWert/Object.keys(bonIds).length):'€ 0')+' pro Bon</div>'+
-        '</div>';
-      })()}
+      <div class="kpi-card">
+        <div class="kpi-label">Stornierte Artikel</div>
+        <div class="kpi-val" style="color:#FF8000">${artCount}</div>
+        <div class="kpi-delta delta-neu">Ø ${betroffeneBons>0?(artCount/betroffeneBons).toFixed(1):"0"} pro Bon</div>
+        <div class="kpi-ai">Positionen mit negativem Betrag</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Stornowert</div>
+        <div class="kpi-val" style="color:#E84393">${fmt(totalWert)}</div>
+        <div class="kpi-delta delta-dn">Entgangener Umsatz</div>
+        <div class="kpi-ai">Ø ${betroffeneBons>0?fmt(totalWert/betroffeneBons):'€ 0'} pro Bon</div>
+      </div>
     </div>
 
-    <div class="box">
-      <div class="box-title">⏰ Stornierungen nach Uhrzeit</div>
-      <div class="box-sub">Wann passieren die meisten Stornos?</div>
-      ${Object.keys(stornoStd).length>0?
-        '<canvas id="c-storno-std" style="max-height:120px"></canvas>':
-        '<div style="color:#475569;font-size:12px;padding:12px">Keine Stornierungen im Zeitraum ✓</div>'}
+    <div class="grid2" style="align-items:start">
+      <div class="box">
+        <div class="box-title">⏰ Stornierungen nach Uhrzeit</div>
+        <div class="box-sub">Wann passieren die meisten Stornos?</div>
+        ${Object.keys(stornoStd).length>0?
+          '<canvas id="c-storno-std" style="max-height:180px"></canvas>':
+          '<div style="color:#475569;font-size:12px;padding:12px">Keine Stornierungen im Zeitraum ✓</div>'}
+      </div>
+      <div class="box">
+        <div class="box-title">📍 Stornierungen pro Standort</div>
+        <div class="box-sub">Anzahl stornierter Bons nach Laden</div>
+        <canvas id="c-storno-standort" style="max-height:180px"></canvas>
+      </div>
     </div>
 
     ${renderStornoAnalyse(von,bis,st)}
@@ -4936,16 +4887,45 @@ function renderStornierungen(){
   document.getElementById("t-stornierungen").innerHTML=html;
 
   // Charts
+  // Storno nach Uhrzeit (Liniendiagramm)
   dc("c-storno-std");
   var stornoStdKeys=Object.keys(stornoStd).sort(function(a,b){return parseInt(a)-parseInt(b);});
   if(stornoStdKeys.length>0){
     var cEl=document.getElementById("c-storno-std");
     if(cEl)charts["c-storno-std"]=new Chart(cEl,{
-      type:"bar",
-      data:{labels:stornoStdKeys.map(function(h){return h+":00";}),datasets:[{label:"Stornos",data:stornoStdKeys.map(function(h){return stornoStd[h];}),backgroundColor:"#ef4444",borderRadius:3}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#475569",font:{size:10}},grid:{color:"#1e2d40"}},y:{ticks:{color:"#475569",font:{size:10}},grid:{color:"#1e2d40"}}}}
+      type:"line",
+      data:{labels:stornoStdKeys.map(function(h){return h+":00";}),datasets:[{label:"Stornos",data:stornoStdKeys.map(function(h){return stornoStd[h];}),borderColor:"#ef4444",backgroundColor:"#ef444420",fill:true,tension:0.3,pointRadius:4,pointBackgroundColor:"#ef4444",borderWidth:2}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#475569",font:{size:10}},grid:{color:"#1e2d40"}},y:{ticks:{color:"#475569",font:{size:10},stepSize:1},grid:{color:"#1e2d4030"}}}}
     });
   }
+
+  // Storno pro Standort (Balkendiagramm — aus stornoDetails)
+  dc("c-storno-standort");
+  var mdBonIdsC={};sd.filter(function(r){return r.standort==="Mehringdamm";}).forEach(function(r){mdBonIdsC[r.quittungsId]=1;});
+  var rsBonIdsC={};sd.filter(function(r){return r.standort==="Rosenthaler Straße";}).forEach(function(r){rsBonIdsC[r.quittungsId]=1;});
+  var stornoMd=Object.keys(mdBonIdsC).length;
+  var stornoRs=Object.keys(rsBonIdsC).length;
+  var cStandort=document.getElementById("c-storno-standort");
+  if(cStandort)charts["c-storno-standort"]=new Chart(cStandort,{
+    type:"bar",
+    data:{
+      labels:["Mehringdamm","Rosenthaler Str."],
+      datasets:[{
+        label:"Stornierte Bons",
+        data:[stornoMd,stornoRs],
+        backgroundColor:["#ef4444","#FF8000"],
+        borderRadius:6,
+        barPercentage:0.5
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:"#cbd5e1",font:{size:11,weight:"600"}},grid:{display:false}},
+        y:{ticks:{color:"#475569",font:{size:10},stepSize:1},grid:{color:"#1e2d4030"}}
+      }
+    }
+  });
 
   // Storno-Detail Charts (aus 15_ls_stornos)
   var sdChart=stornoDetails.filter(function(r){
