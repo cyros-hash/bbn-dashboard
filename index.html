@@ -5193,23 +5193,30 @@ function renderRabatte(){
     function fmtWday(d){if(!d)return"";var wd=["So","Mo","Di","Mi","Do","Fr","Sa"];return wd[new Date(d).getDay()]||"";}
 
     maTischSummary.forEach(function(m,idx){
-      var hasViolation=violations.some(function(v){return v.tisch===m.tisch;});
+      var tischViol=violations.filter(function(v){return v.tisch===m.tisch;});
+      var hasViolation=tischViol.length>0;
       var borderCol=hasViolation?"#ef4444":"#22c55e";
       var maName=m.tisch.replace("Mitarbeiter, Table ","").replace("Mitarbeiter, ","");
 
-      // Summary-Zeile (klickbar)
-      html+='<div style="background:#0d1f2d;border-radius:8px;margin-bottom:8px;border-left:3px solid '+borderCol+';overflow:hidden">'+
-        '<div onclick="var d=document.getElementById(\'ma-detail-'+idx+'\');d.style.display=d.style.display===\'none\'?\'block\':\'none\'" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">'+
-          '<div>'+
-            '<span style="font-weight:600;color:#f1f5f9;font-size:13px">🍜 '+maName.toUpperCase()+'</span>'+
-            (hasViolation?' <span style="color:#ef4444;font-size:11px;font-weight:600">⚠️ '+violations.filter(function(v){return v.tisch===m.tisch;}).length+' Verstöße</span>':' <span style="color:#22c55e;font-size:11px">✓ OK</span>')+
-            '<span style="color:#64748b;font-size:11px;margin-left:12px">'+m.tage+' Tage · '+m.totalItems+' Pos. · ▼ Details</span>'+
+      // Summary-Zeile (klickbar → toggled Detail)
+      html+='<div style="background:#0d1f2d;border-radius:8px;margin-bottom:10px;border-left:3px solid '+borderCol+';overflow:hidden">'+
+        '<div onclick="var d=document.getElementById(\'ma-detail-'+idx+'\');var a=document.getElementById(\'ma-arrow-'+idx+'\');if(d.style.display===\'none\'){d.style.display=\'block\';a.textContent=\'▲\';}else{d.style.display=\'none\';a.textContent=\'▼\';}" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">'+
+          '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
+            '<span style="font-weight:700;color:#f1f5f9;font-size:14px">🍜 '+maName.toUpperCase()+'</span>'+
+            (hasViolation?' <span style="background:#7f1d1d50;color:#ef4444;font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px">⚠️ '+tischViol.length+' Verstöße</span>':' <span style="background:#16653430;color:#22c55e;font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px">✓ OK</span>')+
+            '<span style="color:#94a3b8;font-size:11px">'+m.tage+' Tage</span>'+
+            '<span style="color:#f1f5f9;font-size:11px">'+m.haupt+'× Hauptspeise</span>'+
+            '<span style="color:#40F0FF;font-size:11px">'+m.getraenke+'× Getränke</span>'+
+            (m.andere>0?'<span style="color:#FF8000;font-size:11px">'+m.andere+'× Andere</span>':'')+
           '</div>'+
-          '<span style="color:#E84393;font-weight:700;font-size:15px">'+fmt(m.totalRab)+'</span>'+
+          '<div style="display:flex;align-items:center;gap:10px">'+
+            '<span style="color:#E84393;font-weight:700;font-size:15px">'+fmt(m.totalRab)+'</span>'+
+            '<span id="ma-arrow-'+idx+'" style="color:#64748b;font-size:12px">▲</span>'+
+          '</div>'+
         '</div>';
 
-      // Detail-Tabelle (initial versteckt)
-      html+='<div id="ma-detail-'+idx+'" style="display:none;padding:0 12px 12px">'+
+      // Detail-Tabelle (standardmäßig OFFEN)
+      html+='<div id="ma-detail-'+idx+'" style="display:block;padding:0 12px 12px">'+
         '<table style="width:100%;border-collapse:collapse;font-size:11px">'+
         '<thead><tr style="border-bottom:2px solid #1e2d40">'+
           '<th style="text-align:left;padding:6px 4px;color:#64748b;font-weight:600">Datum</th>'+
