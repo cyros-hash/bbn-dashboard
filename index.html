@@ -5027,13 +5027,19 @@ function renderRabatte(){
     var orphanStornoPrices=[];// Preise verwaister Stornos (kein passendes +1 vorher)
     entries.forEach(function(r){
       if(r.menge>0){
-        // Prüfe ob ein verwaister Storno davor lag → versteckter Rabatt
+        // Prüfe ob ein verwaister Storno davor lag → Preisdifferenz prüfen
         if(orphanStornoPrices.length>0){
           var stornoPreis=orphanStornoPrices.shift();
-          var aktuellerPreis=r.preis;
-          if(stornoPreis>aktuellerPreis){
-            // Versteckter Rabatt erkannt! Original teurer als Neubuchung.
-            r._implicitRabatt=stornoPreis-aktuellerPreis;
+          // Originalpreis der Neubuchung = Bezahlt + expliziter Rabatt/Gratis
+          var neubuchungOriginal=r.preis+Math.abs(r.rabatt)+Math.abs(r.gratis);
+          // Nur wenn Storno-Preis HÖHER als Neubuchungs-Originalpreis → echte Preisdifferenz
+          // (Wenn gleich: Storno war nur Umbuchung für Rabatt-Anwendung, kein versteckter Rabatt)
+          if(stornoPreis>neubuchungOriginal+0.01){
+            r._implicitRabatt=stornoPreis-neubuchungOriginal;
+            r._originalPreis=stornoPreis;
+          } else if(stornoPreis>r.preis+0.01&&!r._originalPreis){
+            // Storno-Preis höher als bezahlt, aber expliziter Rabatt erklärt Differenz
+            // → Originalpreis aus Storno übernehmen (genauer als preis+rabatt bei Rundung)
             r._originalPreis=stornoPreis;
           }
         }
