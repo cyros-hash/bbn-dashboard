@@ -5008,25 +5008,37 @@ function renderRabatte(){
   // Nur rabattierte Artikel auf normalen Tischen (nicht MA, nicht Online)
   var normalTischRab=rabArt.filter(function(r){ var typ=tischTyp(r.tisch); return typ==="tisch"||typ==="andere"; });
 
-  // === NETTING: Positive + Negative Einträge verrechnen ===
-  // Gruppiert nach Tisch+Datum+Artikel, summiert Menge/Preis/Rabatt
-  var netMap={};// key: "tisch|datum|artikel" → {menge, preis, rabatt, gratis, name, gruppe, ...}
+  // === FIFO STORNO-MATCHING ===
+  // Lightspeed-Stornos (menge=-1) kommen bei echten Stornos UND bei Umbuchungen/Neudrucken.
+  // FIFO: Positive Einträge chronologisch aufbauen, negative verrechnen den ältesten positiven.
+  // Was übrig bleibt = tatsächlich konsumiert. Verwaiste Stornos (ohne passendes +1) werden ignoriert.
+  var fifoMap={};// key: tisch|datum|artikelname → [entries]
   maTischRaw.forEach(function(r){
     var key=r.tisch+"|"+r.datum+"|"+r.name;
-    if(!netMap[key]) netMap[key]={tisch:r.tisch,datum:r.datum,name:r.name,gruppe:r.gruppe,
-      menge:0,preis:0,rabatt:0,gratis:0,bonNr:r.bonNr,stunde:r.stunde};
-    netMap[key].menge+=r.menge;
-    netMap[key].preis+=r.preis;
-    netMap[key].rabatt+=r.rabatt;
-    netMap[key].gratis+=r.gratis;
+    if(!fifoMap[key]) fifoMap[key]=[];
+    fifoMap[key].push(r);
   });
-  // Nur Netto-positive Artikel (tatsächlich konsumiert)
-  var maTischArt=Object.values(netMap).filter(function(r){return r.menge>0;});
-  // Stornierte Artikel (net=0) für Detail-Anzeige behalten
-  var maTischStorno=Object.values(netMap).filter(function(r){return r.menge===0;});
+  var maTischArt=[];
+  Object.keys(fifoMap).forEach(function(key){
+    // Sortiere nach BonNr (chronologisch)
+    var entries=fifoMap[key].sort(function(a,b){return (a.bonNr||"").localeCompare(b.bonNr||"");});
+    var pending=[];// Queue: positive Einträge die noch nicht storniert wurden
+    entries.forEach(function(r){
+      if(r.menge>0){
+        pending.push(r);
+      } else if(r.menge<0){
+        // FIFO: ältesten positiven Eintrag verrechnen
+        if(pending.length>0) pending.shift();
+        // Kein passender positiver → verwaister Storno → ignorieren
+      }
+    });
+    // Übrige positive Einträge = tatsächlich konsumiert
+    pending.forEach(function(r){ maTischArt.push(r); });
+  });
 
-  // === COMPLIANCE: Mitarbeiter-Essen pro Tag ===
+  // === MITARBEITER-ESSEN pro Tag (basierend auf positiven Einträgen) ===
   // Erlaubt: 1x Bang Bang Minced Beef ODER Minced Soja pro Tag + Getränke 70% off
+  // Positive Einträge = bestellt & konsumiert (Storno-Zeilen menge<0 ausgeblendet)
   var maEssenMap={};// {tisch: {datum: {hauptspeisen:[], getraenke:[], andere:[]}}}
   maTischArt.forEach(function(r){
     var tisch=r.tisch||"Unbekannt";
@@ -5155,14 +5167,6 @@ function renderRabatte(){
     });
     maTischSummary.push({tisch:tisch,tage:tage.length,totalRab:totalRab,totalItems:totalItems,haupt:hauptCount,getraenke:getCount,andere:andereCount});
   });
-  // Tische die NUR stornierte Einträge haben, auch in Summary aufnehmen
-  var stornoTische={};
-  maTischStorno.forEach(function(r){stornoTische[r.tisch]=1;});
-  Object.keys(stornoTische).forEach(function(tisch){
-    if(!maEssenMap[tisch]){
-      maTischSummary.push({tisch:tisch,tage:0,totalRab:0,totalItems:0,haupt:0,getraenke:0,andere:0});
-    }
-  });
   maTischSummary.sort(function(a,b){return b.totalRab-a.totalRab;});
 
   // === HTML RENDERING ===
@@ -5245,14 +5249,10 @@ function renderRabatte(){
           '<th style="text-align:center;padding:6px 4px;color:#64748b;font-weight:600">Status</th>'+
         '</tr></thead><tbody>';
 
-      // Alle Artikel dieses Tisches, gruppiert nach Datum (inkl. stornierte)
+      // Alle Artikel dieses Tisches (nur menge > 0), gruppiert nach Datum
       var tischArtikel=maTischArt.filter(function(r){return r.tisch===m.tisch;});
-      var tischStorno=maTischStorno.filter(function(r){return r.tisch===m.tisch;});
-      // Zusammenführen: aktive + stornierte, stornierte markieren
-      var alleArtikel=tischArtikel.map(function(r){r._storniert=false;return r;})
-        .concat(tischStorno.map(function(r){r._storniert=true;return r;}));
       var tage={};
-      alleArtikel.forEach(function(r){
+      tischArtikel.forEach(function(r){
         if(!tage[r.datum])tage[r.datum]=[];
         tage[r.datum].push(r);
       });
@@ -5260,35 +5260,21 @@ function renderRabatte(){
 
       tagKeys.forEach(function(tag,tIdx){
         var items=tage[tag];
-        // Zähle nur RABATTIERTE Hauptspeisen für Verstoß-Check (NUR aktive, NICHT stornierte)
-        var activeItems=items.filter(function(r){return !r._storniert;});
-        var hauptAnTag=activeItems.filter(function(r){return artikelKat(r.name,r.gruppe)==="haupt";});
+        // Zähle nur RABATTIERTE Hauptspeisen für Verstoß-Check
+        var hauptAnTag=items.filter(function(r){return artikelKat(r.name,r.gruppe)==="haupt";});
         var hauptRabAnTag=hauptAnTag.filter(function(r){return Math.abs(r.rabatt)+Math.abs(r.gratis)>0;});
         var hauptRabMenge=hauptRabAnTag.reduce(function(s,r){return s+r.menge;},0);
         var tagBg=tIdx%2===0?"transparent":"#0a1520";
 
         items.forEach(function(r,rIdx){
-          // Stornierte Artikel speziell markieren
-          if(r._storniert){
-            html+='<tr style="border-bottom:1px solid #1e2d4060;background:'+tagBg+';opacity:0.5">'+
-              '<td style="padding:5px 4px;color:#94a3b8;white-space:nowrap">'+(rIdx===0?fmtWday(tag)+' '+fmtDat(tag):'')+'</td>'+
-              '<td style="padding:5px 4px;color:#64748b;text-decoration:line-through">'+r.name+'</td>'+
-              '<td style="padding:5px 4px;text-align:right;color:#64748b">0</td>'+
-              '<td style="padding:5px 4px;text-align:right;color:#64748b">–</td>'+
-              '<td style="padding:5px 4px;text-align:right;color:#64748b">–</td>'+
-              '<td style="padding:5px 4px;text-align:right;color:#64748b">–</td>'+
-              '<td style="padding:5px 4px;text-align:center;color:#64748b;font-weight:600">🔄 Storniert</td>'+
-            '</tr>';
-            return;
-          }
           var kat=artikelKat(r.name,r.gruppe);
           var rabBetrag=Math.abs(r.rabatt)+Math.abs(r.gratis);
           var original=r.preis+rabBetrag;
           var bezahlt=r.preis;
           var hatRabatt=rabBetrag>0;
-          // Verstoß bestimmen:
-          // - Haupt MIT Rabatt und >1× rabattiert am Tag → Verstoß
-          // - Haupt OHNE Rabatt (Vollpreis) → OK (Vollpreis = kein Verstoß)
+          // Verstoß bestimmen (basiert auf Netto-Werten):
+          // - Haupt MIT Rabatt und >1× rabattiert am Tag (netto) → Verstoß
+          // - Haupt OHNE Rabatt (Vollpreis) → OK
           // - Getränke → immer OK
           // - Andere MIT Rabatt → Verstoß
           // - Andere OHNE Rabatt → OK (Vollpreis)
