@@ -777,7 +777,6 @@ function drill(id){
   el.classList.toggle("open");
   if(el.classList.contains("open")){
     setTimeout(function(){
-      el.scrollIntoView({behavior:"smooth",block:"start"});
       // Chart.js braucht resize wenn Container von display:none aufgeht
       var canvases=el.querySelectorAll("canvas");
       canvases.forEach(function(c){
