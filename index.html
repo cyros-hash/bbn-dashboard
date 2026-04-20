@@ -5003,8 +5003,8 @@ function renderRabatte(){
     if(t==="") return "leer";
     return "andere";
   }
-  // Mitarbeiter-Tische: "Mitarbeiter, Table xxx"
-  var maTischArt=allArt.filter(function(r){ return tischTyp(r.tisch)==="ma"; });
+  // Mitarbeiter-Tische: "Mitarbeiter, Table xxx" — nur echte Bestellungen (Menge > 0, nicht storniert)
+  var maTischArt=allArt.filter(function(r){ return tischTyp(r.tisch)==="ma"&&r.menge>0&&r.storniert===0; });
   // Nur rabattierte Artikel auf normalen Tischen (nicht MA, nicht Online)
   var normalTischRab=rabArt.filter(function(r){ var typ=tischTyp(r.tisch); return typ==="tisch"||typ==="andere"; });
 
