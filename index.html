@@ -378,7 +378,8 @@ if(sessionStorage.getItem("bbn_unlocked")==="1"){document.getElementById("lock-s
   <button class="tab" onclick="showTab('personal',this)">👥 Personal</button>
   <button class="tab" onclick="showTab('foodcost',this)">🥩 Food Cost</button>
   <button class="tab" onclick="showTab('speisekarte',this)">🍽️ Speisekarte</button>
-  <button class="tab" onclick="showTab('trinkgeld',this)">💝 Trinkgeld & Stornos</button>
+  <button class="tab" onclick="showTab('trinkgeld',this)">💝 Trinkgeld</button>
+  <button class="tab" onclick="showTab('stornierungen',this)">❌ Stornierungen</button>
   <button class="tab" onclick="showTab('rabatte',this)">🏷️ Rabatte</button>
   <button class="tab" onclick="showTab('simulator',this)">🧮 Simulator</button>
   <button class="tab" onclick="showTab('lieferando',this)">🛵 Lieferando</button>
@@ -392,6 +393,7 @@ if(sessionStorage.getItem("bbn_unlocked")==="1"){document.getElementById("lock-s
   <div id="t-foodcost" style="display:none"></div>
   <div id="t-speisekarte" style="display:none"></div>
   <div id="t-trinkgeld" style="display:none"></div>
+  <div id="t-stornierungen" style="display:none"></div>
   <div id="t-rabatte" style="display:none"></div>
   <div id="t-simulator" style="display:none"></div>
   <div id="t-lieferando" style="display:none"></div>
@@ -1137,6 +1139,7 @@ function renderAll(){
   renderFoodCost();
   renderSpeisekarte();
   renderTrinkgeld();
+  renderStornierungen();
   renderRabatte();
   renderSimulator();
   renderLieferando();
@@ -4657,9 +4660,6 @@ function renderTrinkgeld(){
   var tkOhneLdo=bonsOhneLdo.reduce(function(s,r){return s+r.trinkgeld;},0);
   var totalOhneLdo=bonsOhneLdo.reduce(function(s,r){return s+r.total;},0);
   var tkQuoteGesamt=totalOhneLdo>0?tkOhneLdo/totalOhneLdo:0;
-  var totalStornos=bonsG.filter(function(r){return r.storniert===1;}).length;
-  var stornoRate=bonsG.length>0?totalStornos/bonsG.length:0;
-
   // Online Order vs Mitarbeiter
   var bonsOnline=bonsG.filter(function(r){return r.mitarbeiter==="Online Order"||r.mitarbeiter.indexOf("Online")!==-1;});
   var bonsMitarb=bonsG.filter(function(r){return r.mitarbeiter!=="Online Order"&&r.mitarbeiter.indexOf("Online")===-1&&r.kanal!=="Lieferando"&&r.mitarbeiter.indexOf(",")===-1;});
@@ -4699,13 +4699,6 @@ function renderTrinkgeld(){
     kanalMap[r.kanal].tk+=r.trinkgeld;kanalMap[r.kanal].total+=r.total;kanalMap[r.kanal].bons++;
   });
 
-  // Storno nach Stunde
-  var stornoStd={};
-  bonsG.filter(function(r){return r.storniert===1;}).forEach(function(r){
-    if(r.stunde<0)return;
-    stornoStd[r.stunde]=(stornoStd[r.stunde]||0)+1;
-  });
-
   document.getElementById("t-trinkgeld").innerHTML=`
     <div class="kpi-grid">
       <div class="kpi-card">
@@ -4725,21 +4718,6 @@ function renderTrinkgeld(){
         <div class="kpi-val" style="color:#22c55e">${fmtP(quoteMitarb)}</div>
         <div class="kpi-delta delta-neu">${bonsMitarb.length} Bons · ${fmt(tkMitarb)}</div>
         <div class="kpi-ai">Klassischer Tischservice · ohne Online/LDO</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Stornierungen</div>
-        <div class="kpi-val" style="color:${totalStornos>0?'#ef4444':'#22c55e'}">${totalStornos} Bons</div>
-        <div class="kpi-delta ${totalStornos>0?'delta-dn':'delta-up'}">${fmtP(stornoRate)} Storno-Rate</div>
-        ${(function(){
-          var sdKpi=stornoDetails.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);});
-          if(sdKpi.length===0) return '<div class="kpi-ai">'+bonsG.length+' Bons gesamt</div>';
-          var bonIds={};sdKpi.forEach(function(r){bonIds[r.quittungsId]=1;});
-          var teilStornos=Object.keys(bonIds).length-totalStornos;
-          var artCount=sdKpi.filter(function(r){return r.betrag<0;}).length;
-          return '<div class="kpi-ai">'+totalStornos+' Komplett-Storno'+(totalStornos!==1?'s':'')+
-            (teilStornos>0?' · '+teilStornos+' Teil-Storno'+(teilStornos!==1?'s':''):'')+
-            ' · '+artCount+' Artikel</div>';
-        })()}
       </div>
     </div>
 
@@ -4820,19 +4798,9 @@ function renderTrinkgeld(){
       <canvas id="c-tk-std" style="max-height:160px"></canvas>
     </div>
 
-    <div class="box">
-      <div class="box-title">❌ Stornierungen nach Uhrzeit</div>
-      <div class="box-sub">Wann passieren die meisten Stornos?</div>
-      ${Object.keys(stornoStd).length>0?
-        '<canvas id="c-storno-std" style="max-height:120px"></canvas>':
-        '<div style="color:#475569;font-size:12px;padding:12px">Keine Stornierungen im Zeitraum ✓</div>'}
-    </div>
-
-    ${renderStornoAnalyse(von,bis,st)}
-
     <div class="box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><div class="box-title">🤖 KI-Analyse: Trinkgeld & Stornos</div><div class="box-sub">Automatische Bewertung der Servicequalität</div></div>
+        <div><div class="box-title">🤖 KI-Analyse: Trinkgeld</div><div class="box-sub">Automatische Bewertung der Servicequalität</div></div>
         <button id="btn-report-trinkgeld" onclick="generateTabReport('trinkgeld')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
       </div>
       <div id="tab-report-trinkgeld" style="display:none;margin-top:12px;border-top:1px solid #0a3545;padding-top:12px"></div>
@@ -4888,6 +4856,86 @@ function renderTrinkgeld(){
     });
   }
 
+}
+
+// ============================================================
+// STORNIERUNGEN (eigenes Tab)
+// ============================================================
+function renderStornierungen(){
+  var von=document.getElementById("von").value;
+  var bis=document.getElementById("bis").value;
+  var st=document.getElementById("standort").value;
+
+  var bonsG=hatStundenfilter()?getBonsGefiltert(von,bis,st):bons.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);
+  });
+
+  var totalStornos=bonsG.filter(function(r){return r.storniert===1;}).length;
+  var stornoRate=bonsG.length>0?totalStornos/bonsG.length:0;
+
+  // Storno nach Stunde (aus Bons)
+  var stornoStd={};
+  bonsG.filter(function(r){return r.storniert===1;}).forEach(function(r){
+    if(r.stunde<0)return;
+    stornoStd[r.stunde]=(stornoStd[r.stunde]||0)+1;
+  });
+
+  if(totalStornos===0&&stornoDetails.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);}).length===0){
+    document.getElementById("t-stornierungen").innerHTML='<div class="box" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">❌</div><div style="color:#475569">Keine Stornierungen im Zeitraum.</div></div>';
+    return;
+  }
+
+  var html=`
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Stornierte Bons</div>
+        <div class="kpi-val" style="color:${totalStornos>0?'#ef4444':'#22c55e'}">${totalStornos}</div>
+        <div class="kpi-delta ${totalStornos>0?'delta-dn':'delta-up'}">${fmtP(stornoRate)} Storno-Rate</div>
+        <div class="kpi-ai">${bonsG.length} Bons gesamt</div>
+      </div>
+      ${(function(){
+        var sdKpi=stornoDetails.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);});
+        if(sdKpi.length===0) return '';
+        var bonIds={};sdKpi.forEach(function(r){bonIds[r.quittungsId]=1;});
+        var teilStornos=Object.keys(bonIds).length-totalStornos;
+        var artCount=sdKpi.filter(function(r){return r.betrag<0;}).length;
+        var totalWert=sdKpi.filter(function(r){return r.betrag<0;}).reduce(function(s,r){return s+r.betrag;},0);
+        return '<div class="kpi-card">'+
+          '<div class="kpi-label">Teil-Stornierungen</div>'+
+          '<div class="kpi-val" style="color:#FF8000">'+(teilStornos>0?teilStornos:0)+'</div>'+
+          '<div class="kpi-delta delta-neu">Bons mit einzelnen Artikel-Stornos</div>'+
+          '<div class="kpi-ai">'+artCount+' stornierte Artikel</div>'+
+        '</div>'+
+        '<div class="kpi-card">'+
+          '<div class="kpi-label">Stornowert</div>'+
+          '<div class="kpi-val" style="color:#E84393">'+fmt(totalWert)+'</div>'+
+          '<div class="kpi-delta delta-dn">Entgangener Umsatz</div>'+
+          '<div class="kpi-ai">Ø '+(Object.keys(bonIds).length>0?fmt(totalWert/Object.keys(bonIds).length):'€ 0')+' pro Bon</div>'+
+        '</div>';
+      })()}
+    </div>
+
+    <div class="box">
+      <div class="box-title">⏰ Stornierungen nach Uhrzeit</div>
+      <div class="box-sub">Wann passieren die meisten Stornos?</div>
+      ${Object.keys(stornoStd).length>0?
+        '<canvas id="c-storno-std" style="max-height:120px"></canvas>':
+        '<div style="color:#475569;font-size:12px;padding:12px">Keine Stornierungen im Zeitraum ✓</div>'}
+    </div>
+
+    ${renderStornoAnalyse(von,bis,st)}
+
+    <div class="box" style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div class="box-title">🤖 KI-Analyse: Stornierungen</div><div class="box-sub">Automatische Bewertung der Storno-Muster</div></div>
+        <button id="btn-report-stornierungen" onclick="generateTabReport('stornierungen')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
+      </div>
+      <div id="tab-report-stornierungen" style="display:none;margin-top:12px;border-top:1px solid #0a3545;padding-top:12px"></div>
+    </div>`;
+
+  document.getElementById("t-stornierungen").innerHTML=html;
+
+  // Charts
   dc("c-storno-std");
   var stornoStdKeys=Object.keys(stornoStd).sort(function(a,b){return parseInt(a)-parseInt(b);});
   if(stornoStdKeys.length>0){
@@ -6744,8 +6792,12 @@ var TAB_REPORT_CONFIG = {
     prompt: "Analysiere die Speisekarten-Performance. Fokus: Top-Seller nach Umsatz und Menge, Renner/Penner-Analyse, Durchschnittspreis, Produktgruppen-Verteilung, Standort-Unterschiede bei den Bestsellern. Welche Gerichte performen gut, welche sollten überarbeitet oder gestrichen werden?"
   },
   trinkgeld: {
-    title: "💝 Trinkgeld & Stornos",
-    prompt: "Analysiere Trinkgeld und Stornierungen. Fokus: TK-Quote vs. Ziel (5%), beste/schlechteste MA bei Trinkgeld, Standort-Vergleich, Storno-Häufigkeit und -Muster. Was verraten Trinkgeld-Quoten über Servicequalität? Gibt es auffällige Storno-Muster?"
+    title: "💝 Trinkgeld",
+    prompt: "Analysiere die Trinkgeld-Performance. Fokus: TK-Quote vs. Ziel (5%), beste/schlechteste MA bei Trinkgeld, Online Order vs. Service-Quote, Standort-Vergleich, Uhrzeiten-Muster. Was verraten Trinkgeld-Quoten über Servicequalität? Welche konkreten Maßnahmen können die TK-Quote steigern?"
+  },
+  stornierungen: {
+    title: "❌ Stornierungen",
+    prompt: "Analysiere die Stornierungen im Detail. Fokus: Storno-Rate, Komplett- vs. Teil-Stornos, Stornogründe (Fehleintrag, Bruch, Unzufriedener Gast, Andere), Top stornierte Artikel, welche Mitarbeiter stornieren am meisten, Standort-Vergleich, Uhrzeiten-Muster, Wochen-Trend. Gibt es auffällige Muster? Sind bestimmte Artikel oder Mitarbeiter überproportional betroffen? Welche Maßnahmen reduzieren Stornos?"
   },
   simulator: {
     title: "🧮 Simulator",
