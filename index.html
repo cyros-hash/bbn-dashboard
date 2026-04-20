@@ -5003,10 +5003,25 @@ function renderRabatte(){
     if(t==="") return "leer";
     return "andere";
   }
-  // Mitarbeiter-Tische: "Mitarbeiter, Table xxx" — nur echte Bestellungen (Menge > 0, nicht storniert)
-  var maTischArt=allArt.filter(function(r){ return tischTyp(r.tisch)==="ma"&&r.menge>0&&r.storniert===0; });
+  // Mitarbeiter-Tische: ALLE Einträge (pos. + neg.) zum Netting
+  var maTischRaw=allArt.filter(function(r){ return tischTyp(r.tisch)==="ma"; });
   // Nur rabattierte Artikel auf normalen Tischen (nicht MA, nicht Online)
   var normalTischRab=rabArt.filter(function(r){ var typ=tischTyp(r.tisch); return typ==="tisch"||typ==="andere"; });
+
+  // === NETTING: Positive + Negative Einträge verrechnen ===
+  // Gruppiert nach Tisch+Datum+Artikel, summiert Menge/Preis/Rabatt
+  var netMap={};// key: "tisch|datum|artikel" → {menge, preis, rabatt, gratis, name, gruppe, ...}
+  maTischRaw.forEach(function(r){
+    var key=r.tisch+"|"+r.datum+"|"+r.name;
+    if(!netMap[key]) netMap[key]={tisch:r.tisch,datum:r.datum,name:r.name,gruppe:r.gruppe,
+      menge:0,preis:0,rabatt:0,gratis:0,bonNr:r.bonNr,stunde:r.stunde};
+    netMap[key].menge+=r.menge;
+    netMap[key].preis+=r.preis;
+    netMap[key].rabatt+=r.rabatt;
+    netMap[key].gratis+=r.gratis;
+  });
+  // Nur Netto-positive Artikel (tatsächlich konsumiert)
+  var maTischArt=Object.values(netMap).filter(function(r){return r.menge>0;});
 
   // === COMPLIANCE: Mitarbeiter-Essen pro Tag ===
   // Erlaubt: 1x Bang Bang Minced Beef ODER Minced Soja pro Tag + Getränke 70% off
