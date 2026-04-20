@@ -4570,6 +4570,7 @@ function renderStornoAnalyse(von,bis,st){
         '<th style="text-align:left;padding:6px 4px;color:#64748b;font-weight:600">Artikel</th>'+
         '<th style="text-align:left;padding:6px 4px;color:#64748b;font-weight:600">Storniert von</th>'+
         '<th style="text-align:right;padding:6px 4px;color:#64748b;font-weight:600">Betrag</th>'+
+        '<th style="text-align:left;padding:6px 4px;color:#64748b;font-weight:600">Tisch</th>'+
         '<th style="text-align:left;padding:6px 4px;color:#64748b;font-weight:600">Quittung</th>'+
         '<th style="text-align:left;padding:6px 4px;color:#64748b;font-weight:600">Grund</th>'+
         '<th style="text-align:left;padding:6px 4px;color:#64748b;font-weight:600">Standort</th>'+
@@ -4583,6 +4584,7 @@ function renderStornoAnalyse(von,bis,st){
           '<td style="padding:4px;color:#f1f5f9">'+r.artikel+'</td>'+
           '<td style="padding:4px;color:#c084fc">'+ma+'</td>'+
           '<td style="padding:4px;text-align:right;color:#ef4444;font-weight:600">'+fmt(r.betrag)+'</td>'+
+          '<td style="padding:4px;color:#94a3b8;font-size:10px">'+(r.kontoName||"–")+'</td>'+
           '<td style="padding:4px;color:#64748b;font-size:10px">'+(r.quittungsId||"–")+'</td>'+
           '<td style="padding:4px;color:#94a3b8;font-size:10px">'+grund+'</td>'+
           '<td style="padding:4px;color:#94a3b8;font-size:10px">'+stK+'</td>'+
@@ -4593,7 +4595,7 @@ function renderStornoAnalyse(von,bis,st){
         '<td style="padding:6px 4px;color:#f1f5f9">'+rows.length+' Positionen</td>'+
         '<td></td>'+
         '<td style="padding:6px 4px;text-align:right;color:#ef4444;font-weight:700;font-size:13px">'+fmt(totalBetrag)+'</td>'+
-        '<td colspan="3"></td>'+
+        '<td colspan="4"></td>'+
       '</tr>'+
       '</tbody></table></div></div>';
   })()+
