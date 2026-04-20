@@ -4280,14 +4280,12 @@ function renderSpeisekarte(){
     artMap[r.name].bons.add(r.bonNr);
   });
 
-  // Stornos separat (mit Stundenfilter)
-  var artStornoG=hatStundenfilter()?
-    getArtikelGefiltert(von,bis,st).filter(function(r){return r.storniert===1;}):
-    artikel.filter(function(r){
-      return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.storniert===1&&datumPasstWT(r.datum);
-    });
-  artStornoG.forEach(function(r){
-    if(artMap[r.name])artMap[r.name].stornos++;
+  // Stornos aus stornoDetails (15_ls_stornos) — konsistent mit Stornierungen-Tab
+  var sdSpeise=stornoDetails.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&r.betrag<0&&datumPasstWT(r.datum);
+  });
+  sdSpeise.forEach(function(r){
+    if(artMap[r.artikel])artMap[r.artikel].stornos++;
   });
 
   var alleArtikel=Object.values(artMap).sort(function(a,b){return b.umsatz-a.umsatz;});
@@ -4686,6 +4684,12 @@ function renderTrinkgeld(){
         <div class="kpi-delta delta-neu">${bonsMitarb.length} Bons · ${fmt(tkMitarb)}</div>
         <div class="kpi-ai">Klassischer Tischservice · ohne Online/LDO</div>
       </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Ø Trinkgeld pro Bon</div>
+        <div class="kpi-val" style="color:#E84393">${bonsOhneLdo.length>0?fmtD(tkOhneLdo/bonsOhneLdo.length):'€ 0'}</div>
+        <div class="kpi-delta delta-neu">${bonsOhneLdo.length} Bons (ohne LDO)</div>
+        <div class="kpi-ai">${maList.length>0?'Bester MA: '+maList[0][0]:'–'}</div>
+      </div>
     </div>
 
     <div class="alert">
@@ -4883,6 +4887,12 @@ function renderStornierungen(){
         <div class="kpi-val" style="color:#E84393">${fmt(totalWert)}</div>
         <div class="kpi-delta delta-dn">Entgangener Umsatz</div>
         <div class="kpi-ai">Ø ${betroffeneBons>0?fmt(totalWert/betroffeneBons):'€ 0'} pro Bon</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Storno-Rate</div>
+        <div class="kpi-val" style="color:${bonsG.length>0&&betroffeneBons/bonsG.length>0.01?'#ef4444':'#22c55e'}">${bonsG.length>0?(betroffeneBons/bonsG.length*100).toFixed(1):'0'}%</div>
+        <div class="kpi-delta ${bonsG.length>0&&betroffeneBons/bonsG.length>0.01?'delta-dn':'delta-up'}">${betroffeneBons} von ${bonsG.length} Bons</div>
+        <div class="kpi-ai">Anteil betroffener Bons</div>
       </div>
     </div>
 
