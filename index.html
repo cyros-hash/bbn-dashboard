@@ -5268,6 +5268,8 @@ function renderRabatte(){
           '<th style="text-align:right;padding:6px 4px;color:#64748b;font-weight:600">Original</th>'+
           '<th style="text-align:right;padding:6px 4px;color:#64748b;font-weight:600">Rabatt</th>'+
           '<th style="text-align:right;padding:6px 4px;color:#64748b;font-weight:600">Bezahlt</th>'+
+          '<th style="text-align:left;padding:6px 4px;color:#64748b;font-weight:600">MA</th>'+
+          '<th style="text-align:left;padding:6px 4px;color:#64748b;font-weight:600">Bon</th>'+
           '<th style="text-align:center;padding:6px 4px;color:#64748b;font-weight:600">Status</th>'+
         '</tr></thead><tbody>';
 
@@ -5313,6 +5315,9 @@ function renderRabatte(){
           var verstossCol=verstoss.indexOf("⚠️")!==-1?"#ef4444":verstoss.indexOf("🚫")!==-1?"#FF8000":verstoss.indexOf("👁")!==-1?"#f59e0b":verstoss.indexOf("💰")!==-1?"#94a3b8":"#22c55e";
           var rabCol=implicitRab>0?"#f59e0b":"#E84393";// Gelb=Storno-Neubuchung, Pink=normaler Rabatt
 
+          // Bon-Nr kürzen: nur letzten Teil nach dem Punkt zeigen
+          var bonKurz=(r.bonNr||"").split(".").pop()||"–";
+
           html+='<tr style="border-bottom:1px solid #1e2d4060;background:'+tagBg+'">'+
             '<td style="padding:5px 4px;color:#94a3b8;white-space:nowrap">'+(rIdx===0?fmtWday(tag)+' '+fmtDat(tag):'')+'</td>'+
             '<td style="padding:5px 4px;color:'+(kat==="haupt"?"#f1f5f9":kat==="getraenk"?"#40F0FF":"#FF8000")+'">'+r.name+'</td>'+
@@ -5320,6 +5325,8 @@ function renderRabatte(){
             '<td style="padding:5px 4px;text-align:right;color:#64748b">'+fmtD(original)+'</td>'+
             '<td style="padding:5px 4px;text-align:right;color:'+rabCol+';font-weight:600">'+(rabBetrag>0?'-'+fmtD(rabBetrag):'–')+'</td>'+
             '<td style="padding:5px 4px;text-align:right;color:#f1f5f9;font-weight:600">'+fmtD(bezahlt)+'</td>'+
+            '<td style="padding:5px 4px;color:#94a3b8;font-size:10px">'+(r.mitarbeiter||"–")+'</td>'+
+            '<td style="padding:5px 4px;color:#475569;font-size:10px;font-family:monospace;cursor:pointer" title="Klick für volle Bon-Nr" onclick="var s=this.getAttribute(\'data-short\'),f=this.getAttribute(\'data-full\');this.textContent=this.textContent===s?f:s;this.style.color=this.textContent===s?\'#475569\':\'#94a3b8\';" data-short="'+bonKurz+'" data-full="'+(r.bonNr||"–")+'">'+bonKurz+'</td>'+
             '<td style="padding:5px 4px;text-align:center;color:'+verstossCol+';font-weight:600">'+verstoss+'</td>'+
           '</tr>';
         });
@@ -5335,6 +5342,7 @@ function renderRabatte(){
         '<td style="padding:6px 4px;text-align:right;color:#94a3b8">'+fmtD(sumOrig)+'</td>'+
         '<td style="padding:6px 4px;text-align:right;color:#E84393">-'+fmtD(sumRab)+'</td>'+
         '<td style="padding:6px 4px;text-align:right;color:#f1f5f9">'+fmtD(sumBez)+'</td>'+
+        '<td colspan="2"></td>'+
         '<td></td>'+
       '</tr>';
 
