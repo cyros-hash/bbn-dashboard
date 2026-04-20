@@ -5022,6 +5022,8 @@ function renderRabatte(){
   });
   // Nur Netto-positive Artikel (tatsächlich konsumiert)
   var maTischArt=Object.values(netMap).filter(function(r){return r.menge>0;});
+  // Stornierte Artikel (net=0) für Detail-Anzeige behalten
+  var maTischStorno=Object.values(netMap).filter(function(r){return r.menge===0;});
 
   // === COMPLIANCE: Mitarbeiter-Essen pro Tag ===
   // Erlaubt: 1x Bang Bang Minced Beef ODER Minced Soja pro Tag + Getränke 70% off
@@ -5033,7 +5035,7 @@ function renderRabatte(){
     if(!maEssenMap[tisch][tag])maEssenMap[tisch][tag]={hauptspeisen:[],getraenke:[],andere:[],total:0,rabattTotal:0};
     var n=(r.name||"").toLowerCase();
     var isHaupt=n.indexOf("minced beef")!==-1||n.indexOf("minced soja")!==-1||n.indexOf("biang biang")!==-1||n.indexOf("bang bang minced")!==-1;
-    var isGetraenk=(r.gruppe||"").toLowerCase().indexOf("getränk")!==-1||(r.gruppe||"").toLowerCase().indexOf("drink")!==-1||n.indexOf("cola")!==-1||n.indexOf("wasser")!==-1||n.indexOf("limo")!==-1||n.indexOf("bier")!==-1||n.indexOf("mate")!==-1||n.indexOf("saft")!==-1||n.indexOf("tee")!==-1||n.indexOf("kaffee")!==-1||n.indexOf("espresso")!==-1;
+    var isGetraenk=(r.gruppe||"").toLowerCase().indexOf("getränk")!==-1||(r.gruppe||"").toLowerCase().indexOf("drink")!==-1||(r.gruppe||"").toLowerCase().indexOf("softdrink")!==-1||n.indexOf("cola")!==-1||n.indexOf("kola")!==-1||n.indexOf("wasser")!==-1||n.indexOf("limo")!==-1||n.indexOf("bier")!==-1||n.indexOf("mate")!==-1||n.indexOf("saft")!==-1||n.indexOf("tee ")!==-1||n.indexOf("kaffee")!==-1||n.indexOf("espresso")!==-1||n.indexOf("fritz")!==-1||n.indexOf("schorle")!==-1||n.indexOf("spritz")!==-1||n.indexOf("spezi")!==-1||n.indexOf("bionade")!==-1||n.indexOf("viva con")!==-1||/\d+[,.]?\d*\s*l\b/.test(n);
     if(isHaupt) maEssenMap[tisch][tag].hauptspeisen.push(r);
     else if(isGetraenk) maEssenMap[tisch][tag].getraenke.push(r);
     else maEssenMap[tisch][tag].andere.push(r);
@@ -5153,6 +5155,14 @@ function renderRabatte(){
     });
     maTischSummary.push({tisch:tisch,tage:tage.length,totalRab:totalRab,totalItems:totalItems,haupt:hauptCount,getraenke:getCount,andere:andereCount});
   });
+  // Tische die NUR stornierte Einträge haben, auch in Summary aufnehmen
+  var stornoTische={};
+  maTischStorno.forEach(function(r){stornoTische[r.tisch]=1;});
+  Object.keys(stornoTische).forEach(function(tisch){
+    if(!maEssenMap[tisch]){
+      maTischSummary.push({tisch:tisch,tage:0,totalRab:0,totalItems:0,haupt:0,getraenke:0,andere:0});
+    }
+  });
   maTischSummary.sort(function(a,b){return b.totalRab-a.totalRab;});
 
   // === HTML RENDERING ===
@@ -5193,7 +5203,7 @@ function renderRabatte(){
       var n=(name||"").toLowerCase();
       if(n.indexOf("minced beef")!==-1||n.indexOf("minced soja")!==-1||n.indexOf("biang biang")!==-1||n.indexOf("bang bang minced")!==-1) return "haupt";
       var g=(gruppe||"").toLowerCase();
-      if(g.indexOf("getränk")!==-1||g.indexOf("drink")!==-1||n.indexOf("cola")!==-1||n.indexOf("wasser")!==-1||n.indexOf("limo")!==-1||n.indexOf("bier")!==-1||n.indexOf("mate")!==-1||n.indexOf("saft")!==-1||n.indexOf("tee")!==-1||n.indexOf("kaffee")!==-1||n.indexOf("espresso")!==-1) return "getraenk";
+      if(g.indexOf("getränk")!==-1||g.indexOf("drink")!==-1||g.indexOf("softdrink")!==-1||n.indexOf("cola")!==-1||n.indexOf("kola")!==-1||n.indexOf("wasser")!==-1||n.indexOf("limo")!==-1||n.indexOf("bier")!==-1||n.indexOf("mate")!==-1||n.indexOf("saft")!==-1||n.indexOf("tee ")!==-1||n.indexOf("kaffee")!==-1||n.indexOf("espresso")!==-1||n.indexOf("fritz")!==-1||n.indexOf("schorle")!==-1||n.indexOf("spritz")!==-1||n.indexOf("spezi")!==-1||n.indexOf("bionade")!==-1||n.indexOf("viva con")!==-1||/\d+[,.]?\d*\s*l\b/.test(n)) return "getraenk";
       return "andere";
     }
     function fmtDat(d){if(!d)return"–";var p=d.split("-");return p[2]+"."+p[1]+"."+p[0];}
@@ -5235,10 +5245,14 @@ function renderRabatte(){
           '<th style="text-align:center;padding:6px 4px;color:#64748b;font-weight:600">Status</th>'+
         '</tr></thead><tbody>';
 
-      // Alle Artikel dieses Tisches, gruppiert nach Datum
+      // Alle Artikel dieses Tisches, gruppiert nach Datum (inkl. stornierte)
       var tischArtikel=maTischArt.filter(function(r){return r.tisch===m.tisch;});
+      var tischStorno=maTischStorno.filter(function(r){return r.tisch===m.tisch;});
+      // Zusammenführen: aktive + stornierte, stornierte markieren
+      var alleArtikel=tischArtikel.map(function(r){r._storniert=false;return r;})
+        .concat(tischStorno.map(function(r){r._storniert=true;return r;}));
       var tage={};
-      tischArtikel.forEach(function(r){
+      alleArtikel.forEach(function(r){
         if(!tage[r.datum])tage[r.datum]=[];
         tage[r.datum].push(r);
       });
@@ -5246,13 +5260,27 @@ function renderRabatte(){
 
       tagKeys.forEach(function(tag,tIdx){
         var items=tage[tag];
-        // Zähle nur RABATTIERTE Hauptspeisen für Verstoß-Check
-        var hauptAnTag=items.filter(function(r){return artikelKat(r.name,r.gruppe)==="haupt";});
+        // Zähle nur RABATTIERTE Hauptspeisen für Verstoß-Check (NUR aktive, NICHT stornierte)
+        var activeItems=items.filter(function(r){return !r._storniert;});
+        var hauptAnTag=activeItems.filter(function(r){return artikelKat(r.name,r.gruppe)==="haupt";});
         var hauptRabAnTag=hauptAnTag.filter(function(r){return Math.abs(r.rabatt)+Math.abs(r.gratis)>0;});
         var hauptRabMenge=hauptRabAnTag.reduce(function(s,r){return s+r.menge;},0);
         var tagBg=tIdx%2===0?"transparent":"#0a1520";
 
         items.forEach(function(r,rIdx){
+          // Stornierte Artikel speziell markieren
+          if(r._storniert){
+            html+='<tr style="border-bottom:1px solid #1e2d4060;background:'+tagBg+';opacity:0.5">'+
+              '<td style="padding:5px 4px;color:#94a3b8;white-space:nowrap">'+(rIdx===0?fmtWday(tag)+' '+fmtDat(tag):'')+'</td>'+
+              '<td style="padding:5px 4px;color:#64748b;text-decoration:line-through">'+r.name+'</td>'+
+              '<td style="padding:5px 4px;text-align:right;color:#64748b">0</td>'+
+              '<td style="padding:5px 4px;text-align:right;color:#64748b">–</td>'+
+              '<td style="padding:5px 4px;text-align:right;color:#64748b">–</td>'+
+              '<td style="padding:5px 4px;text-align:right;color:#64748b">–</td>'+
+              '<td style="padding:5px 4px;text-align:center;color:#64748b;font-weight:600">🔄 Storniert</td>'+
+            '</tr>';
+            return;
+          }
           var kat=artikelKat(r.name,r.gruppe);
           var rabBetrag=Math.abs(r.rabatt)+Math.abs(r.gratis);
           var original=r.preis+rabBetrag;
