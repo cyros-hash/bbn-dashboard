@@ -5129,10 +5129,11 @@ function renderRabatte(){
   var artRabMap={};
   rabArt.forEach(function(r){
     var n=r.name||"Unbekannt";
-    if(!artRabMap[n])artRabMap[n]={count:0,betrag:0,menge:0};
+    if(!artRabMap[n])artRabMap[n]={count:0,betrag:0,menge:0,artikel:[]};
     artRabMap[n].count++;
     artRabMap[n].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);
     artRabMap[n].menge+=r.menge;
+    artRabMap[n].artikel.push(r);
   });
   var artRabList=Object.entries(artRabMap).sort(function(a,b){return b[1].betrag-a[1].betrag;}).slice(0,10);
   var maxArtRab=artRabList.length>0?artRabList[0][1].betrag:1;
@@ -5229,10 +5230,7 @@ function renderRabatte(){
     '</div>'+
   '</div>';
 
-  // === GRID: MA-Essen Monitor + Rabatte nach MA ===
-  html+='<div class="grid2" style="align-items:start">';
-
-  // === MITARBEITER-ESSEN MONITOR (klickbar mit Detail-Tabelle) ===
+  // === MITARBEITER-ESSEN MONITOR (volle Breite) ===
   html+='<div class="box">'+
     '<div class="box-title">🍜 Mitarbeiter-Essen Monitor</div>'+
     '<div class="box-sub">Erlaubt: 1× Bang Bang Minced Beef / Soja pro Tag · Getränke 70% off · Über Mitarbeiter-Tisch · Klick für Details</div>';
@@ -5453,9 +5451,29 @@ function renderRabatte(){
   });
 
   html+='</div>';
-  html+='</div>'; // grid2 end (MA-Essen + Rabatte nach MA)
+  // (MA-Essen + Rabatte nach MA = volle Breite, kein grid2)
 
-  // === GRID: Rabatte nach Tisch + Top rabattierte Artikel ===
+  // === RABATT-TREND (volle Breite — visueller Breaker) ===
+  var dayMap={};
+  rabArt.forEach(function(r){
+    var d=r.datum;
+    if(!dayMap[d])dayMap[d]={count:0,betrag:0};
+    dayMap[d].count++;
+    dayMap[d].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);
+  });
+  var dayKeys=Object.keys(dayMap).sort();
+
+  html+='<div class="box">'+
+    '<div class="box-title">📈 Rabatt-Trend nach Tag</div>'+
+    '<div class="box-sub">Rabattwert (€) + Anzahl Positionen pro Tag</div>';
+  if(dayKeys.length>1){
+    html+='<canvas id="c-rabatt-trend-day" style="max-height:200px"></canvas>';
+  } else {
+    html+='<div style="color:#475569;font-size:12px;padding:12px 0">Zu wenige Tage für Trend-Darstellung</div>';
+  }
+  html+='</div>';
+
+  // === GRID: Tisch + Standort/Uhrzeit (beide kompakt, ähnliche Höhe) ===
   html+='<div class="grid2" style="align-items:start">';
 
   // Nach Tisch
@@ -5479,49 +5497,6 @@ function renderRabatte(){
       '</div>'+
     '</div>';
   });
-  html+='</div>';
-
-  // Top rabattierte Artikel
-  html+='<div class="box">'+
-    '<div class="box-title">🏷️ Top rabattierte Artikel</div>'+
-    '<div class="box-sub">Nach Rabattwert</div>';
-  artRabList.forEach(function(e){
-    var name=e[0],d=e[1];
-    var pct=maxArtRab>0?Math.round(d.betrag/maxArtRab*100):0;
-    html+='<div style="margin-bottom:8px">'+
-      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'+
-        '<span style="color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">'+name+'</span>'+
-        '<span style="color:#E84393;white-space:nowrap;margin-left:8px">'+d.count+'× · '+fmt(d.betrag)+'</span>'+
-      '</div>'+
-      '<div style="height:3px;background:#1e2d40;border-radius:2px">'+
-        '<div style="height:100%;background:#E84393;border-radius:2px;width:'+pct+'%"></div>'+
-      '</div>'+
-    '</div>';
-  });
-  html+='</div>';
-  html+='</div>'; // grid2 end (Tisch + Top Artikel)
-
-  // === GRID: Rabatt-Trend (Liniendiagramm) + Per Standort nach Uhrzeit ===
-  html+='<div class="grid2" style="align-items:start">';
-
-  // Rabatt-Trend als Liniendiagramm (Tages-Trend statt Wochen-Trend)
-  var dayMap={};
-  rabArt.forEach(function(r){
-    var d=r.datum;
-    if(!dayMap[d])dayMap[d]={count:0,betrag:0};
-    dayMap[d].count++;
-    dayMap[d].betrag+=Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);
-  });
-  var dayKeys=Object.keys(dayMap).sort();
-
-  html+='<div class="box">'+
-    '<div class="box-title">📈 Rabatt-Trend nach Tag</div>'+
-    '<div class="box-sub">Anzahl Positionen + Rabattwert pro Tag</div>';
-  if(dayKeys.length>1){
-    html+='<canvas id="c-rabatt-trend-day" style="max-height:220px"></canvas>';
-  } else {
-    html+='<div style="color:#475569;font-size:12px;padding:12px 0">Zu wenige Tage für Trend-Darstellung</div>';
-  }
   html+='</div>';
 
   // Per Standort + Rabatte nach Uhrzeit
@@ -5569,7 +5544,64 @@ function renderRabatte(){
       '<div style="font-size:10px;color:#475569;margin-top:2px">Rabatte nach Uhrzeit</div>';
   }
   html+='</div>';
-  html+='</div>'; // grid2 end (Trend + Standort/Uhrzeit)
+  html+='</div>'; // grid2 end (Tisch + Standort)
+
+  // === TOP RABATTIERTE ARTIKEL (volle Breite — aufklappbar) ===
+  html+='<div class="box">'+
+    '<div class="box-title">🏷️ Top rabattierte Artikel</div>'+
+    '<div class="box-sub">Nach Rabattwert · Klick für Details</div>';
+  artRabList.forEach(function(e,aidx){
+    var name=e[0],d=e[1];
+    var pct=maxArtRab>0?Math.round(d.betrag/maxArtRab*100):0;
+
+    html+='<div style="background:#0d1f2d;border-radius:8px;margin-bottom:8px;border-left:3px solid #E84393;overflow:hidden">'+
+      '<div onclick="var el=document.getElementById(\'art-rab-'+aidx+'\');var a=document.getElementById(\'art-rab-arrow-'+aidx+'\');if(el.style.display===\'none\'){el.style.display=\'block\';a.textContent=\'▲\';}else{el.style.display=\'none\';a.textContent=\'▼\';}" style="padding:10px;cursor:pointer">'+
+        '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'+
+          '<span style="color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px">'+name+'</span>'+
+          '<span style="display:flex;align-items:center;gap:6px">'+
+            '<span style="color:#E84393;white-space:nowrap">'+d.count+'× · '+fmt(d.betrag)+'</span>'+
+            '<span id="art-rab-arrow-'+aidx+'" style="color:#64748b;font-size:10px">▼</span>'+
+          '</span>'+
+        '</div>'+
+        '<div style="height:3px;background:#1e2d40;border-radius:2px">'+
+          '<div style="height:100%;background:#E84393;border-radius:2px;width:'+pct+'%"></div>'+
+        '</div>'+
+      '</div>';
+
+    // Detail-Tabelle (zugeklappt)
+    var items=d.artikel.slice().sort(function(a,b){return b.datum>a.datum?1:b.datum<a.datum?-1:0;});
+    html+='<div id="art-rab-'+aidx+'" style="display:none;padding:0 10px 10px">'+
+      '<table style="width:100%;border-collapse:collapse;font-size:11px">'+
+      '<thead><tr style="border-bottom:2px solid #1e2d40">'+
+        '<th style="text-align:left;padding:5px 4px;color:#64748b;font-weight:600">Datum</th>'+
+        '<th style="text-align:right;padding:5px 4px;color:#64748b;font-weight:600">Original</th>'+
+        '<th style="text-align:right;padding:5px 4px;color:#64748b;font-weight:600">Rabatt</th>'+
+        '<th style="text-align:right;padding:5px 4px;color:#64748b;font-weight:600">Bezahlt</th>'+
+        '<th style="text-align:left;padding:5px 4px;color:#64748b;font-weight:600">Eingebucht</th>'+
+        '<th style="text-align:left;padding:5px 4px;color:#64748b;font-weight:600">Bezahlt bei</th>'+
+        '<th style="text-align:left;padding:5px 4px;color:#64748b;font-weight:600">Tisch</th>'+
+        '<th style="text-align:left;padding:5px 4px;color:#64748b;font-weight:600">Standort</th>'+
+      '</tr></thead><tbody>';
+
+    items.forEach(function(r,ri){
+      var rabB=Math.abs(r.rabatt)+Math.abs(r.gratis)+(r._implicitRabatt||0);
+      var orig=r._originalPreis||(r.preis+rabB);
+      var tK=(r.tisch||"–").replace("Inside 2026, ","⬛ ").replace("Outside 2026, ","🟫 ").replace("Mitarbeiter, ","🍜 MA ");
+      var stK=(r.standort||"").indexOf("Mehring")!==-1?"MD":"RS";
+      html+='<tr style="border-bottom:1px solid #1e2d4060;background:'+(ri%2===0?"transparent":"#0a1520")+'">'+
+        '<td style="padding:4px;color:#94a3b8;white-space:nowrap">'+fmtWdayR(r.datum)+' '+fmtDatR(r.datum)+'</td>'+
+        '<td style="padding:4px;text-align:right;color:#64748b">'+fmtD(orig)+'</td>'+
+        '<td style="padding:4px;text-align:right;color:#E84393;font-weight:600">-'+fmtD(rabB)+'</td>'+
+        '<td style="padding:4px;text-align:right;color:#f1f5f9;font-weight:600">'+fmtD(r.preis)+'</td>'+
+        '<td style="padding:4px;color:#94a3b8;font-size:10px">'+(r.mitarbeiter||"–")+'</td>'+
+        '<td style="padding:4px;color:#c084fc;font-size:10px">'+(r.bezahltBei||"–")+'</td>'+
+        '<td style="padding:4px;color:#94a3b8;font-size:10px">'+tK+'</td>'+
+        '<td style="padding:4px;color:#94a3b8;font-size:10px">'+stK+'</td>'+
+      '</tr>';
+    });
+    html+='</tbody></table></div></div>';
+  });
+  html+='</div>';
 
   // Rabatte auf normalen Tischen (nicht MA, nicht Online) — Warnung wenn vorhanden
   var normalRabBetrag=normalTischRab.reduce(function(s,r){return s+Math.abs(r.rabatt)+Math.abs(r.gratis);},0);
