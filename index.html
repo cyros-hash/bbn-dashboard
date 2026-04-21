@@ -793,16 +793,12 @@ html[data-theme="dark"] .alert b{color:oklch(0.92 0.15 150) !important;}
 }
 .st-val{
   font-family:var(--font-display) !important;
-  font-size:72px !important;
+  font-size:40px !important;
   font-weight:600 !important;
-  color:var(--ink) !important;
   letter-spacing:-0.04em !important;
   line-height:1 !important;
   font-feature-settings:"tnum","ss01";
   position:relative;z-index:1;
-}
-  font-family:var(--font-serif) !important;
-  font-size:88px !important;font-style:italic;font-weight:400 !important;
 }
 .st-meta{
   font-family:var(--font-mono) !important;
@@ -939,7 +935,7 @@ html[data-density="compact"] .kpi-card:first-child{padding:22px !important;min-h
 html[data-density="compact"] .kpi-card:first-child 
 html[data-density="compact"] 
 html[data-density="compact"] .st-card{padding:22px !important;}
-html[data-density="compact"] .st-val{font-size:44px !important;}
+html[data-density="compact"] .st-val{font-size:34px !important;}
 html[data-density="compact"] .box{padding:20px 22px !important;}
 html[data-density="compact"] .header{padding:14px 22px !important;}
 html[data-density="compact"] .filterbar{padding:12px 22px !important;}
@@ -1045,7 +1041,7 @@ html[data-density="compact"] .content{padding:24px 22px 64px !important;}
   .kpi-ai{font-size:11.5px !important;padding-top:12px !important;}
   .st-cards{grid-template-columns:1fr !important;gap:10px !important;}
   .st-card{padding:24px 22px !important;border-radius:18px !important;}
-  .st-val{font-size:48px !important;font-weight:650 !important;}
+  .st-val{font-size:32px !important;font-weight:650 !important;}
   .st-name{margin-bottom:14px !important;}
   .st-meta{margin-top:16px !important;gap:16px !important;flex-wrap:wrap;}
   .box{padding:20px !important;border-radius:16px !important;}
@@ -1075,7 +1071,7 @@ html[data-density="compact"] .content{padding:24px 22px 64px !important;}
   .header h1::after{content:"Bang Bang Noodles" !important;}
   .kpi-card:first-child 
   
-  .st-val{font-size:40px !important;}
+  .st-val{font-size:28px !important;}
 }
 
 
@@ -1231,7 +1227,7 @@ html .st-meta{ margin-top: 14px !important; gap: 18px !important; }
 @media (max-width: 900px){
   html .st-cards{ grid-template-columns: repeat(2, 1fr) !important; }
   html .st-card{ min-height: 150px !important; padding: 18px !important; }
-  html .st-val{ font-size: 28px !important; }
+  html .st-val{ font-size: 26px !important; }
 }
 @media (max-width: 640px){
   html .st-cards{ grid-template-columns: 1fr !important; }
@@ -4300,6 +4296,12 @@ async function ladeDaten(){
         kosten:    pDE(v[8])
       };
     }).filter(function(r){return r.datum&&r.artikel;});
+    // Montag ist Ruhetag — Waste am Montag stammt vom Sonntagabend (nach 0 Uhr erfasst)
+    // → Datum auf den vorherigen Sonntag umschreiben
+    waste.forEach(function(r){
+      var d=new Date(r.datum+"T12:00:00");
+      if(d.getDay()===1){d.setDate(d.getDate()-1);r.datum=d.toISOString().slice(0,10);}
+    });
 
     // ITEM SALES (FC pro Artikel — Apicbase)
     try {
@@ -7150,9 +7152,11 @@ function renderFoodCost(){
       if(_d.getDay()===0){
         totalSo++;
         var iso=_d.toISOString().slice(0,10);
+        // Montag danach: Inventur oft nach Mitternacht erfasst → fällt auf Mo
+        var moD=new Date(_d);moD.setDate(moD.getDate()+1);var moISO=moD.toISOString().slice(0,10);
         if(bestandDaten.length>0){
           var hat=false;
-          bestandDaten.forEach(function(b){if(!hat&&bestandDatISO(b.bis)===iso&&b.standort===stName){hat=true;}});
+          bestandDaten.forEach(function(b){var bISO=bestandDatISO(b.bis);if(!hat&&(bISO===iso||bISO===moISO)&&b.standort===stName){hat=true;}});
           if(hat)soMitInv++;
         }
       }
