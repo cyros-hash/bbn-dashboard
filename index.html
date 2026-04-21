@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de" data-theme="dark" data-variant="editorial" data-accent="magenta" data-density="compact" data-font="grotesk" data-font-display="geist" data-font-body="dmsans" data-font-weight="light"><head>
+<html lang="de" data-theme="dark" data-variant="editorial" data-accent="magenta" data-density="compact" data-font="grotesk" data-font-display="inter" data-font-body="inter" data-font-weight="light"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BBN Intelligence Dashboard</title>
@@ -616,8 +616,6 @@ html[data-density="compact"] .content{padding:24px 24px 64px !important;}
   min-height:220px;
   background:linear-gradient(180deg, var(--surface) 0%, var(--paper-2) 100%) !important;
 }
-.kpi-card:first-child 
-
 .kpi-label{
   font-family:var(--font-body) !important;
   font-size:var(--fs-caption) !important;
@@ -933,8 +931,7 @@ html[data-theme="dark"] #ai-fab::before{background-image:url("data:image/svg+xml
 /* ===== DENSITY: compact ===== */
 html[data-density="compact"] .kpi-card{padding:18px !important;min-height:130px;}
 html[data-density="compact"] .kpi-card:first-child{padding:22px !important;min-height:150px;}
-html[data-density="compact"] .kpi-card:first-child 
-html[data-density="compact"] 
+html[data-density="compact"] .kpi-card:first-child{padding:22px !important;min-height:150px;}
 html[data-density="compact"] .st-card{padding:22px !important;}
 html[data-density="compact"] .st-val{font-size:34px !important;}
 html[data-density="compact"] .box{padding:20px 22px !important;}
@@ -1009,7 +1006,6 @@ html[data-density="compact"] .content{padding:24px 22px 64px !important;}
 /* ===== RESPONSIVE ===== */
 @media(max-width:1024px){
   .kpi-card:first-child{grid-column:span 2;}
-  .kpi-card:first-child 
 }
 @media(max-width:900px){
   .kpi-grid{grid-template-columns:repeat(2,1fr) !important;}
@@ -1035,8 +1031,6 @@ html[data-density="compact"] .content{padding:24px 22px 64px !important;}
   .kpi-grid{grid-template-columns:1fr !important;gap:10px !important;margin-bottom:32px !important;}
   .kpi-card{padding:20px !important;min-height:auto !important;border-radius:16px !important;}
   .kpi-card:first-child{grid-column:span 1;padding:24px !important;min-height:auto !important;}
-  .kpi-card:first-child 
-  
   .kpi-label{font-size:10.5px !important;}
   .kpi-delta{font-size:11.5px !important;}
   .kpi-ai{font-size:11.5px !important;padding-top:12px !important;}
@@ -1070,8 +1064,6 @@ html[data-density="compact"] .content{padding:24px 22px 64px !important;}
 }
 @media(max-width:400px){
   .header h1::after{content:"Bang Bang Noodles" !important;}
-  .kpi-card:first-child 
-  
   .st-val{font-size:24px !important;}
 }
 
@@ -1231,121 +1223,6 @@ html .st-meta{ margin-top: 14px !important; gap: 18px !important; }
 }
 @media (max-width: 640px){
   html .st-cards{ grid-template-columns: 1fr !important; }
-}
-
-/* ===== GLASS VARIANT (original — NOT Apple Liquid Glass) =====
-   Toggle via    specular highlight on active states, soft atmospheric tints. */
-  --glass-tint: oklch(0.98 0.008 270 / .55);
-  --glass-tint-2: oklch(0.96 0.012 260 / .38);
-  --glass-edge: oklch(1 0 0 / .55);
-  --glass-edge-dark: oklch(0 0 0 / .06);
-  --glass-ambient: radial-gradient(1200px 600px at 10% -10%, oklch(0.85 0.08 310 / .25), transparent 60%),
-                   radial-gradient(900px 500px at 100% 0%, oklch(0.88 0.07 220 / .22), transparent 55%),
-                   radial-gradient(700px 400px at 50% 100%, oklch(0.90 0.06 150 / .18), transparent 60%);
-}
-  --glass-tint: oklch(0.26 0.02 265 / .5);
-  --glass-tint-2: oklch(0.30 0.025 265 / .35);
-  --glass-edge: oklch(1 0 0 / .14);
-  --glass-edge-dark: oklch(0 0 0 / .35);
-  --glass-ambient: radial-gradient(1200px 600px at 10% -10%, oklch(0.55 0.18 300 / .35), transparent 60%),
-                   radial-gradient(900px 500px at 100% 0%, oklch(0.55 0.16 210 / .35), transparent 55%),
-                   radial-gradient(700px 400px at 50% 100%, oklch(0.50 0.18 340 / .30), transparent 60%);
-}
-
-/* Ambient background: colored wash behind translucent surfaces */
-  content:""; position:fixed; inset:0; z-index:-1;
-  background: var(--glass-ambient), var(--paper);
-  pointer-events:none;
-}
-
-/* Frosted surfaces everywhere */
-  background: var(--glass-tint) !important;
-  backdrop-filter: blur(28px) saturate(1.6) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(1.6) !important;
-  border-bottom: 1px solid var(--glass-edge) !important;
-  box-shadow: inset 0 1px 0 var(--glass-edge), 0 1px 0 var(--glass-edge-dark) !important;
-}
-  background: var(--glass-tint) !important;
-  backdrop-filter: blur(24px) saturate(1.5) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(1.5) !important;
-  border: 1px solid var(--glass-edge) !important;
-  box-shadow:
-    inset 0 1px 0 var(--glass-edge),
-    inset 0 -1px 0 var(--glass-edge-dark),
-    0 1px 2px oklch(0 0 0 / .04),
-    0 20px 50px -24px oklch(0 0 0 / .15) !important;
-  position: relative;
-  overflow: hidden;
-}
-/* Specular highlight on card top edge */
-  content:""; position:absolute; top:0; left:8%; right:8%; height:1px;
-  background: linear-gradient(90deg, transparent 0%, var(--glass-edge) 50%, transparent 100%);
-  pointer-events:none;
-}
-/* Inner glass sheen — faint highlight bloom */
-  content:""; position:absolute; inset: -40% -40% auto auto;
-  width:70%; height:70%;
-  background: radial-gradient(closest-side, var(--glass-edge), transparent 70%);
-  opacity: .5; pointer-events:none;
-  mix-blend-mode: overlay;
-}
-  transform: translateY(-2px) scale(1.005);
-  backdrop-filter: blur(32px) saturate(1.7) !important;
-  -webkit-backdrop-filter: blur(32px) saturate(1.7) !important;
-  transition: all 380ms cubic-bezier(.22,.61,.36,1);
-}
-  background: var(--glass-tint-2) !important;
-  border-color: var(--a-mag) !important;
-  box-shadow:
-    inset 0 1px 0 var(--glass-edge),
-    0 0 0 1px var(--a-mag),
-    0 0 40px -8px color-mix(in oklch, var(--a-mag) 40%, transparent),
-    0 20px 50px -24px oklch(0 0 0 / .2) !important;
-}
-
-/* Buttons: pill-glass */
-  background: var(--glass-tint-2) !important;
-  backdrop-filter: blur(12px) saturate(1.4) !important;
-  border: 1px solid var(--glass-edge) !important;
-  box-shadow: inset 0 1px 0 var(--glass-edge), 0 1px 2px oklch(0 0 0 / .04) !important;
-}
-  background: var(--ink) !important;
-  color: var(--paper) !important;
-  border-color: var(--ink) !important;
-  box-shadow: inset 0 1px 0 oklch(1 0 0 / .15), 0 4px 20px -8px oklch(0 0 0 / .25) !important;
-}
-
-/* Tabs: active tab gets glass pill behind it */
-  background: var(--glass-tint-2) !important;
-  border-bottom-color: var(--a-mag) !important;
-  border-radius: 10px 10px 0 0;
-  box-shadow: inset 0 1px 0 var(--glass-edge);
-}
-
-/* AI panel + Tweaks panel — heaviest frost */
-  background: var(--glass-tint) !important;
-  backdrop-filter: blur(40px) saturate(1.8) !important;
-  -webkit-backdrop-filter: blur(40px) saturate(1.8) !important;
-  border: 1px solid var(--glass-edge) !important;
-  box-shadow:
-    inset 0 1px 0 var(--glass-edge),
-    inset 0 -1px 0 var(--glass-edge-dark),
-    0 30px 80px -24px oklch(0 0 0 / .4) !important;
-}
-
-/* Chart scrim — blend into frosted surface */
-  filter: saturate(.9) contrast(.95);
-  mix-blend-mode: multiply;
-}
-  mix-blend-mode: screen;
-}
-
-/* Subtle breathing on active KPI */
-@keyframes glass-breath {
-  0%, 100% { box-shadow: inset 0 1px 0 var(--glass-edge), 0 0 0 1px var(--a-mag), 0 0 30px -8px color-mix(in oklch, var(--a-mag) 30%, transparent); }
-  50%      { box-shadow: inset 0 1px 0 var(--glass-edge), 0 0 0 1px var(--a-mag), 0 0 55px -8px color-mix(in oklch, var(--a-mag) 55%, transparent); }
-}
-  animation: glass-breath 3.5s ease-in-out infinite;
 }
 
 /* ===== AI-BOX REDESIGN (user feedback — nicer "speech bubbles") ===== */
