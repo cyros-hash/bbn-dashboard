@@ -6,7 +6,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#0a0f1e;color:#e2e8f0;min-height:100vh;font-size:14px;overflow-x:hidden}
+body{font-family:"Inter Tight",system-ui,-apple-system,sans-serif;background:#0a0f1e;color:#e2e8f0;min-height:100vh;font-size:14px;overflow-x:hidden}
 /* HEADER */
 .header{background:#111827;border-bottom:1px solid #1e2d40;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .header h1{font-size:16px;font-weight:700;color:#f1f5f9;letter-spacing:-0.3px}
@@ -390,7 +390,9 @@ html[data-theme="dark"][data-accent="blue"]{--a-mag:oklch(0.72 0.16 245);--a-mag
 html[data-accent="ink"]{--a-mag:var(--ink);--a-mag-soft:oklch(0.18 0.01 280 / .06);--a-mag-border:oklch(0.18 0.01 280 / .22);}
 html[data-theme="dark"][data-accent="ink"]{--a-mag:oklch(0.97 0.004 85);--a-mag-soft:oklch(0.97 0.004 85 / .1);--a-mag-border:oklch(0.97 0.004 85 / .22);}
 
-/* BASE */
+/* BASE — global font reset: alles Inter Tight */
+*,*::before,*::after{font-family:"Inter Tight",system-ui,-apple-system,sans-serif !important;}
+code,pre,#ai-key-input{font-family:var(--font-mono) !important;}
 html,body{background:var(--paper) !important;color:var(--ink) !important;}
 body{
   font-family:var(--font-body) !important;
@@ -1393,15 +1395,7 @@ html[data-theme="dark"] .ai-box{
   background: color-mix(in oklch, var(--a-mag) 10%, var(--surface)) !important;
   color: var(--ink) !important;
 }
-/* Glass variant uses frosted treatment instead */
-  background: var(--glass-tint-2) !important;
-  backdrop-filter: blur(20px) saturate(1.5) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(1.5) !important;
-  border: 1px solid var(--glass-edge) !important;
-  box-shadow:
-    inset 0 1px 0 var(--glass-edge),
-    0 8px 30px -12px color-mix(in oklch, var(--a-mag) 35%, transparent) !important;
-}
+/* Glass variant removed — orphaned CSS without selector */
 
 /* ===== ST-VAL LAYOUT FIX (user feedback — "so eng dass man nichts erkennen kann") ===== */
 html .st-val{
@@ -1447,11 +1441,7 @@ html .kpi-val > span[class*="delta"]{
   font-family: var(--font-body) !important;
   font-size: 11.5px !important;
 }
-/* Glass variant: frosted pill */
-  background: var(--glass-tint-2) !important;
-  backdrop-filter: blur(8px) !important;
-  border-color: var(--glass-edge) !important;
-}
+/* Glass variant pill removed — orphaned CSS without selector */
 
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
