@@ -6,7 +6,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#0a0f1e;color:#e2e8f0;min-height:100vh;font-size:14px}
+body{font-family:system-ui,sans-serif;background:#0a0f1e;color:#e2e8f0;min-height:100vh;font-size:14px;overflow-x:hidden}
 /* HEADER */
 .header{background:#111827;border-bottom:1px solid #1e2d40;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .header h1{font-size:16px;font-weight:700;color:#f1f5f9;letter-spacing:-0.3px}
@@ -257,6 +257,34 @@ canvas{max-height:220px}
 
   /* Drill Umsatz/Std Grid */
   .drill-3col{grid-template-columns:1fr!important}
+
+  /* ALLE Tabellen auf Mobile horizontal scrollbar */
+  table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+  thead,tbody,tr{display:table;width:100%;table-layout:auto}
+
+  /* Inline-style Container begrenzen */
+  .content *{max-width:100%;box-sizing:border-box}
+
+  /* Canvas responsive — Breite begrenzen, Höhe von Parent erben lassen */
+  canvas{max-width:100%!important;max-height:180px!important}
+
+  /* Storno Donut: feste Breite aufheben */
+  .chart-flex>div[style*="width:180px"]{width:100%!important;height:auto!important}
+
+  /* Tagesbriefing-Banner */
+  .alert,.tages-briefing{font-size:11px!important;padding:8px 10px!important;line-height:1.4}
+
+  /* Fix: inline flex containers mit festen Breiten */
+  div[style*="display:flex"]{flex-wrap:wrap!important}
+  div[style*="min-width:220px"]{min-width:100%!important}
+  div[style*="min-width:300px"]{min-width:100%!important}
+  div[style*="min-width:250px"]{min-width:100%!important}
+
+  /* JS-generierte 3-Spalter auf 1 Spalte */
+  div[style*="grid-template-columns:repeat(3"]{grid-template-columns:1fr!important}
+  div[style*="grid-template-columns:1fr 1fr 1fr"]{grid-template-columns:1fr!important}
+  div[style*="grid-template-columns:1fr 1fr;"]{grid-template-columns:1fr!important}
+  div[style*="grid-template-columns: 1fr 1fr"]{grid-template-columns:1fr!important}
 }
 
 /* Extra klein (max 400px) */
@@ -1029,6 +1057,16 @@ html[data-density="compact"] .content{padding:24px 22px 64px !important;}
   .ma-bar-wrap{width:100%;}
   .ma-stat{min-width:auto !important;text-align:left;}
   .speise-table{display:block;overflow-x:auto;white-space:nowrap;}
+  /* Alle Tabellen scrollbar */
+  table{display:block !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch;max-width:100% !important}
+  thead,tbody,tr{display:table;width:100%;table-layout:auto}
+  /* Canvas nie breiter als Container */
+  canvas{max-width:100% !important}
+  /* Inline flex mit festen Breiten aufbrechen */
+  div[style*="min-width:220px"],div[style*="min-width:250px"],div[style*="min-width:300px"]{min-width:100% !important;width:100% !important}
+  div[style*="width:180px"][style*="flex-shrink"]{width:100% !important;height:auto !important}
+  /* Briefing */
+  .alert{font-size:11px !important;padding:8px 12px !important;line-height:1.4 !important}
   #ai-fab{bottom:20px !important;right:16px !important;width:48px !important;height:48px !important;}
   #ai-panel{bottom:0 !important;right:0 !important;left:0 !important;width:100% !important;height:88vh !important;border-radius:22px 22px 0 0 !important;}
   #tweaks-panel{left:12px;right:12px;bottom:80px;width:auto;padding:16px 18px;}
@@ -8627,7 +8665,7 @@ function renderRabatte(){
         '</div>';
 
       // Detail-Tabelle (standardmäßig ZU)
-      html+='<div id="ma-detail-'+idx+'" style="display:none;padding:0 12px 12px">'+
+      html+='<div id="ma-detail-'+idx+'" style="display:none;padding:0 12px 12px;overflow-x:auto">'+
         '<table style="width:100%;border-collapse:collapse;font-size:11px">'+
         '<thead><tr style="border-bottom:2px solid #1e2d40">'+
           '<th style="text-align:left;padding:6px 4px;color:#64748b;font-weight:600">Datum</th>'+
@@ -8750,7 +8788,7 @@ function renderRabatte(){
       '</div>';
 
     // Detail-Tabelle (zugeklappt)
-    html+='<div id="rab-ma-'+ridx+'" style="display:none;padding:0 12px 12px">'+
+    html+='<div id="rab-ma-'+ridx+'" style="display:none;padding:0 12px 12px;overflow-x:auto">'+
       '<table style="width:100%;border-collapse:collapse;font-size:11px">'+
       '<thead><tr style="border-bottom:2px solid #1e2d40">'+
         '<th style="text-align:left;padding:6px 4px;color:#64748b;font-weight:600">Datum</th>'+
