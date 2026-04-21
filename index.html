@@ -1650,11 +1650,18 @@ function getRealFC(stFilter){
     return Object.keys(keys).map(function(k){return keys[k];});
   }
 
-  // Passende Perioden: überlappen mit Dashboard-Zeitraum
+  // Montag-Inventuren der Vorwoche zuordnen
+  function _normBis(isoDate){
+    var d=new Date(isoDate+'T12:00:00');
+    if(d.getDay()===1) d.setDate(d.getDate()-1);
+    return d.toISOString().slice(0,10);
+  }
+  // Passende Perioden: normalisiertes Bis-Datum muss im Dashboard-Zeitraum liegen
   function _passendePerioden(stN){
     var alle=_getPeriodenKeys(stN);
     var passend=alle.filter(function(p){
-      return p.bisISO>=dashVon && p.vonISO<=dashBis;
+      var nb=_normBis(p.bisISO);
+      return nb>=dashVon && nb<=dashBis;
     });
     passend.sort(function(a,b){return a.bisISO<b.bisISO?-1:a.bisISO>b.bisISO?1:0;});
     return passend;
@@ -2450,8 +2457,18 @@ function renderOverview(){
   var wastePctMd=km.u>0?wasteMdT/km.u:0;
   var wastePctRs=kr.u>0?wasteRsT/kr.u:0;
   // Waste-Konsistenz (Erfassungsrate: Tage mit Waste / Geschäftstage)
-  var wasteMdDays=new Set(wasteMdOv.map(function(r){return r.datum;})).size;
-  var wasteRsDays=new Set(wasteRsOv.map(function(r){return r.datum;})).size;
+  // Montag-Waste dem Sonntag zuordnen (Montag=Ruhetag, Waste stammt vom Vorabend)
+  function _wasteTagNorm(rows){
+    var s=new Set();
+    rows.forEach(function(r){
+      var d=new Date(r.datum+'T12:00:00');
+      if(d.getDay()===1){d.setDate(d.getDate()-1);s.add(d.toISOString().slice(0,10));}
+      else{s.add(r.datum);}
+    });
+    return s.size;
+  }
+  var wasteMdDays=_wasteTagNorm(wasteMdOv);
+  var wasteRsDays=_wasteTagNorm(wasteRsOv);
   // Geschäftstage berechnen (exkl. Montag)
   var bizDays=0;
   var _dBiz=new Date(von);var _dEnd=new Date(bis);
@@ -4903,15 +4920,52 @@ function renderFoodCost(){
   var betriebsTage = new Set(gefiltert.map(function(r){return r.datum;})).size || 1;
   function wasteKonsistenz(stName) {
     var stWaste = waste.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort===stName&&datumPasstWT(r.datum);});
-    var tageMitWaste = new Set(stWaste.map(function(r){return r.datum;})).size;
+    // Montag-Waste dem Sonntag zuordnen (Montag=Ruhetag, Waste stammt vom Vorabend)
+    var wasteTage = new Set();
+    stWaste.forEach(function(r){
+      var d=new Date(r.datum+'T12:00:00');
+      if(d.getDay()===1){ // Montag → Sonntag davor
+        d.setDate(d.getDate()-1);
+        wasteTage.add(d.toISOString().slice(0,10));
+      } else {
+        wasteTage.add(r.datum);
+      }
+    });
+    var tageMitWaste = wasteTage.size;
+    // Betriebstage = alle Tage im Zeitraum OHNE Montag
+    var bTage=0;
+    var _db=new Date(von+'T12:00:00'),_de=new Date(bis+'T12:00:00');
+    while(_db<=_de){if(_db.getDay()!==1)bTage++;_db.setDate(_db.getDate()+1);}
     var totalW = stWaste.reduce(function(s,r){return s+r.kosten;},0);
     var avgProWasteTag = tageMitWaste>0?totalW/tageMitWaste:0;
+
+    // Detail pro Tag: Datum, ob Waste erfasst, Schichthabende aus Ordio
+    var tageDetail = [];
+    var _dt=new Date(von+'T12:00:00');
+    while(_dt<=_de){
+      var iso=_dt.toISOString().slice(0,10);
+      var wt=_dt.getDay(); // 0=So, 1=Mo
+      if(wt!==1){ // Montag überspringen (Ruhetag)
+        var hatWaste = wasteTage.has(iso);
+        // Schichthabende aus Ordio für diesen Tag + Standort
+        var schicht = ordio.filter(function(r){return r.datum===iso&&r.standort===stName;})
+          .map(function(r){return r.mitarbeiter;});
+        // Deduplizieren
+        var unique = [];
+        schicht.forEach(function(m){if(unique.indexOf(m)===-1)unique.push(m);});
+        var wtNames=['So','Mo','Di','Mi','Do','Fr','Sa'];
+        tageDetail.push({datum:iso, wochentag:wtNames[wt], hat:hatWaste, mitarbeiter:unique});
+      }
+      _dt.setDate(_dt.getDate()+1);
+    }
+
     return {
       tageMitWaste: tageMitWaste,
-      betriebsTage: betriebsTage,
-      quote: betriebsTage>0?tageMitWaste/betriebsTage:0,
+      betriebsTage: bTage,
+      quote: bTage>0?tageMitWaste/bTage:0,
       avgProWasteTag: avgProWasteTag,
-      total: totalW
+      total: totalW,
+      detail: tageDetail
     };
   }
   var wkMd = wasteKonsistenz('Mehringdamm');
@@ -4974,18 +5028,53 @@ function renderFoodCost(){
     </div>
 
     <div class="kpi-grid">
-      <div class="kpi-card" style="border-color:${wkMd.quote>=0.8?'#22c55e40':wkMd.quote>=0.5?'#E8439340':'#ef444440'}">
-        <div class="kpi-label">🟠 MD — Waste-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">täglich</span></div>
+      <div class="kpi-card" onclick="drill('d-waste-erf-md')" style="cursor:pointer;border-color:${wkMd.quote>=0.8?'#22c55e40':wkMd.quote>=0.5?'#E8439340':'#ef444440'}">
+        <div class="kpi-label">🟠 MD — Waste-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">täglich ▾</span></div>
         <div class="kpi-val" style="color:${wkMd.quote>=0.8?'#22c55e':wkMd.quote>=0.5?'#FF8000':'#ef4444'}">${Math.round(wkMd.quote*100)}%</div>
         <div class="kpi-delta" style="color:${wkMd.quote>=0.8?'#22c55e':wkMd.quote>=0.5?'#FF8000':'#ef4444'}">${wkMd.tageMitWaste} von ${wkMd.betriebsTage} Tagen</div>
         <div class="kpi-ai" style="color:${wkMd.quote>=0.8?'#22c55e':wkMd.quote>=0.5?'#FF8000':'#ef4444'}">Ø ${fmt(wkMd.avgProWasteTag)}/Tag · ${wkMd.quote>=0.8?'✓ Regelmäßig':wkMd.quote>=0.5?'⚠️ Lückenhaft':'🔴 Sofort handeln'}</div>
       </div>
-      <div class="kpi-card" style="border-color:${wkRs.quote>=0.8?'#22c55e40':wkRs.quote>=0.5?'#E8439340':'#ef444440'}">
-        <div class="kpi-label">🔵 RS — Waste-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">täglich</span></div>
+      <div class="kpi-card" onclick="drill('d-waste-erf-rs')" style="cursor:pointer;border-color:${wkRs.quote>=0.8?'#22c55e40':wkRs.quote>=0.5?'#E8439340':'#ef444440'}">
+        <div class="kpi-label">🔵 RS — Waste-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">täglich ▾</span></div>
         <div class="kpi-val" style="color:${wkRs.quote>=0.8?'#22c55e':wkRs.quote>=0.5?'#FF8000':'#ef4444'}">${Math.round(wkRs.quote*100)}%</div>
         <div class="kpi-delta" style="color:${wkRs.quote>=0.8?'#22c55e':wkRs.quote>=0.5?'#FF8000':'#ef4444'}">${wkRs.tageMitWaste} von ${wkRs.betriebsTage} Tagen</div>
         <div class="kpi-ai" style="color:${wkRs.quote>=0.8?'#22c55e':wkRs.quote>=0.5?'#FF8000':'#ef4444'}">Ø ${fmt(wkRs.avgProWasteTag)}/Tag · ${wkRs.quote>=0.8?'✓ Regelmäßig':wkRs.quote>=0.5?'⚠️ Lückenhaft':'🔴 Sofort handeln'}</div>
       </div>
+    </div>
+    <!-- Waste-Erfassung Drill-Panels -->
+    <div class="grid2" style="margin-top:-4px">
+      <div id="d-waste-erf-md" class="drill-panel" style="display:none;border-radius:0 0 10px 10px">
+        <div style="font-size:10px;font-weight:600;color:#E84393;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">🟠 MD — Tagesdetail Waste-Erfassung</div>
+        ${wkMd.detail.map(function(d){
+          var datParts=d.datum.split('-');
+          var datDisplay=datParts[2]+'.'+datParts[1]+'.';
+          var maText=d.mitarbeiter.length>0?d.mitarbeiter.join(', '):'<span style="color:#475569">—</span>';
+          return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1e2d40;font-size:11px">'
+            +'<span style="color:#64748b;min-width:22px">'+d.wochentag+'</span>'
+            +'<span style="color:#94a3b8;min-width:42px">'+datDisplay+'</span>'
+            +'<span style="font-size:14px;min-width:18px;text-align:center">'+(d.hat?'✓':'✗')+'</span>'
+            +'<span style="color:'+(d.hat?'#22c55e':'#ef4444')+';min-width:55px;font-weight:600">'+(d.hat?'Erfasst':'Fehlt')+'</span>'
+            +'<span style="color:#64748b;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+maText+'</span>'
+          +'</div>';
+        }).join('')}
+      </div>
+      <div id="d-waste-erf-rs" class="drill-panel" style="display:none;border-radius:0 0 10px 10px">
+        <div style="font-size:10px;font-weight:600;color:#00EEFC;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">🔵 RS — Tagesdetail Waste-Erfassung</div>
+        ${wkRs.detail.map(function(d){
+          var datParts=d.datum.split('-');
+          var datDisplay=datParts[2]+'.'+datParts[1]+'.';
+          var maText=d.mitarbeiter.length>0?d.mitarbeiter.join(', '):'<span style="color:#475569">—</span>';
+          return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1e2d40;font-size:11px">'
+            +'<span style="color:#64748b;min-width:22px">'+d.wochentag+'</span>'
+            +'<span style="color:#94a3b8;min-width:42px">'+datDisplay+'</span>'
+            +'<span style="font-size:14px;min-width:18px;text-align:center">'+(d.hat?'✓':'✗')+'</span>'
+            +'<span style="color:'+(d.hat?'#22c55e':'#ef4444')+';min-width:55px;font-weight:600">'+(d.hat?'Erfasst':'Fehlt')+'</span>'
+            +'<span style="color:#64748b;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+maText+'</span>'
+          +'</div>';
+        }).join('')}
+      </div>
+    </div>
+    <div class="kpi-grid">
       <div class="kpi-card" style="border-color:${ikMd.quote>=0.9?'#22c55e40':ikMd.quote>=0.5?'#E8439340':'#ef444440'}">
         <div class="kpi-label">🟠 MD — Inventur-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">sonntags</span></div>
         <div class="kpi-val" style="color:${ikMd.quote>=0.9?'#22c55e':ikMd.quote>=0.5?'#E84393':'#ef4444'}">${ikMd.totalSo>0?Math.round(ikMd.quote*100)+'%':'—'}</div>
@@ -5153,12 +5242,18 @@ function renderFoodCost(){
         return Object.keys(keys).map(function(k){ return keys[k]; });
       }
 
-      // Perioden filtern die den Dashboard-Zeitraum überlappen
+      // Montag-Inventuren der Vorwoche zuordnen: Bis am Montag → zählt als Sonntag davor
+      function normBis(isoDate){
+        var d=new Date(isoDate+'T12:00:00');
+        if(d.getDay()===1) d.setDate(d.getDate()-1); // Montag → Sonntag
+        return d.toISOString().slice(0,10);
+      }
+      // Perioden filtern: normalisiertes Bis-Datum muss im Dashboard-Zeitraum liegen
       function getPassendePerioden(st) {
         var alle = getPeriodenKeys(st);
         var passend = alle.filter(function(p){
-          // Überlappung: Inventur-bis >= Dashboard-von UND Inventur-von <= Dashboard-bis
-          return p.bisISO >= dashVon && p.vonISO <= dashBis;
+          var nb = normBis(p.bisISO);
+          return nb >= dashVon && nb <= dashBis;
         });
         // Sortiert nach bis-Datum (neueste zuletzt)
         passend.sort(function(a,b){ return a.bisISO < b.bisISO ? -1 : a.bisISO > b.bisISO ? 1 : 0; });
