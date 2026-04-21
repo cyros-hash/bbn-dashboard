@@ -1656,12 +1656,12 @@ function getRealFC(stFilter){
     if(d.getDay()===1) d.setDate(d.getDate()-1);
     return d.toISOString().slice(0,10);
   }
-  // Passende Perioden: normalisiertes Bis-Datum muss im Dashboard-Zeitraum liegen
+  // Passende Perioden: Von-Datum UND normalisiertes Bis-Datum müssen im Dashboard-Zeitraum liegen
   function _passendePerioden(stN){
     var alle=_getPeriodenKeys(stN);
     var passend=alle.filter(function(p){
       var nb=_normBis(p.bisISO);
-      return nb>=dashVon && nb<=dashBis;
+      return p.vonISO>=dashVon && nb>=dashVon && nb<=dashBis;
     });
     passend.sort(function(a,b){return a.bisISO<b.bisISO?-1:a.bisISO>b.bisISO?1:0;});
     return passend;
@@ -5264,12 +5264,12 @@ function renderFoodCost(){
         if(d.getDay()===1) d.setDate(d.getDate()-1); // Montag → Sonntag
         return d.toISOString().slice(0,10);
       }
-      // Perioden filtern: normalisiertes Bis-Datum muss im Dashboard-Zeitraum liegen
+      // Perioden filtern: Von-Datum UND normalisiertes Bis-Datum müssen im Dashboard-Zeitraum liegen
       function getPassendePerioden(st) {
         var alle = getPeriodenKeys(st);
         var passend = alle.filter(function(p){
           var nb = normBis(p.bisISO);
-          return nb >= dashVon && nb <= dashBis;
+          return p.vonISO >= dashVon && nb >= dashVon && nb <= dashBis;
         });
         // Sortiert nach bis-Datum (neueste zuletzt)
         passend.sort(function(a,b){ return a.bisISO < b.bisISO ? -1 : a.bisISO > b.bisISO ? 1 : 0; });
