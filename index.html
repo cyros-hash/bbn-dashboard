@@ -628,11 +628,8 @@ html[data-density="compact"] .content{padding:24px 24px 64px !important;}
 }
 .kpi-label>span.badge{margin-left:auto;}
 
-.kpi-val[style*="22c55e"],.kpi-val[style*="#22c55e"]{color:var(--ink) !important;}
-.kpi-val[style*="ef4444"]{color:var(--neg) !important;}
-.kpi-val[style*="E84393"]{color:var(--a-mag) !important;}
-.kpi-val[style*="00EEFC"],.kpi-val[style*="40F0FF"]{color:var(--ink) !important;}
-.kpi-val[style*="FF8000"]{color:var(--neu) !important;}
+/* KPI-Werte immer weiß — Farbe nur in Sub-Metriken und VW-Badges */
+.kpi-val{color:#f1f5f9 !important;}
 
 .kpi-delta{
   font-family:var(--font-mono) !important;
@@ -1413,12 +1410,11 @@ html .st-val{
   gap: 8px !important;
   line-height: 1.05 !important;
 }
-html .st-val > span{
+html .st-val > span.vw-badge{
   font-family: var(--font-mono) !important;
   font-size: 11.5px !important;
   font-weight: 500 !important;
   letter-spacing: .02em !important;
-  color: var(--ink-3) !important;
   line-height: 1 !important;
   padding: 3px 9px !important;
   border-radius: 99px !important;
@@ -4623,7 +4619,7 @@ function renderOverview(){
     if(diff===null) return '';
     var arrow=diff>=0?'▲':'▼';
     var col=diff>=0?'#22c55e':'#ef4444';
-    return '<span style="font-size:11px;color:'+col+';font-weight:600;margin-left:6px">'+arrow+' '+Math.abs(diff).toFixed(1)+'% vs. '+vpLabel+'</span>';
+    return '<span class="vw-badge" style="color:'+col+'">'+arrow+' '+Math.abs(diff).toFixed(1)+'% vs. '+vpLabel+'</span>';
   }
 
   // Tages-Chart
@@ -5373,7 +5369,7 @@ function renderUmsatz(){
     if(diff===null) return '';
     var arrow=diff>=0?'▲':'▼';
     var col=diff>=0?'#22c55e':'#ef4444';
-    return '<span style="font-size:11px;color:'+col+';font-weight:600;margin-left:6px">'+arrow+' '+Math.abs(diff).toFixed(1)+'% vs. '+vpLabelUm+'</span>';
+    return '<span class="vw-badge" style="color:'+col+'">'+arrow+' '+Math.abs(diff).toFixed(1)+'% vs. '+vpLabelUm+'</span>';
   }
   var tm={};
   gefiltert.forEach(function(r){if(!tm[r.datum])tm[r.datum]={m:0,r:0};if(r.st==="Mehringdamm")tm[r.datum].m+=r.u;else tm[r.datum].r+=r.u;});
@@ -5463,19 +5459,19 @@ function renderUmsatz(){
     <div class="st-cards" style="grid-template-columns:repeat(3,1fr)">
       <div class="st-card" onclick="drill('d-ges')">
         <div class="st-name">Gesamtumsatz</div>
-        <div class="st-val" style="color:#22c55e;display:flex;align-items:center">${fmt(kGes.u)}${trendBadge(diffGes)}</div>
+        <div class="st-val" style="color:#f1f5f9;display:flex;align-items:center">${fmt(kGes.u)}${trendBadge(diffGes)}</div>
         <div class="st-meta"><span>Ø ${fmt(kGes.u/Math.max(kGes.t,1))}/Tag</span><span>Ø Bon: ${fmtD(bonWertData.avg)}</span></div>
         <div class="progress"><div class="progress-fill" style="width:100%;background:#22c55e"></div></div>
       </div>
       <div class="st-card" onclick="drill('d-md')">
         <div class="st-name">Mehringdamm</div>
-        <div class="st-val" style="color:#E84393;display:flex;align-items:center">${fmt(km.u)}${trendBadge(diffMd)}</div>
+        <div class="st-val" style="color:#f1f5f9;display:flex;align-items:center">${fmt(km.u)}${trendBadge(diffMd)}</div>
         <div class="st-meta"><span>Ø ${fmt(km.u/Math.max(km.t,1))}/Tag</span><span>Ø Bon: ${fmtD(bonWertMd.avg)}</span></div>
         <div class="progress"><div class="progress-fill" style="width:${km.u+kr.u>0?Math.round(km.u/(km.u+kr.u)*100):50}%;background:#E84393"></div></div>
       </div>
       <div class="st-card" onclick="drill('d-rs')">
         <div class="st-name">Rosenthaler Straße</div>
-        <div class="st-val" style="color:#00EEFC;display:flex;align-items:center">${fmt(kr.u)}${trendBadge(diffRs)}</div>
+        <div class="st-val" style="color:#f1f5f9;display:flex;align-items:center">${fmt(kr.u)}${trendBadge(diffRs)}</div>
         <div class="st-meta"><span>Ø ${fmt(kr.u/Math.max(kr.t,1))}/Tag</span><span>Ø Bon: ${fmtD(bonWertRs.avg)}</span></div>
         <div class="progress"><div class="progress-fill" style="width:${km.u+kr.u>0?Math.round(kr.u/(km.u+kr.u)*100):50}%;background:#00EEFC"></div></div>
       </div>
