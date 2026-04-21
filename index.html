@@ -1635,11 +1635,39 @@ function tageDiff(von,bis){
 //           revBestand (Umsatz im Bestandszeitraum), plus Traceability-Aufschlüsselung
 function getRealFC(stFilter){
   if(bestandDaten.length===0)return{hat:false,quote:0,gesamt:0,revBestand:0,verkauft:0,verschwendet:0,unkontrolliert:0,von:'',bis:'',tage:0};
-  function _neustesBis(stN){
-    var rows=bestandDaten.filter(function(r){return r.standort===stN;});
-    if(!rows.length)return'';
-    return rows.reduce(function(m,r){return r.bis>m?r.bis:m;},'');
+
+  // Dashboard-Zeitfilter lesen
+  var dashVon=document.getElementById("von").value;
+  var dashBis=document.getElementById("bis").value;
+
+  // Alle einzigartigen Perioden (von/bis) für einen Standort
+  function _getPeriodenKeys(stN){
+    var keys={};
+    bestandDaten.filter(function(r){return r.standort===stN;}).forEach(function(r){
+      var k=r.von+'|'+r.bis;
+      if(!keys[k]) keys[k]={von:r.von,bis:r.bis,vonISO:bestandDatISO(r.von),bisISO:bestandDatISO(r.bis)};
+    });
+    return Object.keys(keys).map(function(k){return keys[k];});
   }
+
+  // Passende Perioden: überlappen mit Dashboard-Zeitraum
+  function _passendePerioden(stN){
+    var alle=_getPeriodenKeys(stN);
+    var passend=alle.filter(function(p){
+      return p.bisISO>=dashVon && p.vonISO<=dashBis;
+    });
+    passend.sort(function(a,b){return a.bisISO<b.bisISO?-1:a.bisISO>b.bisISO?1:0;});
+    return passend;
+  }
+
+  // Fallback: neueste Periode
+  function _neueste(stN){
+    var alle=_getPeriodenKeys(stN);
+    if(!alle.length)return[];
+    alle.sort(function(a,b){return a.bisISO<b.bisISO?-1:a.bisISO>b.bisISO?1:0;});
+    return[alle[alle.length-1]];
+  }
+
   // Umsatz aus "alle" für einen Standort im Bestandszeitraum
   function _rev(vonRaw,bisRaw,stN){
     var v=bestandDatISO(vonRaw),b=bestandDatISO(bisRaw);
@@ -1648,24 +1676,40 @@ function getRealFC(stFilter){
       return r.datum>=v&&r.datum<=b&&(stN==='Alle'||r.st===stN);
     }).reduce(function(s,r){return s+r.u;},0);
   }
+
   function _calc(stN){
-    var bisD=_neustesBis(stN);
-    if(!bisD)return{fc:0,verkauft:0,verschwendet:0,unkontrolliert:0,hergestellt:0,umverl:0,versandt:0,offen:0,waren:0,erstelltIn:0,umverlEin:0,schluss:0,von:'',bis:'',n:0,tage:0,rev:0,quote:0};
-    var rows=bestandDaten.filter(function(r){return r.standort===stN&&r.bis===bisD;});
-    var s=function(field){return rows.reduce(function(sum,r){return sum+r[field];},0);};
-    var offen=s('offen'),waren=s('waren'),erstelltIn=s('erstelltIn'),umverlEin=s('umverlEin');
-    var verkauft=Math.abs(s('verkauft')),hergestellt=Math.abs(s('hergestellt'));
-    var umverlAus=Math.abs(s('umverlAus')),versandt=Math.abs(s('versandt'));
-    var verschwendet=Math.abs(s('verschwendet')),unkontrolliert=Math.abs(s('unkontrolliert'));
-    var schluss=s('schluss');
-    var fc=offen+waren+erstelltIn+umverlEin-schluss;
-    var vonD=rows.length?rows[0].von:'';
-    var tage=tageDiff(vonD,bisD);
-    var rev=_rev(vonD,bisD,stN);
-    return{fc:fc,verkauft:verkauft,verschwendet:verschwendet,unkontrolliert:unkontrolliert,
-           hergestellt:hergestellt,umverl:umverlAus,versandt:versandt,
-           offen:offen,waren:waren,erstelltIn:erstelltIn,umverlEin:umverlEin,schluss:schluss,
-           von:vonD,bis:bisD,n:rows.length,tage:tage,rev:rev,quote:rev>0?fc/rev:0};
+    var perioden=_passendePerioden(stN);
+    if(!perioden.length) perioden=_neueste(stN);
+    if(!perioden.length)return{fc:0,verkauft:0,verschwendet:0,unkontrolliert:0,hergestellt:0,umverl:0,versandt:0,offen:0,waren:0,erstelltIn:0,umverlEin:0,schluss:0,von:'',bis:'',n:0,tage:0,rev:0,quote:0};
+
+    var gesFC=0,gesVerkauft=0,gesVerschwendet=0,gesUnkontrolliert=0,gesHergestellt=0;
+    var gesUmverl=0,gesVersandt=0,gesOffen=0,gesWaren=0,gesErstelltIn=0,gesUmverlEin=0,gesSchluss=0;
+    var gesN=0,gesTage=0,gesRev=0;
+
+    perioden.forEach(function(p){
+      var rows=bestandDaten.filter(function(r){return r.standort===stN&&r.von===p.von&&r.bis===p.bis;});
+      var s=function(field){return rows.reduce(function(sum,r){return sum+r[field];},0);};
+      var offen=s('offen'),waren=s('waren'),erstelltIn=s('erstelltIn'),umverlEin=s('umverlEin');
+      var verkauft=Math.abs(s('verkauft')),hergestellt=Math.abs(s('hergestellt'));
+      var umverlAus=Math.abs(s('umverlAus')),versandt=Math.abs(s('versandt'));
+      var verschwendet=Math.abs(s('verschwendet')),unkontrolliert=Math.abs(s('unkontrolliert'));
+      var schluss=s('schluss');
+      var tage=tageDiff(p.von,p.bis);
+      var rev=_rev(p.von,p.bis,stN);
+
+      gesOffen+=offen; gesWaren+=waren; gesErstelltIn+=erstelltIn; gesUmverlEin+=umverlEin;
+      gesVerkauft+=verkauft; gesHergestellt+=hergestellt; gesUmverl+=umverlAus; gesVersandt+=versandt;
+      gesVerschwendet+=verschwendet; gesUnkontrolliert+=unkontrolliert; gesSchluss+=schluss;
+      gesN+=rows.length; gesTage+=tage; gesRev+=rev;
+    });
+
+    var fc=gesOffen+gesWaren+gesErstelltIn+gesUmverlEin-gesSchluss;
+    var vonD=perioden[0].von;
+    var bisD=perioden[perioden.length-1].bis;
+    return{fc:fc,verkauft:gesVerkauft,verschwendet:gesVerschwendet,unkontrolliert:gesUnkontrolliert,
+           hergestellt:gesHergestellt,umverl:gesUmverl,versandt:gesVersandt,
+           offen:gesOffen,waren:gesWaren,erstelltIn:gesErstelltIn,umverlEin:gesUmverlEin,schluss:gesSchluss,
+           von:vonD,bis:bisD,n:gesN,tage:gesTage||1,rev:gesRev,quote:gesRev>0?fc/gesRev:0};
   }
   var md=_calc('Mehringdamm'),rs=_calc('Rosenthaler Straße');
   var ges,von,bis;
@@ -5086,74 +5130,119 @@ function renderFoodCost(){
 
     ${(function(){
       // === WARENWIRTSCHAFT BLOCK ===
-      var heute = new Date();
-      var vor90 = new Date(); vor90.setDate(heute.getDate()-90);
-      var vor90s = vor90.toISOString().slice(0,10).split('-').reverse().join('.');
-
-      var invRows = fcReal.filter(function(r){return r.typ==='';});
-      var invMd = fcReal.filter(function(r){return r.standort==='Mehringdamm'&&r.vonDatum;});
-      var invRs = fcReal.filter(function(r){return r.standort==='Rosenthaler Straße'&&r.vonDatum;});
-      var bestRows = fcReal.filter(function(r){return r.bestellStatus;});
-      var offenMd = bestRows.filter(function(r){return r.standort==='Mehringdamm'&&r.bestellOffen;});
-      var offenRs = bestRows.filter(function(r){return r.standort==='Rosenthaler Straße'&&r.bestellOffen;});
-
-      function invKonsistenz(rows, standort) {
-        var wochen = 0;
-        for(var w=0;w<4;w++){
-          var wEnd=new Date(heute); wEnd.setDate(heute.getDate()-w*7);
-          var wStart=new Date(heute); wStart.setDate(heute.getDate()-(w+1)*7);
-          var wEndS=wEnd.toISOString().slice(0,10).split('-').reverse().join('.');
-          var wStartS=wStart.toISOString().slice(0,10).split('-').reverse().join('.');
-          var hat=rows.some(function(r){return r.vonDatum>=wStartS&&r.vonDatum<=wEndS;});
-          if(hat) wochen++;
-        }
-        return {wochen:wochen, von4:4, ok:wochen>=3};
-      }
-      var ikMd = invKonsistenz(invMd, 'Mehringdamm');
-      var ikRs = invKonsistenz(invRs, 'Rosenthaler Straße');
+      // Nutzt Dashboard-Zeitfilter (von/bis) um passende Inventur-Perioden zu finden.
+      // Bei mehreren Perioden im Zeitraum: Werte aggregieren.
+      // Fallback: neueste Periode falls keine im Zeitraum.
 
       if(bestandDaten.length===0){
         return '<div class="box"><div class="box-title">📦 Warenwirtschaft — Reale Food Cost</div>' +
           '<div style="color:#475569;font-size:12px;padding:12px 0">Noch keine Bestandsberichte verfügbar.</div></div>';
       }
 
-      function getNeuesteBis(st) {
-        var rows = bestandDaten.filter(function(r){ return r.standort===st; });
-        if(!rows.length) return '';
-        return rows.reduce(function(max,r){ return r.bis>max?r.bis:max; }, '');
+      // Dashboard-Zeitfilter (YYYY-MM-DD)
+      var dashVon = von; // aus renderFoodCost scope
+      var dashBis = bis;
+
+      // Alle einzigartigen Inventur-Perioden (von/bis Paare) pro Standort finden
+      function getPeriodenKeys(st) {
+        var keys = {};
+        bestandDaten.filter(function(r){ return r.standort===st; }).forEach(function(r){
+          var k = r.von + '|' + r.bis;
+          if(!keys[k]) keys[k] = {von: r.von, bis: r.bis, vonISO: bestandDatISO(r.von), bisISO: bestandDatISO(r.bis)};
+        });
+        return Object.keys(keys).map(function(k){ return keys[k]; });
       }
 
+      // Perioden filtern die den Dashboard-Zeitraum überlappen
+      function getPassendePerioden(st) {
+        var alle = getPeriodenKeys(st);
+        var passend = alle.filter(function(p){
+          // Überlappung: Inventur-bis >= Dashboard-von UND Inventur-von <= Dashboard-bis
+          return p.bisISO >= dashVon && p.vonISO <= dashBis;
+        });
+        // Sortiert nach bis-Datum (neueste zuletzt)
+        passend.sort(function(a,b){ return a.bisISO < b.bisISO ? -1 : a.bisISO > b.bisISO ? 1 : 0; });
+        return passend;
+      }
+
+      // Fallback: neueste Periode
+      function getNeueste(st) {
+        var alle = getPeriodenKeys(st);
+        if(!alle.length) return [];
+        alle.sort(function(a,b){ return a.bisISO < b.bisISO ? -1 : a.bisISO > b.bisISO ? 1 : 0; });
+        return [alle[alle.length-1]];
+      }
+
+      // KPIs über passende Perioden aggregieren
       function getKPIs(st) {
-        var bis = getNeuesteBis(st);
-        var rows = bestandDaten.filter(function(r){ return r.standort===st && r.bis===bis; });
-        var von = rows.length ? rows[0].von : '';
+        var perioden = getPassendePerioden(st);
+        var fallback = false;
+        if(!perioden.length) {
+          perioden = getNeueste(st);
+          fallback = true;
+        }
+        if(!perioden.length) return {von:'',bis:'',offen:0,waren:0,verkauft:0,schluss:0,schwund:0,artikel:0,perioden:0,fallback:false};
+
+        var gesOffen=0,gesWaren=0,gesVerkauft=0,gesSchluss=0,gesSchwund=0,gesArtikel=0;
+        perioden.forEach(function(p){
+          var rows = bestandDaten.filter(function(r){ return r.standort===st && r.von===p.von && r.bis===p.bis; });
+          gesOffen   += rows.reduce(function(s,r){return s+r.offen;},0);
+          gesWaren   += rows.reduce(function(s,r){return s+r.waren;},0);
+          gesVerkauft+= rows.reduce(function(s,r){return s+r.verkauft;},0);
+          gesSchluss += rows.reduce(function(s,r){return s+r.schluss;},0);
+          gesSchwund += rows.reduce(function(s,r){return s+r.unkontrolliert;},0);
+          gesArtikel += rows.length;
+        });
+
+        // Zeitraum-Anzeige: frühestes von → spätestes bis
+        var vonDisplay = perioden[0].von;
+        var bisDisplay = perioden[perioden.length-1].bis;
+
         return {
-          von: von, bis: bis,
-          offen:   rows.reduce(function(s,r){return s+r.offen;},0),
-          waren:   rows.reduce(function(s,r){return s+r.waren;},0),
-          verkauft:rows.reduce(function(s,r){return s+r.verkauft;},0),
-          schluss: rows.reduce(function(s,r){return s+r.schluss;},0),
-          schwund: rows.reduce(function(s,r){return s+r.unkontrolliert;},0),
-          artikel: rows.length
+          von: vonDisplay, bis: bisDisplay,
+          offen: gesOffen, waren: gesWaren, verkauft: gesVerkauft,
+          schluss: gesSchluss, schwund: gesSchwund,
+          artikel: gesArtikel, perioden: perioden.length, fallback: fallback
         };
       }
 
+      // Schwund-Artikel über alle passenden Perioden sammeln
+      function getSchwundRows(st) {
+        var perioden = getPassendePerioden(st);
+        if(!perioden.length) perioden = getNeueste(st);
+        if(!perioden.length) return [];
+        var allRows = [];
+        perioden.forEach(function(p){
+          var rows = bestandDaten.filter(function(r){ return r.standort===st && r.von===p.von && r.bis===p.bis && r.unkontrolliert!==0; });
+          allRows = allRows.concat(rows);
+        });
+        // Bei mehreren Perioden: gleiche Artikel aggregieren
+        if(perioden.length > 1) {
+          var byArtikel = {};
+          allRows.forEach(function(r){
+            if(!byArtikel[r.artikel]) byArtikel[r.artikel] = {artikel:r.artikel, unkontrolliert:0};
+            byArtikel[r.artikel].unkontrolliert += r.unkontrolliert;
+          });
+          allRows = Object.keys(byArtikel).map(function(k){ return byArtikel[k]; });
+        }
+        return allRows;
+      }
+
       function getTopSchwund(st, limit) {
-        var bis = getNeuesteBis(st);
-        var rows = bestandDaten.filter(function(r){ return r.standort===st && r.bis===bis && r.unkontrolliert!==0; });
+        var rows = getSchwundRows(st);
         return rows.slice().sort(function(a,b){ return a.unkontrolliert-b.unkontrolliert; }).slice(0,limit||5);
+      }
+
+      function getAllSchwund(st, minAbs) {
+        var rows = getSchwundRows(st);
+        return rows.filter(function(r){ return Math.abs(r.unkontrolliert)>=minAbs; })
+                   .sort(function(a,b){ return a.unkontrolliert-b.unkontrolliert; });
       }
 
       var kpiMd = getKPIs('Mehringdamm');
       var kpiRs = getKPIs('Rosenthaler Straße');
       var schwundMd = getTopSchwund('Mehringdamm', 5);
       var schwundRs = getTopSchwund('Rosenthaler Straße', 5);
-
-      function getAllSchwund(st, minAbs) {
-        var bis = getNeuesteBis(st);
-        var rows = bestandDaten.filter(function(r){ return r.standort===st && r.bis===bis && Math.abs(r.unkontrolliert)>=minAbs; });
-        return rows.slice().sort(function(a,b){ return a.unkontrolliert-b.unkontrolliert; });
-      }
       var schwundAllMd = getAllSchwund('Mehringdamm', 5);
       var schwundAllRs = getAllSchwund('Rosenthaler Straße', 5);
 
@@ -5161,11 +5250,14 @@ function renderFoodCost(){
         var realFC = kpi.offen + kpi.waren - kpi.schluss;
         var schwundPct = realFC>0?Math.abs(kpi.schwund)/realFC:0;
         var schwundCol = kpi.schwund<-50?'#ef4444':kpi.schwund<0?'#E84393':'#22c55e';
+        var periodenHint = '';
+        if(kpi.perioden > 1) periodenHint = '<span style="font-size:9px;color:#E84393;margin-left:4px">('+kpi.perioden+' Inventuren aggregiert)</span>';
+        else if(kpi.fallback) periodenHint = '<span style="font-size:9px;color:#f59e0b;margin-left:4px">(keine Daten im Zeitraum — zeige neueste)</span>';
         return '<div style="background:#0a1628;border-radius:10px;padding:16px;border:1px solid #0a3545">' +
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
             '<span style="font-size:14px">'+emoji+'</span>' +
             '<div><div style="font-size:13px;font-weight:700;color:'+color+'">'+stName+'</div>' +
-            '<div style="font-size:10px;color:#64748b">'+(kpi.von||'')+' → '+(kpi.bis||'')+'</div></div>' +
+            '<div style="font-size:10px;color:#64748b">'+(kpi.von||'')+' → '+(kpi.bis||'')+periodenHint+'</div></div>' +
           '</div>' +
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">' +
             '<div style="background:#1a2538;border-radius:8px;padding:10px;text-align:center">' +
