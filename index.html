@@ -2447,9 +2447,29 @@ function renderOverview(){
   var fcSollIstDiff=hatIstFC?(anzFcPct-k.fp):0;
   var fcSollIstMd=hatIstFC&&rfc.md?(anzFcMdPct-km.fp):0;
   var fcSollIstRs=hatIstFC&&rfc.rs?(anzFcRsPct-kr.fp):0;
-  // Waste
-  var wasteMdOv=waste.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort==="Mehringdamm"&&datumPasstWT(r.datum);});
-  var wasteRsOv=waste.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort==="Rosenthaler Straße"&&datumPasstWT(r.datum);});
+  // Waste — Montag=Ruhetag, Montag-Waste gehört zum Sonntag davor
+  // Filter erweitert: bis+1 Tag holen, damit Montag-Waste nach Zeitraumende dem letzten Sonntag zugeordnet wird
+  var _bisPlus1Ov=new Date(bis+'T12:00:00');_bisPlus1Ov.setDate(_bisPlus1Ov.getDate()+1);var _bisPlus1OvISO=_bisPlus1Ov.toISOString().slice(0,10);
+  var wasteMdOvRaw=waste.filter(function(r){return r.datum>=von&&r.datum<=_bisPlus1OvISO&&r.standort==="Mehringdamm";});
+  var wasteRsOvRaw=waste.filter(function(r){return r.datum>=von&&r.datum<=_bisPlus1OvISO&&r.standort==="Rosenthaler Straße";});
+  // Montag-Normalisierung: Montag→Sonntag, dann nur Tage innerhalb [von,bis] zählen
+  function _wasteNormFilter(rows){
+    var kept=[];
+    rows.forEach(function(r){
+      var d=new Date(r.datum+'T12:00:00');
+      if(d.getDay()===1){
+        // Montag → Sonntag davor
+        d.setDate(d.getDate()-1);
+        var normISO=d.toISOString().slice(0,10);
+        if(normISO>=von&&normISO<=bis) kept.push({datum:normISO,kosten:r.kosten,standort:r.standort});
+      } else {
+        if(r.datum>=von&&r.datum<=bis&&datumPasstWT(r.datum)) kept.push(r);
+      }
+    });
+    return kept;
+  }
+  var wasteMdOv=_wasteNormFilter(wasteMdOvRaw);
+  var wasteRsOv=_wasteNormFilter(wasteRsOvRaw);
   var wasteMdT=wasteMdOv.reduce(function(s,r){return s+r.kosten;},0);
   var wasteRsT=wasteRsOv.reduce(function(s,r){return s+r.kosten;},0);
   var wasteGes=wasteMdT+wasteRsT;
@@ -2457,14 +2477,9 @@ function renderOverview(){
   var wastePctMd=km.u>0?wasteMdT/km.u:0;
   var wastePctRs=kr.u>0?wasteRsT/kr.u:0;
   // Waste-Konsistenz (Erfassungsrate: Tage mit Waste / Geschäftstage)
-  // Montag-Waste dem Sonntag zuordnen (Montag=Ruhetag, Waste stammt vom Vorabend)
   function _wasteTagNorm(rows){
     var s=new Set();
-    rows.forEach(function(r){
-      var d=new Date(r.datum+'T12:00:00');
-      if(d.getDay()===1){d.setDate(d.getDate()-1);s.add(d.toISOString().slice(0,10));}
-      else{s.add(r.datum);}
-    });
+    rows.forEach(function(r){s.add(r.datum);});
     return s.size;
   }
   var wasteMdDays=_wasteTagNorm(wasteMdOv);
@@ -4919,16 +4934,20 @@ function renderFoodCost(){
   // Waste-Konsistenz pro Standort
   var betriebsTage = new Set(gefiltert.map(function(r){return r.datum;})).size || 1;
   function wasteKonsistenz(stName) {
-    var stWaste = waste.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.standort===stName&&datumPasstWT(r.datum);});
-    // Montag-Waste dem Sonntag zuordnen (Montag=Ruhetag, Waste stammt vom Vorabend)
+    // Waste im Zeitraum + 1 Tag danach holen (Montag-Waste gehört zum Sonntag davor)
+    var _bP1=new Date(bis+'T12:00:00');_bP1.setDate(_bP1.getDate()+1);var bP1ISO=_bP1.toISOString().slice(0,10);
+    var stWasteRaw = waste.filter(function(r){return r.datum>=von&&r.datum<=bP1ISO&&r.standort===stName;});
+    // Montag → Sonntag normalisieren, nur Tage innerhalb [von,bis] behalten
     var wasteTage = new Set();
-    stWaste.forEach(function(r){
+    var totalW = 0;
+    stWasteRaw.forEach(function(r){
       var d=new Date(r.datum+'T12:00:00');
       if(d.getDay()===1){ // Montag → Sonntag davor
         d.setDate(d.getDate()-1);
-        wasteTage.add(d.toISOString().slice(0,10));
+        var normISO=d.toISOString().slice(0,10);
+        if(normISO>=von&&normISO<=bis){wasteTage.add(normISO);totalW+=r.kosten;}
       } else {
-        wasteTage.add(r.datum);
+        if(r.datum>=von&&r.datum<=bis){wasteTage.add(r.datum);totalW+=r.kosten;}
       }
     });
     var tageMitWaste = wasteTage.size;
@@ -4936,7 +4955,6 @@ function renderFoodCost(){
     var bTage=0;
     var _db=new Date(von+'T12:00:00'),_de=new Date(bis+'T12:00:00');
     while(_db<=_de){if(_db.getDay()!==1)bTage++;_db.setDate(_db.getDate()+1);}
-    var totalW = stWaste.reduce(function(s,r){return s+r.kosten;},0);
     var avgProWasteTag = tageMitWaste>0?totalW/tageMitWaste:0;
 
     // Detail pro Tag: Datum, ob Waste erfasst, Schichthabende aus Ordio
@@ -5040,10 +5058,22 @@ function renderFoodCost(){
         <div class="kpi-delta" style="color:${wkRs.quote>=0.8?'#22c55e':wkRs.quote>=0.5?'#FF8000':'#ef4444'}">${wkRs.tageMitWaste} von ${wkRs.betriebsTage} Tagen</div>
         <div class="kpi-ai" style="color:${wkRs.quote>=0.8?'#22c55e':wkRs.quote>=0.5?'#FF8000':'#ef4444'}">Ø ${fmt(wkRs.avgProWasteTag)}/Tag · ${wkRs.quote>=0.8?'✓ Regelmäßig':wkRs.quote>=0.5?'⚠️ Lückenhaft':'🔴 Sofort handeln'}</div>
       </div>
+      <div class="kpi-card" style="border-color:${ikMd.quote>=0.9?'#22c55e40':ikMd.quote>=0.5?'#E8439340':'#ef444440'}">
+        <div class="kpi-label">🟠 MD — Inventur-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">sonntags</span></div>
+        <div class="kpi-val" style="color:${ikMd.quote>=0.9?'#22c55e':ikMd.quote>=0.5?'#E84393':'#ef4444'}">${ikMd.totalSo>0?Math.round(ikMd.quote*100)+'%':'—'}</div>
+        <div class="kpi-delta" style="color:${ikMd.quote>=0.9?'#22c55e':ikMd.quote>=0.5?'#E84393':'#ef4444'}">${ikMd.soMitInv} von ${ikMd.totalSo} Sonntagen</div>
+        <div class="kpi-ai" style="color:${ikMd.totalSo===0?'#64748b':ikMd.quote>=0.9?'#22c55e':ikMd.quote>=0.5?'#FF8000':'#ef4444'}">${ikMd.totalSo===0?'Kein Sonntag im Zeitraum':ikMd.quote>=0.9?'✓ Vollständig':ikMd.quote>=0.5?'⚠️ Lücken — jeden So. zählen':'🔴 Inventur fehlt'}</div>
+      </div>
+      <div class="kpi-card" style="border-color:${ikRs.quote>=0.9?'#22c55e40':ikRs.quote>=0.5?'#E8439340':'#ef444440'}">
+        <div class="kpi-label">🔵 RS — Inventur-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">sonntags</span></div>
+        <div class="kpi-val" style="color:${ikRs.quote>=0.9?'#22c55e':ikRs.quote>=0.5?'#E84393':'#ef4444'}">${ikRs.totalSo>0?Math.round(ikRs.quote*100)+'%':'—'}</div>
+        <div class="kpi-delta" style="color:${ikRs.quote>=0.9?'#22c55e':ikRs.quote>=0.5?'#E84393':'#ef4444'}">${ikRs.soMitInv} von ${ikRs.totalSo} Sonntagen</div>
+        <div class="kpi-ai" style="color:${ikRs.totalSo===0?'#64748b':ikRs.quote>=0.9?'#22c55e':ikRs.quote>=0.5?'#FF8000':'#ef4444'}">${ikRs.totalSo===0?'Kein Sonntag im Zeitraum':ikRs.quote>=0.9?'✓ Vollständig':ikRs.quote>=0.5?'⚠️ Lücken — jeden So. zählen':'🔴 Inventur fehlt'}</div>
+      </div>
     </div>
-    <!-- Waste-Erfassung Drill-Panels -->
+    <!-- Waste-Erfassung Drill-Panels (nebeneinander) -->
     <div class="grid2" style="margin-top:-4px">
-      <div id="d-waste-erf-md" class="drill-panel" style="display:none;border-radius:0 0 10px 10px">
+      <div id="d-waste-erf-md" class="drill-panel" style="border-radius:0 0 10px 10px">
         <div style="font-size:10px;font-weight:600;color:#E84393;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">🟠 MD — Tagesdetail Waste-Erfassung</div>
         ${wkMd.detail.map(function(d){
           var datParts=d.datum.split('-');
@@ -5058,7 +5088,7 @@ function renderFoodCost(){
           +'</div>';
         }).join('')}
       </div>
-      <div id="d-waste-erf-rs" class="drill-panel" style="display:none;border-radius:0 0 10px 10px">
+      <div id="d-waste-erf-rs" class="drill-panel" style="border-radius:0 0 10px 10px">
         <div style="font-size:10px;font-weight:600;color:#00EEFC;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">🔵 RS — Tagesdetail Waste-Erfassung</div>
         ${wkRs.detail.map(function(d){
           var datParts=d.datum.split('-');
@@ -5072,20 +5102,6 @@ function renderFoodCost(){
             +'<span style="color:#64748b;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+maText+'</span>'
           +'</div>';
         }).join('')}
-      </div>
-    </div>
-    <div class="kpi-grid">
-      <div class="kpi-card" style="border-color:${ikMd.quote>=0.9?'#22c55e40':ikMd.quote>=0.5?'#E8439340':'#ef444440'}">
-        <div class="kpi-label">🟠 MD — Inventur-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">sonntags</span></div>
-        <div class="kpi-val" style="color:${ikMd.quote>=0.9?'#22c55e':ikMd.quote>=0.5?'#E84393':'#ef4444'}">${ikMd.totalSo>0?Math.round(ikMd.quote*100)+'%':'—'}</div>
-        <div class="kpi-delta" style="color:${ikMd.quote>=0.9?'#22c55e':ikMd.quote>=0.5?'#E84393':'#ef4444'}">${ikMd.soMitInv} von ${ikMd.totalSo} Sonntagen</div>
-        <div class="kpi-ai" style="color:${ikMd.totalSo===0?'#64748b':ikMd.quote>=0.9?'#22c55e':ikMd.quote>=0.5?'#FF8000':'#ef4444'}">${ikMd.totalSo===0?'Kein Sonntag im Zeitraum':ikMd.quote>=0.9?'✓ Vollständig':ikMd.quote>=0.5?'⚠️ Lücken — jeden So. zählen':'🔴 Inventur fehlt'}</div>
-      </div>
-      <div class="kpi-card" style="border-color:${ikRs.quote>=0.9?'#22c55e40':ikRs.quote>=0.5?'#E8439340':'#ef444440'}">
-        <div class="kpi-label">🔵 RS — Inventur-Erfassung <span style="font-size:9px;color:#475569;font-weight:400">sonntags</span></div>
-        <div class="kpi-val" style="color:${ikRs.quote>=0.9?'#22c55e':ikRs.quote>=0.5?'#E84393':'#ef4444'}">${ikRs.totalSo>0?Math.round(ikRs.quote*100)+'%':'—'}</div>
-        <div class="kpi-delta" style="color:${ikRs.quote>=0.9?'#22c55e':ikRs.quote>=0.5?'#E84393':'#ef4444'}">${ikRs.soMitInv} von ${ikRs.totalSo} Sonntagen</div>
-        <div class="kpi-ai" style="color:${ikRs.totalSo===0?'#64748b':ikRs.quote>=0.9?'#22c55e':ikRs.quote>=0.5?'#FF8000':'#ef4444'}">${ikRs.totalSo===0?'Kein Sonntag im Zeitraum':ikRs.quote>=0.9?'✓ Vollständig':ikRs.quote>=0.5?'⚠️ Lücken — jeden So. zählen':'🔴 Inventur fehlt'}</div>
       </div>
     </div>
 
