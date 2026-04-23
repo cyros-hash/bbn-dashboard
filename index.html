@@ -1437,7 +1437,6 @@ if(sessionStorage.getItem("bbn_unlocked")==="1"){document.getElementById("lock-s
   <button class="tab" onclick="showTab('stornierungen',this)">❌ Stornierungen</button>
   <button class="tab" onclick="showTab('rabatte',this)">🏷️ Rabatte</button>
   <button class="tab" onclick="showTab('simulator',this)">🧮 Simulator</button>
-  <button class="tab" onclick="showTab('lieferando',this)">🛵 Lieferando</button>
 </div>
 
 <div class="content">
@@ -1451,7 +1450,6 @@ if(sessionStorage.getItem("bbn_unlocked")==="1"){document.getElementById("lock-s
   <div id="t-stornierungen" style="display:none"></div>
   <div id="t-rabatte" style="display:none"></div>
   <div id="t-simulator" style="display:none"></div>
-  <div id="t-lieferando" style="display:none"></div>
 </div>
 
 <script>
@@ -2253,7 +2251,6 @@ function renderAll(){
   renderStornierungen();
   renderRabatte();
   renderSimulator();
-  renderLieferando();
 }
 
 // ============================================================
@@ -7155,9 +7152,9 @@ function renderSimulator(){
 
 
 // ============================================================
-// LIEFERANDO TAB
+// LIEFERANDO TAB (entfernt)
 // ============================================================
-function renderLieferando(){
+/* function renderLieferando(){
   var von=document.getElementById("von").value;
   var bis=document.getElementById("bis").value;
   var st=document.getElementById("standort").value;
@@ -7457,7 +7454,7 @@ function renderLieferando(){
       }
     });
   }
-}
+} */
 
 // ============================================================
 // INIT
