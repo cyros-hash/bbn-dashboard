@@ -1362,6 +1362,8 @@ var firebaseConfig={
   appId:"1:443212747604:web:3c0b9afa916269e7b86ec1"
 };
 firebase.initializeApp(firebaseConfig);
+// Session nur für aktuelle Browser-Sitzung — beim Schließen wird ausgeloggt
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
 // ── Autorisierte Emails → Rollen ──
 // Hier Emails eintragen die Zugriff bekommen sollen.
@@ -1371,7 +1373,8 @@ var _emailRoles={
   "umut.baser@bangbangnoodles.de":   {role:"owner", hidden:[]},
   "natalia@bangbangnoodles.de":      {role:"owner", hidden:[]},
   "gegee@bangbangnoodles.de":        {role:"owner", hidden:[]},
-  "jan@bangbangnoodles.de":          {role:"team",  hidden:["overview","guv","simulator","lieferando"]}
+  "jan@bangbangnoodles.de":          {role:"team",  hidden:["overview","guv","simulator","lieferando"]},
+  "gerayeli.geschaeftlich@gmail.com":{role:"team",  hidden:["overview","guv","simulator","lieferando"]}
 };
 
 var _currentRole=null;
