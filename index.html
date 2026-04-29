@@ -1417,13 +1417,16 @@ function _applyRole(role){
 }
 
 // Google Sign-In
+var _freshLogin=false;
 function googleSignIn(){
   var provider=new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({prompt:"select_account"});
   document.getElementById("lock-err").textContent="";
   document.getElementById("google-login-btn").disabled=true;
   document.getElementById("google-login-btn").style.opacity="0.5";
+  _freshLogin=true;
   firebase.auth().signInWithPopup(provider).catch(function(err){
+    _freshLogin=false;
     document.getElementById("google-login-btn").disabled=false;
     document.getElementById("google-login-btn").style.opacity="1";
     if(err.code==="auth/popup-closed-by-user") return;
@@ -1445,12 +1448,13 @@ firebase.auth().onAuthStateChanged(function(user){
   var logoutBtn=document.getElementById("google-logout-btn");
 
   if(user){
-    // Session-Timeout prüfen
-    if(_isSessionExpired()){
+    // Session-Timeout prüfen (nicht bei frischem Login)
+    if(!_freshLogin&&_isSessionExpired()){
       _clearSession();
       firebase.auth().signOut();
       return;
     }
+    _freshLogin=false;
 
     var email=user.email.toLowerCase();
     var roleCfg=_emailRoles[email];
