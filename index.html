@@ -7,6 +7,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"Inter Tight",system-ui,-apple-system,sans-serif;background:#0a0f1e;color:#e2e8f0;min-height:100vh;font-size:14px;overflow-x:hidden}
+body.no-admin [id^="btn-report-"],body.no-admin #ai-key-btn{display:none!important}
 /* HEADER */
 .header{background:#111827;border-bottom:1px solid #1e2d40;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .header h1{font-size:16px;font-weight:700;color:#f1f5f9;letter-spacing:-0.3px}
@@ -1393,10 +1394,9 @@ function _applyRole(role,email){
   var cfg=null;
   Object.values(_emailRoles).forEach(function(r){if(r.role===role)cfg=r;});
   if(!cfg)return;
-  // AI-Buttons nur für cyros sichtbar
-  var isAdmin=(email==="cyros@bangbangnoodles.de");
-  var aiKeyBtn=document.getElementById("ai-key-btn");if(aiKeyBtn)aiKeyBtn.style.display=isAdmin?"inline-flex":"none";
-  document.querySelectorAll("[id^='btn-report-']").forEach(function(b){b.style.display=isAdmin?"inline-block":"none";});
+  // AI-Buttons nur für cyros sichtbar (CSS-Klasse, wirkt auch auf dynamisch erzeugte Buttons)
+  if(email==="cyros@bangbangnoodles.de"){document.body.classList.remove("no-admin");}
+  else{document.body.classList.add("no-admin");}
   // Tabs ausblenden
   var tabBtns=document.querySelectorAll(".tabs .tab");
   tabBtns.forEach(function(btn){
@@ -1493,6 +1493,7 @@ firebase.auth().onAuthStateChanged(function(user){
     logoutBtn.style.display="none";
     var hLogout=document.getElementById("header-logout-btn");if(hLogout)hLogout.style.display="none";
     // Alle Tabs wieder sichtbar machen (reset)
+    document.body.classList.remove("no-admin");
     _currentRole=null;
     var tabBtns=document.querySelectorAll(".tabs .tab");
     tabBtns.forEach(function(btn){btn.style.display="";});
