@@ -1362,8 +1362,17 @@ var firebaseConfig={
   appId:"1:443212747604:web:3c0b9afa916269e7b86ec1"
 };
 firebase.initializeApp(firebaseConfig);
-// Session nur für aktuelle Browser-Sitzung — beim Schließen wird ausgeloggt
-firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
+
+// ── Session-Timeout: 4 Stunden ──
+var SESSION_TIMEOUT_MS=4*60*60*1000;
+var SESSION_KEY="bbn_auth_ts";
+function _refreshSession(){localStorage.setItem(SESSION_KEY,Date.now().toString());}
+function _isSessionExpired(){
+  var ts=localStorage.getItem(SESSION_KEY);
+  if(!ts) return true;
+  return (Date.now()-parseInt(ts))>SESSION_TIMEOUT_MS;
+}
+function _clearSession(){localStorage.removeItem(SESSION_KEY);}
 
 // ── Autorisierte Emails → Rollen ──
 // Hier Emails eintragen die Zugriff bekommen sollen.
@@ -1400,8 +1409,10 @@ function _applyRole(role){
     if(am&&cfg.hidden.indexOf(am[1])>-1)activeHidden=true;
   }
   if(activeHidden){
-    var firstVisible=document.querySelector(".tabs .tab:not([style*='display:none'])");
-    if(firstVisible)firstVisible.click();
+    // Bevorzugt Umsatz-Tab öffnen, sonst ersten sichtbaren
+    var umsatzTab=document.querySelector(".tabs .tab[onclick*=\"showTab('umsatz'\"]");
+    if(umsatzTab&&umsatzTab.style.display!=="none"){umsatzTab.click();}
+    else{var firstVisible=document.querySelector(".tabs .tab:not([style*='display:none'])");if(firstVisible)firstVisible.click();}
   }
 }
 
@@ -1434,11 +1445,19 @@ firebase.auth().onAuthStateChanged(function(user){
   var logoutBtn=document.getElementById("google-logout-btn");
 
   if(user){
+    // Session-Timeout prüfen
+    if(_isSessionExpired()){
+      _clearSession();
+      firebase.auth().signOut();
+      return;
+    }
+
     var email=user.email.toLowerCase();
     var roleCfg=_emailRoles[email];
 
     if(roleCfg){
       // Autorisiert → Dashboard freischalten
+      _refreshSession();
       lockScreen.style.display="none";
       if(document.readyState==="loading"){
         document.addEventListener("DOMContentLoaded",function(){_applyRole(roleCfg.role);});
@@ -1455,6 +1474,7 @@ firebase.auth().onAuthStateChanged(function(user){
     }
   }else{
     // Nicht eingeloggt → Lock-Screen zeigen
+    _clearSession();
     lockScreen.style.display="flex";
     errEl.textContent="";
     userEl.textContent="";
@@ -1468,6 +1488,21 @@ firebase.auth().onAuthStateChanged(function(user){
     tabBtns.forEach(function(btn){btn.style.display="";});
   }
 });
+
+// Aktivität tracken — bei Klick/Scroll/Taste wird Session verlängert
+["click","scroll","keydown"].forEach(function(evt){
+  document.addEventListener(evt,function(){
+    if(_currentRole) _refreshSession();
+  },{passive:true});
+});
+
+// Alle 5 Min prüfen ob Session abgelaufen
+setInterval(function(){
+  if(_currentRole&&_isSessionExpired()){
+    _clearSession();
+    firebase.auth().signOut();
+  }
+},5*60*1000);
 </script>
 
 <div class="header">
