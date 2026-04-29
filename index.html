@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"Inter Tight",system-ui,-apple-system,sans-serif;background:#0a0f1e;color:#e2e8f0;min-height:100vh;font-size:14px;overflow-x:hidden}
-body.no-admin [id^="btn-report-"],body.no-admin #ai-key-btn{display:none!important}
+body.no-admin .ki-analyse-box,body.no-admin #ai-key-btn{display:none!important}
 /* HEADER */
 .header{background:#111827;border-bottom:1px solid #1e2d40;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .header h1{font-size:16px;font-weight:700;color:#f1f5f9;letter-spacing:-0.3px}
@@ -3678,7 +3678,7 @@ function renderUmsatz(){
 
     ${renderArtikelProStunde(von, bis, st)}
 
-    <div class="box" style="margin-top:14px">
+    <div class="box ki-analyse-box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: Umsatz</div><div class="box-sub">Automatische Bewertung der Umsatzdaten</div></div>
         <button id="btn-report-umsatz" onclick="generateTabReport('umsatz')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
@@ -4308,7 +4308,7 @@ function renderGuV(){
 
     <!-- KPI-Ampel entfernt — jetzt in Übersicht integriert -->
 
-    <div class="box" style="margin-top:14px">
+    <div class="box ki-analyse-box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: GuV</div><div class="box-sub">Automatische Bewertung der Ergebnisrechnung</div></div>
         <button id="btn-report-guv" onclick="generateTabReport('guv')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
@@ -4897,7 +4897,7 @@ function renderPersonal(){
 
     <!-- Erkannte Muster entfernt — durch KI-Bericht ersetzt -->
 
-    <div class="box" style="margin-top:14px">
+    <div class="box ki-analyse-box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: Personal</div><div class="box-sub">Automatische Bewertung der Personaleffizienz</div></div>
         <button id="btn-report-personal" onclick="generateTabReport('personal')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
@@ -5723,7 +5723,7 @@ function renderFoodCost(){
       :'<div style="color:#475569;font-size:12px;padding:12px">Keine Artikel-Daten für diesen Zeitraum.</div>'}
     </div>
 
-    <div class="box" style="margin-top:14px">
+    <div class="box ki-analyse-box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: Food Cost</div><div class="box-sub">Automatische Bewertung von Food Cost & Waste</div></div>
         <button id="btn-report-foodcost" onclick="generateTabReport('foodcost')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
@@ -5951,7 +5951,7 @@ function renderSpeisekarte(){
       </div>
     </div>
 
-    <div class="box" style="margin-top:14px">
+    <div class="box ki-analyse-box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: Speisekarte</div><div class="box-sub">Automatische Bewertung der Artikel-Performance</div></div>
         <button id="btn-report-speisekarte" onclick="generateTabReport('speisekarte')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
@@ -6274,7 +6274,7 @@ function renderTrinkgeld(){
       <canvas id="c-tk-std" style="max-height:160px"></canvas>
     </div>
 
-    <div class="box" style="margin-top:14px">
+    <div class="box ki-analyse-box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: Trinkgeld</div><div class="box-sub">Automatische Bewertung der Servicequalität</div></div>
         <button id="btn-report-trinkgeld" onclick="generateTabReport('trinkgeld')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
@@ -6418,7 +6418,7 @@ function renderStornierungen(){
 
     ${renderStornoAnalyse(von,bis,st)}
 
-    <div class="box" style="margin-top:14px">
+    <div class="box ki-analyse-box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: Stornierungen</div><div class="box-sub">Automatische Bewertung der Storno-Muster</div></div>
         <button id="btn-report-stornierungen" onclick="generateTabReport('stornierungen')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
@@ -7383,7 +7383,7 @@ function renderSimulator(){
       </div>
     </div>
 
-    <div class="box" style="margin-top:14px">
+    <div class="box ki-analyse-box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: Simulator</div><div class="box-sub">KI-gestützte Szenario-Bewertung</div></div>
         <button id="btn-report-simulator" onclick="generateTabReport('simulator')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
@@ -7648,7 +7648,7 @@ function renderLieferando(){
       </div>
     </div>
 
-    <div class="box" style="margin-top:14px">
+    <div class="box ki-analyse-box" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div class="box-title">🤖 KI-Analyse: Lieferando</div><div class="box-sub">Automatische Bewertung des Lieferando-Geschäfts</div></div>
         <button id="btn-report-lieferando" onclick="generateTabReport('lieferando')" style="background:#E84393;border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">🤖 Bericht generieren</button>
