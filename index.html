@@ -1463,6 +1463,7 @@ firebase.auth().onAuthStateChanged(function(user){
       // Autorisiert → Dashboard freischalten
       _refreshSession();
       lockScreen.style.display="none";
+      var hLogout=document.getElementById("header-logout-btn");if(hLogout)hLogout.style.display="inline-flex";
       if(document.readyState==="loading"){
         document.addEventListener("DOMContentLoaded",function(){_applyRole(roleCfg.role);});
       }else{
@@ -1486,6 +1487,7 @@ firebase.auth().onAuthStateChanged(function(user){
     loginBtn.disabled=false;
     loginBtn.style.opacity="1";
     logoutBtn.style.display="none";
+    var hLogout=document.getElementById("header-logout-btn");if(hLogout)hLogout.style.display="none";
     // Alle Tabs wieder sichtbar machen (reset)
     _currentRole=null;
     var tabBtns=document.querySelectorAll(".tabs .tab");
@@ -1525,6 +1527,7 @@ setInterval(function(){
     </select>
     <button class="reload-btn" onclick="ladeDaten()">🔄 Neu laden</button>
     <button class="reload-btn" onclick="toggleApiKeyModal()" id="ai-key-btn" style="background:#E8439330;color:#E84393;border-color:#E8439340">🤖 API Key</button>
+    <button id="header-logout-btn" class="reload-btn" onclick="googleSignOut()" style="background:#ef444420;color:#ef4444;border-color:#ef444440;display:none">⎋ Logout</button>
   </div>
 </div>
 
