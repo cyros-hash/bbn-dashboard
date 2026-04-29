@@ -1381,8 +1381,8 @@ function _clearSession(){localStorage.removeItem(SESSION_KEY);}
 var _emailRoles={
   "cyros@bangbangnoodles.de":       {role:"owner", hidden:[]},
   "umut.baser@bangbangnoodles.de":   {role:"owner", hidden:[]},
-  "natalia@bangbangnoodles.de":      {role:"owner", hidden:[]},
-  "gegee@bangbangnoodles.de":        {role:"owner", hidden:[]},
+  "natalia@bangbangnoodles.de":      {role:"owner", hidden:["lieferando"]},
+  "gegee@bangbangnoodles.de":        {role:"owner", hidden:["lieferando"]},
   "jan@bangbangnoodles.de":          {role:"team",  hidden:["overview","guv","simulator","lieferando"]},
   "gerayeli.geschaeftlich@gmail.com":{role:"team",  hidden:["overview","guv","simulator","lieferando"]}
 };
@@ -1391,8 +1391,7 @@ var _currentRole=null;
 
 function _applyRole(role,email){
   _currentRole=role;
-  var cfg=null;
-  Object.values(_emailRoles).forEach(function(r){if(r.role===role)cfg=r;});
+  var cfg=_emailRoles[email];
   if(!cfg)return;
   // AI-Buttons nur für cyros sichtbar (CSS-Klasse, wirkt auch auf dynamisch erzeugte Buttons)
   if(email==="cyros@bangbangnoodles.de"){document.body.classList.remove("no-admin");}
