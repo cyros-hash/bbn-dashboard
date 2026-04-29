@@ -1388,11 +1388,15 @@ var _emailRoles={
 
 var _currentRole=null;
 
-function _applyRole(role){
+function _applyRole(role,email){
   _currentRole=role;
   var cfg=null;
   Object.values(_emailRoles).forEach(function(r){if(r.role===role)cfg=r;});
   if(!cfg)return;
+  // AI-Buttons nur für cyros sichtbar
+  var isAdmin=(email==="cyros@bangbangnoodles.de");
+  var aiKeyBtn=document.getElementById("ai-key-btn");if(aiKeyBtn)aiKeyBtn.style.display=isAdmin?"inline-flex":"none";
+  document.querySelectorAll("[id^='btn-report-']").forEach(function(b){b.style.display=isAdmin?"inline-block":"none";});
   // Tabs ausblenden
   var tabBtns=document.querySelectorAll(".tabs .tab");
   tabBtns.forEach(function(btn){
@@ -1465,9 +1469,9 @@ firebase.auth().onAuthStateChanged(function(user){
       lockScreen.style.display="none";
       var hLogout=document.getElementById("header-logout-btn");if(hLogout)hLogout.style.display="inline-flex";
       if(document.readyState==="loading"){
-        document.addEventListener("DOMContentLoaded",function(){_applyRole(roleCfg.role);});
+        document.addEventListener("DOMContentLoaded",function(){_applyRole(roleCfg.role,email);});
       }else{
-        _applyRole(roleCfg.role);
+        _applyRole(roleCfg.role,email);
       }
     }else{
       // Eingeloggt aber nicht autorisiert
