@@ -1339,22 +1339,76 @@ html .kpi-val > span[class*="delta"]{
 </div>
 
 <script>
-var _pwHash="07480fb9e85b9396af06f006cf1c95024af2531c65fb505cfbd0add1e2f31573";
+// Rollen-System: URL-Parameter + Passwort
+var _roles={
+  "25031367":{hash:"7cca15add3fd96ff8667f41c4116d25fafc8e66663b89181ecbe1c00360198bb",role:"owner",hidden:[]},
+  "20012024":{hash:"1a3e666f26f430498676a35f1ddb39644335efcf9470683f89d88db8f9b75fab",role:"team",hidden:["overview","guv","simulator","lieferando"]}
+};
+var _viewKey=new URLSearchParams(window.location.search).get("v")||"";
+var _currentRole=null;
+
 async function sha256(s){var buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,"0");}).join("");}
+
+function _applyRole(role){
+  _currentRole=role;
+  var cfg=null;
+  Object.values(_roles).forEach(function(r){if(r.role===role)cfg=r;});
+  if(!cfg)return;
+  // Tabs ausblenden
+  var tabBtns=document.querySelectorAll(".tabs .tab");
+  tabBtns.forEach(function(btn){
+    var oc=btn.getAttribute("onclick")||"";
+    var match=oc.match(/showTab\('([^']+)'/);
+    if(match&&cfg.hidden.indexOf(match[1])>-1){btn.style.display="none";}
+  });
+  // Falls aktiver Tab versteckt ist, zum ersten sichtbaren wechseln
+  var activeHidden=false;
+  var activeTab=document.querySelector(".tabs .tab.active");
+  if(activeTab){
+    var aoc=activeTab.getAttribute("onclick")||"";
+    var am=aoc.match(/showTab\('([^']+)'/);
+    if(am&&cfg.hidden.indexOf(am[1])>-1)activeHidden=true;
+  }
+  if(activeHidden){
+    var firstVisible=document.querySelector(".tabs .tab:not([style*='display:none'])");
+    if(firstVisible)firstVisible.click();
+  }
+}
+
 async function unlockDash(){
   var pw=document.getElementById("lock-pw").value;
   if(!pw){document.getElementById("lock-err").textContent="Bitte Passwort eingeben.";return;}
+  var roleCfg=_roles[_viewKey];
+  if(!roleCfg){
+    document.getElementById("lock-err").textContent="Ungültiger Zugangslink.";
+    return;
+  }
   var h=await sha256(pw);
-  if(h===_pwHash){
-    sessionStorage.setItem("bbn_unlocked","1");
+  if(h===roleCfg.hash){
+    sessionStorage.setItem("bbn_role",roleCfg.role);
+    sessionStorage.setItem("bbn_view",_viewKey);
     document.getElementById("lock-screen").style.display="none";
+    _applyRole(roleCfg.role);
   }else{
     document.getElementById("lock-err").textContent="Falsches Passwort.";
     document.getElementById("lock-pw").value="";
     document.getElementById("lock-pw").focus();
   }
 }
-if(sessionStorage.getItem("bbn_unlocked")==="1"){document.getElementById("lock-screen").style.display="none";}
+
+// Kein gültiger URL-Parameter → Lock-Screen mit Fehlermeldung
+if(!_roles[_viewKey]){
+  document.addEventListener("DOMContentLoaded",function(){
+    document.getElementById("lock-err").textContent="Ungültiger Zugangslink.";
+    document.getElementById("lock-pw").style.display="none";
+    document.querySelector("#lock-screen button").style.display="none";
+  });
+}
+// Session wiederherstellen
+if(sessionStorage.getItem("bbn_role")&&sessionStorage.getItem("bbn_view")===_viewKey&&_roles[_viewKey]){
+  document.getElementById("lock-screen").style.display="none";
+  document.addEventListener("DOMContentLoaded",function(){_applyRole(sessionStorage.getItem("bbn_role"));});
+}
 </script>
 
 <div class="header">
