@@ -3883,7 +3883,7 @@ function renderArtikelProStunde(von, bis, st) {
            (st==="Alle Standorte"||r.standort===st) &&
            r.storniert===0 && r.preisN>=0 && datumPasstWT(r.datum);
   });
-  if(artG.length===0) return '<div class="box"><div class="box-title">📦 Artikel pro Stunde nach Kategorie</div><div style="color:#475569;font-size:12px;padding:12px">Keine Artikel-Daten im Zeitraum.</div></div>';
+  if(artG.length===0) return '<div class="box"><div class="box-title">📦 Artikel pro 30 Min nach Kategorie</div><div style="color:#475569;font-size:12px;padding:12px">Keine Artikel-Daten im Zeitraum.</div></div>';
 
   function mapKat(gruppe) {
     var g = (gruppe||"").toLowerCase();
@@ -3894,17 +3894,28 @@ function renderArtikelProStunde(von, bis, st) {
     return "Sonstiges";
   }
 
+  // 30-Min-Slot aus Zeit-String: "14:35" → "14:30"
+  function zeitSlot(zeit, stunde) {
+    if(zeit && zeit.indexOf(":")!==-1) {
+      var p=zeit.split(":"); var m=parseInt(p[1])||0;
+      return p[0]+":"+(m<30?"00":"30");
+    }
+    return (stunde||0)+":00";
+  }
+
   var stundenMap = {};
   artG.forEach(function(r){
-    var h = r.stunde;
-    if(h<0) return;
-    if(!stundenMap[h]) stundenMap[h]={Main:0,Starter:0,"Getränke":0,Dessert:0,Sonstiges:0,total:0};
+    var slot = zeitSlot(r.zeit, r.stunde);
+    if(!stundenMap[slot]) stundenMap[slot]={Main:0,Starter:0,"Getränke":0,Dessert:0,Sonstiges:0,total:0};
     var kat = mapKat(r.gruppe);
-    stundenMap[h][kat] += r.menge;
-    stundenMap[h].total += r.menge;
+    stundenMap[slot][kat] += r.menge;
+    stundenMap[slot].total += r.menge;
   });
 
-  var sKeys = Object.keys(stundenMap).sort(function(a,b){return parseInt(a)-parseInt(b);});
+  var sKeys = Object.keys(stundenMap).sort(function(a,b){
+    var pa=a.split(":"),pb=b.split(":");
+    return (parseInt(pa[0])*60+parseInt(pa[1]))-(parseInt(pb[0])*60+parseInt(pb[1]));
+  });
   var maxTotal = Math.max.apply(null, sKeys.map(function(h){return stundenMap[h].total;}));
   var tage = new Set(artG.map(function(r){return r.datum;})).size || 1;
 
@@ -3931,17 +3942,17 @@ function renderArtikelProStunde(von, bis, st) {
       return '<div style="height:100%;width:'+pct+'%;background:'+katColors[kat]+';display:inline-block;vertical-align:top" title="'+kat+': '+Math.round(d[kat])+'x"></div>';
     }).join("");
 
-    // Exakter Stunden-Check: MA war in Dienst wenn startStunde <= h < endeStunde
-    var hInt = parseInt(h);
-    var tageInStunde = new Set(artG.filter(function(r){return r.stunde===hInt;}).map(function(r){return r.datum;}));
+    // Exakter Stunden-Check: MA war in Dienst wenn startStunde <= slotH < endeStunde
+    var slotH = parseInt(h.split(":")[0]);
+    var tageInSlot = new Set(artG.filter(function(r){return zeitSlot(r.zeit,r.stunde)===h;}).map(function(r){return r.datum;}));
     var alleMA = {};
-    var maZeiten   = {}; // Schichtzeiten pro MA
-    var maBereiche = {}; // Bereich pro MA
-    tageInStunde.forEach(function(tag){
+    var maZeiten   = {};
+    var maBereiche = {};
+    tageInSlot.forEach(function(tag){
       ordio.filter(function(r){
         return r.datum === tag &&
                (st==="Alle Standorte"||r.standort===st) &&
-               r.startStunde <= hInt && r.endeStunde > hInt;
+               r.startStunde <= slotH && r.endeStunde > slotH;
       }).forEach(function(r){
         alleMA[r.mitarbeiter] = (alleMA[r.mitarbeiter]||0)+1;
         if(r.startZeit && r.endeZeit) {
@@ -3953,10 +3964,11 @@ function renderArtikelProStunde(von, bis, st) {
       });
     });
     var maListe = Object.keys(alleMA).sort();
+    var slotId = h.replace(":","");
 
-    return '<div style="margin-bottom:14px;cursor:pointer" onclick="toggleArtikelDrill(\'ad-'+h+'\')">'+
+    return '<div style="margin-bottom:14px;cursor:pointer" onclick="toggleArtikelDrill(\'ad-'+slotId+'\')">'+
       '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:5px">'+
-        '<span style="color:'+(isHigh?'#ef4444':'#f1f5f9')+';font-weight:600">'+h+':00 Uhr'+(isHigh?' 🔥':'')+'</span>'+
+        '<span style="color:'+(isHigh?'#ef4444':'#f1f5f9')+';font-weight:600">'+h+' Uhr'+(isHigh?' 🔥':'')+'</span>'+
         '<span style="display:flex;gap:14px;align-items:center">'+
           kats.filter(function(kat){return d[kat]>0;}).map(function(kat){
             return '<span style="font-size:10px;color:'+katColors[kat]+'">'+kat+' '+Math.round(d[kat])+'</span>';
@@ -3966,7 +3978,7 @@ function renderArtikelProStunde(von, bis, st) {
         '</span>'+
       '</div>'+
       '<div style="height:16px;background:#1e2d40;border-radius:3px;overflow:hidden">'+segments+'</div>'+
-      '<div id="ad-'+h+'" style="display:none;margin-top:8px;padding:10px;background:#0a1628;border:1px solid #0a3545;border-radius:6px">'+
+      '<div id="ad-'+slotId+'" style="display:none;margin-top:8px;padding:10px;background:#0a1628;border:1px solid #0a3545;border-radius:6px">'+
         '<div style="font-size:11px;color:#40F0FF;font-weight:600;margin-bottom:6px">👥 Eingeplante Mitarbeiter (Tage mit Aktivität in dieser Stunde)</div>'+
         (maListe.length>0
           ? '<div class="wt-flex" style="display:flex;gap:6px;flex-wrap:wrap">'+
@@ -3998,8 +4010,8 @@ function renderArtikelProStunde(von, bis, st) {
   }).join("");
 
   return '<div class="box">'+
-    '<div class="box-title">📦 Artikel pro Stunde nach Kategorie</div>'+
-    '<div class="box-sub">Ohne Stornos · '+artG.length+' Artikel-Positionen · '+tage+' Tage · Klick auf Stunde für Schichtbesetzung</div>'+
+    '<div class="box-title">📦 Artikel pro 30 Min nach Kategorie</div>'+
+    '<div class="box-sub">Ohne Stornos · '+artG.length+' Artikel-Positionen · '+tage+' Tage · Klick auf Slot für Schichtbesetzung</div>'+
     '<canvas id="c-art-std" style="max-height:180px;margin-bottom:16px"></canvas>'+
     '<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">'+legendHTML+
     '<span style="margin-left:auto;font-size:10px;color:#334155">🔥 = Spitzenstunde (>70% des Max)</span>'+
@@ -4031,15 +4043,25 @@ function buildArtikelProStundeChart(von, bis, st) {
     return "Sonstiges";
   }
 
+  function zeitSlot(zeit, stunde) {
+    if(zeit && zeit.indexOf(":")!==-1) {
+      var p=zeit.split(":"); var m=parseInt(p[1])||0;
+      return p[0]+":"+(m<30?"00":"30");
+    }
+    return (stunde||0)+":00";
+  }
+
   var stundenMap = {};
   artG.forEach(function(r){
-    var h = r.stunde;
-    if(h<0) return;
-    if(!stundenMap[h]) stundenMap[h]={Main:0,Starter:0,"Getränke":0,Dessert:0,Sonstiges:0};
-    stundenMap[h][mapKat(r.gruppe)] += r.menge;
+    var slot = zeitSlot(r.zeit, r.stunde);
+    if(!stundenMap[slot]) stundenMap[slot]={Main:0,Starter:0,"Getränke":0,Dessert:0,Sonstiges:0};
+    stundenMap[slot][mapKat(r.gruppe)] += r.menge;
   });
 
-  var sKeys = Object.keys(stundenMap).sort(function(a,b){return parseInt(a)-parseInt(b);});
+  var sKeys = Object.keys(stundenMap).sort(function(a,b){
+    var pa=a.split(":"),pb=b.split(":");
+    return (parseInt(pa[0])*60+parseInt(pa[1]))-(parseInt(pb[0])*60+parseInt(pb[1]));
+  });
   var kats   = ["Main","Starter","Getränke","Dessert","Sonstiges"];
   var colors = {Main:"#E84393",Starter:"#00EEFC","Getränke":"#22c55e",Dessert:"#FF8000",Sonstiges:"#475569"};
 
@@ -4049,7 +4071,7 @@ function buildArtikelProStundeChart(von, bis, st) {
   charts["c-art-std"] = new Chart(el, {
     type: "bar",
     data: {
-      labels: sKeys.map(function(h){return h+":00";}),
+      labels: sKeys,
       datasets: kats.map(function(kat){
         return {
           label: kat,
