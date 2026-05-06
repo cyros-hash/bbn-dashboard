@@ -2125,7 +2125,8 @@ async function ladeDaten(){
     var r5=await fetch(CSV.lsPay);var t5=await r5.text();
     lsPay=t5.trim().split("\n").map(function(l){
       var v=pCSV(l);
-      return{datum:pDat(v[0]),standort:v[1]||"",bar:pDE(v[3]),karte:pDE(v[5]),ldo:pDE(v[7]),onlineOrder:pDE(v[9]),trinkgeld:pDE(v[10]),manuell:pDE(v[12])};
+      // Spalten: datum|standort|anz_tx|ls_payment|order_anywhere|api_payment|bar|manuell|sonstige|trinkgeld|timestamp
+      return{datum:pDat(v[0]),standort:v[1]||"",lsPay:pDE(v[3]),orderAnywhere:pDE(v[4]),apiPayment:pDE(v[5]),bar:pDE(v[6]),manuell:pDE(v[7]),sonstige:pDE(v[8]),trinkgeld:pDE(v[9])};
     }).filter(function(r){return r.datum&&r.standort;});
 
     // ORDIO
@@ -3403,12 +3404,13 @@ function renderUmsatz(){
     return ' <span style="font-size:10px;color:'+col+'">'+(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'% vs. '+vpLabelUm+'</span>';
   }
   var totalTrinkgeld=qG.reduce(function(s,r){return s+r.trinkgeld;},0);
+  var totalLsPay=payG.reduce(function(s,r){return s+(r.lsPay||0);},0);
+  var totalOA=payG.reduce(function(s,r){return s+(r.orderAnywhere||0);},0);
+  var totalAPI=payG.reduce(function(s,r){return s+(r.apiPayment||0);},0);
   var totalBar=payG.reduce(function(s,r){return s+r.bar;},0);
   var totalManuell=payG.reduce(function(s,r){return s+(r.manuell||0);},0);
-  var totalKarte=payG.reduce(function(s,r){return s+r.karte;},0);
-  var totalLdoPay=payG.reduce(function(s,r){return s+r.ldo;},0);
-  var totalOnlineOrder=payG.reduce(function(s,r){return s+(r.onlineOrder||0);},0);
-  var totalZahl=totalBar+totalManuell+totalKarte+totalLdoPay+totalOnlineOrder;
+  var totalSonstige=payG.reduce(function(s,r){return s+(r.sonstige||0);},0);
+  var totalZahl=totalLsPay+totalOA+totalAPI+totalBar+totalManuell+totalSonstige;
 
   var stundenMap={};
   stdG.forEach(function(r){if(!stundenMap[r.stunde])stundenMap[r.stunde]=0;stundenMap[r.stunde]+=r.umsatz;});
@@ -3629,30 +3631,31 @@ function renderUmsatz(){
           </tr></thead>
           <tbody>
             <tr style="border-bottom:1px solid #1e2d40">
-              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#00EEFC;display:inline-block"></span><span style="color:#e2e8f0">Karte</span></span></td>
-              <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(totalKarte)}</td>
-              <td style="text-align:right;color:#e2e8f0;padding:6px 0 6px 8px">${totalZahl>0?(totalKarte/totalZahl*100).toFixed(1):0}%</td>
+              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#00EEFC;display:inline-block"></span><span style="color:#e2e8f0">Lightspeed Payment</span></span></td>
+              <td style="text-align:right;color:#e2e8f0;padding:6px 8px">${fmt(totalLsPay)}</td>
+              <td style="text-align:right;color:#e2e8f0;padding:6px 0 6px 8px">${totalZahl>0?(totalLsPay/totalZahl*100).toFixed(1):0}%</td>
             </tr>
             <tr style="border-bottom:1px solid #1e2d40">
-              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#E84393;display:inline-block"></span><span style="color:#E84393">Lieferando</span></span></td>
-              <td style="text-align:right;color:#E84393;padding:6px 8px">${fmt(totalLdoPay)}</td>
-              <td style="text-align:right;color:#E84393;padding:6px 0 6px 8px">${totalZahl>0?(totalLdoPay/totalZahl*100).toFixed(1):0}%</td>
+              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block"></span><span style="color:#22c55e">Order Anywhere</span></span></td>
+              <td style="text-align:right;color:#22c55e;padding:6px 8px">${fmt(totalOA)}</td>
+              <td style="text-align:right;color:#22c55e;padding:6px 0 6px 8px">${totalZahl>0?(totalOA/totalZahl*100).toFixed(1):0}%</td>
             </tr>
             <tr style="border-bottom:1px solid #1e2d40">
-              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block"></span><span style="color:#22c55e">Online Order</span></span></td>
-              <td style="text-align:right;color:#22c55e;padding:6px 8px">${fmt(totalOnlineOrder)}</td>
-              <td style="text-align:right;color:#22c55e;padding:6px 0 6px 8px">${totalZahl>0?(totalOnlineOrder/totalZahl*100).toFixed(1):0}%</td>
+              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#E84393;display:inline-block"></span><span style="color:#E84393">API Payment (LDO)</span></span></td>
+              <td style="text-align:right;color:#E84393;padding:6px 8px">${fmt(totalAPI)}</td>
+              <td style="text-align:right;color:#E84393;padding:6px 0 6px 8px">${totalZahl>0?(totalAPI/totalZahl*100).toFixed(1):0}%</td>
             </tr>
             <tr style="border-bottom:1px solid #1e2d40">
-              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#E84393;display:inline-block"></span><span style="color:#E84393">Bar</span></span></td>
-              <td style="text-align:right;color:#E84393;padding:6px 8px">${fmt(totalBar)}</td>
-              <td style="text-align:right;color:#E84393;padding:6px 0 6px 8px">${totalZahl>0?(totalBar/totalZahl*100).toFixed(1):0}%</td>
+              <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f59e0b;display:inline-block"></span><span style="color:#f59e0b">Bar</span></span></td>
+              <td style="text-align:right;color:#f59e0b;padding:6px 8px">${fmt(totalBar)}</td>
+              <td style="text-align:right;color:#f59e0b;padding:6px 0 6px 8px">${totalZahl>0?(totalBar/totalZahl*100).toFixed(1):0}%</td>
             </tr>
             <tr style="border-bottom:1px solid #1e2d40">
               <td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#a78bfa;display:inline-block"></span><span style="color:#a78bfa">Manuell</span></span></td>
               <td style="text-align:right;color:#a78bfa;padding:6px 8px">${fmt(totalManuell)}</td>
               <td style="text-align:right;color:#a78bfa;padding:6px 0 6px 8px">${totalZahl>0?(totalManuell/totalZahl*100).toFixed(1):0}%</td>
             </tr>
+            ${totalSonstige>0?'<tr style="border-bottom:1px solid #1e2d40"><td style="padding:6px 8px 6px 0"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#64748b;display:inline-block"></span><span style="color:#64748b">Sonstige</span></span></td><td style="text-align:right;color:#64748b;padding:6px 8px">'+fmt(totalSonstige)+'</td><td style="text-align:right;color:#64748b;padding:6px 0 6px 8px">'+(totalZahl>0?(totalSonstige/totalZahl*100).toFixed(1):0)+'%</td></tr>':""}
             <tr style="border-top:2px solid #0a3545">
               <td style="color:#f1f5f9;font-weight:600;padding:6px 8px 6px 0">Gesamt</td>
               <td style="text-align:right;color:#22c55e;font-weight:600;padding:6px 8px">${fmt(totalZahl)}</td>
@@ -3660,7 +3663,7 @@ function renderUmsatz(){
             </tr>
           </tbody>
         </table>
-        ${totalLdoPay/Math.max(totalZahl,1)>0.2?'<div class="ai-box" style="margin-top:8px">Lieferando-Anteil über 20% — erhöht Food Cost durch Portionsgrößen und Provisionen. Prüfe ob Lieferando-Preise angepasst werden sollten.</div>':""}
+        ${totalAPI/Math.max(totalZahl,1)>0.2?'<div class="ai-box" style="margin-top:8px">API Payment (Lieferando) Anteil über 20% — erhöht Food Cost durch Portionsgrößen und Provisionen. Prüfe ob Lieferando-Preise angepasst werden sollten.</div>':""}
       </div>
       <div class="box">
         <div class="box-title">⏰ Umsatz nach Stunde</div>
@@ -8578,14 +8581,15 @@ function buildAiContext() {
   // Zahlungsarten
   var payFilt = lsPay.filter(function(r){return r.datum>=von&&r.datum<=bis&&(st==="Alle Standorte"||r.standort===st)&&datumPasstWT(r.datum);});
   if(payFilt.length > 0) {
+    var pLsPay = payFilt.reduce(function(s,r){return s+(r.lsPay||0);},0);
+    var pOA = payFilt.reduce(function(s,r){return s+(r.orderAnywhere||0);},0);
+    var pAPI = payFilt.reduce(function(s,r){return s+(r.apiPayment||0);},0);
     var pBar = payFilt.reduce(function(s,r){return s+r.bar;},0);
     var pMan = payFilt.reduce(function(s,r){return s+(r.manuell||0);},0);
-    var pKarte = payFilt.reduce(function(s,r){return s+r.karte;},0);
-    var pLdo = payFilt.reduce(function(s,r){return s+r.ldo;},0);
-    var pOnline = payFilt.reduce(function(s,r){return s+(r.onlineOrder||0);},0);
-    var pTotal = pBar+pMan+pKarte+pLdo+pOnline;
+    var pSonst = payFilt.reduce(function(s,r){return s+(r.sonstige||0);},0);
+    var pTotal = pLsPay+pOA+pAPI+pBar+pMan+pSonst;
     ctx += "ZAHLUNGSARTEN:\n";
-    ctx += "Karte: " + fmt(pKarte) + " (" + fmtP(pTotal>0?pKarte/pTotal:0) + ") | Bar (Bargeld): " + fmt(pBar) + " (" + fmtP(pTotal>0?pBar/pTotal:0) + ") | Manuell: " + fmt(pMan) + " | Lieferando: " + fmt(pLdo) + " | Online: " + fmt(pOnline) + "\n\n";
+    ctx += "Lightspeed Payment (Karte): " + fmt(pLsPay) + " (" + fmtP(pTotal>0?pLsPay/pTotal:0) + ") | Order Anywhere (Online): " + fmt(pOA) + " (" + fmtP(pTotal>0?pOA/pTotal:0) + ") | API Payment (Lieferando): " + fmt(pAPI) + " (" + fmtP(pTotal>0?pAPI/pTotal:0) + ") | Bar: " + fmt(pBar) + " (" + fmtP(pTotal>0?pBar/pTotal:0) + ") | Manuell: " + fmt(pMan) + (pSonst>0?" | Sonstige: " + fmt(pSonst):"") + "\n\n";
   }
 
   // Kanäle
@@ -8727,7 +8731,7 @@ async function sendAiMessage() {
       "GESCHÄFTSMODELL:\n" +
       "• Kanäle: Inhouse (vor Ort), Takeaway, Lieferando (20% Provision)\n" +
       "• Kassensystem: Lightspeed (LS). Personalsystem: Ordio. Warenwirtschaft: Apicbase.\n" +
-      "• Zahlungsarten: Karte, Bar (=Bargeld/Cash), Manuell, Lieferando, Online Order\n" +
+      "• Zahlungsarten: Lightspeed Payment (=Kartenterminal), Order Anywhere (=LS Online-Bestellung), API Payment (=Lieferando), Bar (=Bargeld/Cash), Manuell (=LSP Manuell), Sonstige\n" +
       "• WICHTIG: 'Bar' = Barzahlung/Bargeld. NIEMALS Getränkebar.\n" +
       "• Management (nicht in PA-Quote): Kevin Weber, Jan Haring, Buted Deleg\n" +
       "• Öffnungszeiten: Di–Do 12–21, Fr–Sa 12–22, So 12–21, Mo geschlossen\n\n" +
