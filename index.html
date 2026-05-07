@@ -4434,11 +4434,11 @@ function renderPersonal(){
     var oh=getShiftOverhead(r);
     if(oh.vorStd>0){
       aufbau.stunden+=oh.vorStd;aufbau.kosten+=oh.vorKosten;aufbau.count++;
-      aufbau.data.push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,vorStd:oh.vorStd,vorKosten:oh.vorKosten,startStunde:r.startStunde,open:oh.open,shiftTags:r.shiftTags});
+      aufbau.data.push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,vorStd:oh.vorStd,vorKosten:oh.vorKosten,startStunde:r.startStunde,open:oh.open,shiftTags:r.shiftTags,startZeit:r.startZeit,endeZeit:r.endeZeit});
     }
     if(oh.nachStd>0){
       abbau.stunden+=oh.nachStd;abbau.kosten+=oh.nachKosten;abbau.count++;
-      abbau.data.push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,nachStd:oh.nachStd,nachKosten:oh.nachKosten,endeStunde:r.endeStunde,close:oh.close,shiftTags:r.shiftTags});
+      abbau.data.push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,nachStd:oh.nachStd,nachKosten:oh.nachKosten,endeStunde:r.endeStunde,close:oh.close,shiftTags:r.shiftTags,startZeit:r.startZeit,endeZeit:r.endeZeit});
     }
     // Betriebsstunden = Gesamtstunden minus Aufbau/Abbau
     betrieb.stunden+=(r.stunden-oh.vorStd-oh.nachStd);
@@ -4503,7 +4503,7 @@ function renderPersonal(){
     abbauWtStMap[wtName][r.standort].kosten+=r.nachKosten;
     abbauWtStMap[wtName][r.standort].count++;
     if(!abbauWtDetail[wtName])abbauWtDetail[wtName]=[];
-    abbauWtDetail[wtName].push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,stunden:r.nachStd,shiftTags:r.shiftTags||""});
+    abbauWtDetail[wtName].push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,stunden:r.nachStd,shiftTags:r.shiftTags||"",startZeit:r.startZeit||"",endeZeit:r.endeZeit||""});
   });
 
   // Aufbau-Trend nach Wochentag + Standort
@@ -4523,7 +4523,7 @@ function renderPersonal(){
     aufbauWtStMap[wtName][r.standort].kosten+=r.vorKosten;
     aufbauWtStMap[wtName][r.standort].count++;
     if(!aufbauWtDetail[wtName])aufbauWtDetail[wtName]=[];
-    aufbauWtDetail[wtName].push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,stunden:r.vorStd,shiftTags:r.shiftTags||""});
+    aufbauWtDetail[wtName].push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,stunden:r.vorStd,shiftTags:r.shiftTags||"",startZeit:r.startZeit||"",endeZeit:r.endeZeit||""});
   });
 
   // Team-Kombination Analyse für Abbau
@@ -4844,7 +4844,9 @@ function renderPersonal(){
     <!-- Aufbau/Abbau Wochentag-Sektionen folgen direkt -->
 
     <!-- AUFBAU NACH WOCHENTAG (mit Standort + Detail) -->
-    ${Object.keys(aufbauWtMap).length>0?'<div class="box" style="margin-bottom:14px"><div class="box-title">🌅 Aufbau nach Wochentag</div><div class="box-sub">Ø Stunden & Kosten vor 12:00 · Klick für Details mit Shift-Tags</div>'+
+    ${Object.keys(aufbauWtMap).length>0?(function(){
+      var aufbauDetailPanels=[];
+      var cardsHtml='<div class="box" style="margin-bottom:14px"><div class="box-title">🌅 Aufbau nach Wochentag</div><div class="box-sub">Ø Stunden & Kosten vor 12:00 · Klick für Details mit Shift-Tags</div>'+
       '<div class="wt-flex" style="display:flex;gap:6px;flex-wrap:nowrap">'+
         ["Di","Mi","Do","Fr","Sa","So"].filter(function(wt){return aufbauWtMap[wt];}).map(function(wt){
           var d=aufbauWtMap[wt];
@@ -4867,30 +4869,35 @@ function renderPersonal(){
             var slName=sl.length>0?sl[0].mitarbeiter:"—";
             return'<div style="margin-bottom:8px"><div style="font-size:10px;color:#f59e0b;font-weight:600;margin-bottom:3px">'+dat+' · Shiftleader: '+slName+'</div>'+
               '<table style="width:100%;font-size:10px;border-collapse:collapse">'+
-              '<tr style="color:#64748b"><td>Mitarbeiter</td><td>Standort</td><td>Bereich</td><td>Std</td><td>Tags</td></tr>'+
+              '<tr style="color:#64748b"><td>Mitarbeiter</td><td>Standort</td><td>Bereich</td><td>Schicht</td><td>Std</td><td>Tags</td></tr>'+
               rows.map(function(r){
                 var tagBadges=r.shiftTags?r.shiftTags.split(", ").filter(function(t){return t;}).map(function(t){
                   var bgC=t==="Shiftleader"?"#f59e0b":t==="Delivery"?"#6366f1":t==="Order"?"#22c55e":t==="Deepclean"?"#06b6d4":"#475569";
                   return'<span style="background:'+bgC+';color:#0f1729;font-size:8px;padding:1px 4px;border-radius:3px;font-weight:600">'+t+'</span>';
                 }).join(" "):"";
-                return'<tr style="border-top:1px solid #1e2d40"><td style="color:#e2e8f0;padding:3px 0">'+r.mitarbeiter+'</td><td style="color:#94a3b8">'+r.standort.substring(0,2)+'</td><td style="color:#94a3b8">'+r.bereich+'</td><td style="color:#94a3b8">'+r.stunden.toFixed(1)+'</td><td>'+tagBadges+'</td></tr>';
+                var zeit=r.startZeit&&r.endeZeit?r.startZeit+'–'+r.endeZeit:"";
+                return'<tr style="border-top:1px solid #1e2d40"><td style="color:#e2e8f0;padding:3px 0">'+r.mitarbeiter+'</td><td style="color:#94a3b8">'+r.standort.substring(0,2)+'</td><td style="color:#94a3b8">'+r.bereich+'</td><td style="color:#64748b">'+zeit+'</td><td style="color:#94a3b8">'+r.stunden.toFixed(1)+'</td><td>'+tagBadges+'</td></tr>';
               }).join("")+
               '</table></div>';
           }).join("");
+          aufbauDetailPanels.push('<div id="aufbau_'+wt+'" style="display:none;background:#0f1729;border:1px solid #1e2d40;border-radius:8px;padding:12px;margin-top:6px;text-align:left">'+detailHtml+'</div>');
           return'<div style="flex:1;min-width:0;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center;border-top:3px solid #f59e0b;cursor:pointer" onclick="toggleWtDetail(this,\'aufbau_'+wt+'\')">'+
             '<div style="font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:4px">'+wt+'</div>'+
             '<div style="font-size:18px;font-weight:700;color:'+col+'">'+avg.toFixed(1)+'h</div>'+
             '<div style="font-size:10px;color:#94a3b8;margin-top:3px">'+fmt(avgK)+'/Tag</div>'+
             '<div style="font-size:9px;color:#475569;margin-top:2px">'+d.count+'× Aufbau</div>'+
             (stLines?'<div style="margin-top:6px;padding-top:5px;border-top:1px solid #1e2d40">'+stLines+'</div>':'')+
-          '</div>'+
-          '<div id="aufbau_'+wt+'" style="display:none;background:#0f1729;border:1px solid #1e2d40;border-radius:8px;padding:12px;margin-top:6px;text-align:left">'+detailHtml+'</div>';
+          '</div>';
         }).join("")+
-      '</div>'+
-    '</div>':''}
+      '</div>'+aufbauDetailPanels.join("")+
+    '</div>';
+      return cardsHtml;
+    })():''}
 
     <!-- ABBAU NACH WOCHENTAG (mit Standort + Detail) -->
-    ${Object.keys(abbauWtMap).length>0?'<div class="box" style="margin-bottom:14px"><div class="box-title">🌙 Abbau nach Wochentag</div><div class="box-sub">Ø Stunden & Kosten nach Ladenschluss · Klick für Details mit Shift-Tags</div>'+
+    ${Object.keys(abbauWtMap).length>0?(function(){
+      var abbauDetailPanels=[];
+      var cardsHtml='<div class="box" style="margin-bottom:14px"><div class="box-title">🌙 Abbau nach Wochentag</div><div class="box-sub">Ø Stunden & Kosten nach Ladenschluss · Klick für Details mit Shift-Tags</div>'+
       '<div class="wt-flex" style="display:flex;gap:6px;flex-wrap:nowrap">'+
         ["Di","Mi","Do","Fr","Sa","So"].filter(function(wt){return abbauWtMap[wt];}).map(function(wt){
           var d=abbauWtMap[wt];
@@ -4913,27 +4920,30 @@ function renderPersonal(){
             var slName=sl.length>0?sl[0].mitarbeiter:"—";
             return'<div style="margin-bottom:8px"><div style="font-size:10px;color:#6366f1;font-weight:600;margin-bottom:3px">'+dat+' · Shiftleader: '+slName+'</div>'+
               '<table style="width:100%;font-size:10px;border-collapse:collapse">'+
-              '<tr style="color:#64748b"><td>Mitarbeiter</td><td>Standort</td><td>Bereich</td><td>Std</td><td>Tags</td></tr>'+
+              '<tr style="color:#64748b"><td>Mitarbeiter</td><td>Standort</td><td>Bereich</td><td>Schicht</td><td>Std</td><td>Tags</td></tr>'+
               rows.map(function(r){
                 var tagBadges=r.shiftTags?r.shiftTags.split(", ").filter(function(t){return t;}).map(function(t){
                   var bgC=t==="Shiftleader"?"#f59e0b":t==="Delivery"?"#6366f1":t==="Order"?"#22c55e":t==="Deepclean"?"#06b6d4":"#475569";
                   return'<span style="background:'+bgC+';color:#0f1729;font-size:8px;padding:1px 4px;border-radius:3px;font-weight:600">'+t+'</span>';
                 }).join(" "):"";
-                return'<tr style="border-top:1px solid #1e2d40"><td style="color:#e2e8f0;padding:3px 0">'+r.mitarbeiter+'</td><td style="color:#94a3b8">'+r.standort.substring(0,2)+'</td><td style="color:#94a3b8">'+r.bereich+'</td><td style="color:#94a3b8">'+r.stunden.toFixed(1)+'</td><td>'+tagBadges+'</td></tr>';
+                var zeit=r.startZeit&&r.endeZeit?r.startZeit+'–'+r.endeZeit:"";
+                return'<tr style="border-top:1px solid #1e2d40"><td style="color:#e2e8f0;padding:3px 0">'+r.mitarbeiter+'</td><td style="color:#94a3b8">'+r.standort.substring(0,2)+'</td><td style="color:#94a3b8">'+r.bereich+'</td><td style="color:#64748b">'+zeit+'</td><td style="color:#94a3b8">'+r.stunden.toFixed(1)+'</td><td>'+tagBadges+'</td></tr>';
               }).join("")+
               '</table></div>';
           }).join("");
+          abbauDetailPanels.push('<div id="abbau_'+wt+'" style="display:none;background:#0f1729;border:1px solid #1e2d40;border-radius:8px;padding:12px;margin-top:6px;text-align:left">'+detailHtml+'</div>');
           return'<div style="flex:1;min-width:0;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center;border-top:3px solid #6366f1;cursor:pointer" onclick="toggleWtDetail(this,\'abbau_'+wt+'\')">'+
             '<div style="font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:4px">'+wt+'</div>'+
             '<div style="font-size:18px;font-weight:700;color:'+col+'">'+avg.toFixed(1)+'h</div>'+
             '<div style="font-size:10px;color:#94a3b8;margin-top:3px">'+fmt(avgK)+'/Tag</div>'+
             '<div style="font-size:9px;color:#475569;margin-top:2px">'+d.count+'× Abbau</div>'+
             (stLines?'<div style="margin-top:6px;padding-top:5px;border-top:1px solid #1e2d40">'+stLines+'</div>':'')+
-          '</div>'+
-          '<div id="abbau_'+wt+'" style="display:none;background:#0f1729;border:1px solid #1e2d40;border-radius:8px;padding:12px;margin-top:6px;text-align:left">'+detailHtml+'</div>';
+          '</div>';
         }).join("")+
-      '</div>'+
-    '</div>':''}
+      '</div>'+abbauDetailPanels.join("")+
+    '</div>';
+      return cardsHtml;
+    })():''}
 
     <!-- EFFIZIENZ RANKINGS -->
     <div class="grid2" style="margin-top:0">
