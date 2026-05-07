@@ -2034,6 +2034,18 @@ function toggleSchwund(st){
   if(arrow)arrow.style.transform=expanded?'':'rotate(90deg)';
 }
 
+function toggleWtDetail(card,id){
+  var el=document.getElementById(id);
+  if(!el)return;
+  var isOpen=el.style.display!=='none';
+  var parent=el.parentElement;
+  if(parent){
+    var all=parent.querySelectorAll('[id^="aufbau_"],[id^="abbau_"]');
+    for(var i=0;i<all.length;i++){all[i].style.display='none';}
+  }
+  el.style.display=isOpen?'none':'block';
+}
+
 function drill(id){
   var el=document.getElementById(id);
   if(!el)return;
@@ -2133,7 +2145,7 @@ async function ladeDaten(){
     var r6=await fetch(CSV.ordio);var t6=await r6.text();
     ordio=t6.trim().split("\n").map(function(l){
       var v=pCSV(l);
-      return{datum:pDat(v[0]),standort:v[1]||"",mitarbeiter:v[2]||"",stunden:pStd(v[3]),kosten:pDE(v[7]),bereich:v[8]||"",startZeit:v[9]||"",endeZeit:v[10]||"",startStunde:parseInt(v[11])||0,endeStunde:parseInt(v[12])||23};
+      return{datum:pDat(v[0]),standort:v[1]||"",mitarbeiter:v[2]||"",stunden:pStd(v[3]),kosten:pDE(v[7]),bereich:v[8]||"",startZeit:v[9]||"",endeZeit:v[10]||"",startStunde:parseInt(v[11])||0,endeStunde:parseInt(v[12])||23,shiftTags:v[13]||""};
     }).filter(function(r){return r.datum&&r.standort&&r.mitarbeiter;});
 
     // LS ARTIKEL (13_ls_artikel)
@@ -4422,11 +4434,11 @@ function renderPersonal(){
     var oh=getShiftOverhead(r);
     if(oh.vorStd>0){
       aufbau.stunden+=oh.vorStd;aufbau.kosten+=oh.vorKosten;aufbau.count++;
-      aufbau.data.push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,vorStd:oh.vorStd,vorKosten:oh.vorKosten,startStunde:r.startStunde,open:oh.open});
+      aufbau.data.push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,vorStd:oh.vorStd,vorKosten:oh.vorKosten,startStunde:r.startStunde,open:oh.open,shiftTags:r.shiftTags});
     }
     if(oh.nachStd>0){
       abbau.stunden+=oh.nachStd;abbau.kosten+=oh.nachKosten;abbau.count++;
-      abbau.data.push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,nachStd:oh.nachStd,nachKosten:oh.nachKosten,endeStunde:r.endeStunde,close:oh.close});
+      abbau.data.push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,nachStd:oh.nachStd,nachKosten:oh.nachKosten,endeStunde:r.endeStunde,close:oh.close,shiftTags:r.shiftTags});
     }
     // Betriebsstunden = Gesamtstunden minus Aufbau/Abbau
     betrieb.stunden+=(r.stunden-oh.vorStd-oh.nachStd);
@@ -4477,6 +4489,7 @@ function renderPersonal(){
   // Abbau-Trend nach Wochentag + Standort
   var abbauWtMap={};
   var abbauWtStMap={}; // {wt: {standort: {stunden,kosten,count}}}
+  var abbauWtDetail={}; // {wt: [{datum,standort,mitarbeiter,bereich,nachStd,shiftTags},...]}
   abbau.data.forEach(function(r){
     var d=new Date(r.datum+"T12:00:00");var wt=d.getDay();
     var wtName=["So","Mo","Di","Mi","Do","Fr","Sa"][wt];
@@ -4489,11 +4502,14 @@ function renderPersonal(){
     abbauWtStMap[wtName][r.standort].stunden+=r.nachStd;
     abbauWtStMap[wtName][r.standort].kosten+=r.nachKosten;
     abbauWtStMap[wtName][r.standort].count++;
+    if(!abbauWtDetail[wtName])abbauWtDetail[wtName]=[];
+    abbauWtDetail[wtName].push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,stunden:r.nachStd,shiftTags:r.shiftTags||""});
   });
 
   // Aufbau-Trend nach Wochentag + Standort
   var aufbauWtMap={};
   var aufbauWtStMap={};
+  var aufbauWtDetail={}; // {wt: [{datum,standort,mitarbeiter,bereich,vorStd,shiftTags},...]}
   aufbau.data.forEach(function(r){
     var d=new Date(r.datum+"T12:00:00");var wt=d.getDay();
     var wtName=["So","Mo","Di","Mi","Do","Fr","Sa"][wt];
@@ -4506,6 +4522,8 @@ function renderPersonal(){
     aufbauWtStMap[wtName][r.standort].stunden+=r.vorStd;
     aufbauWtStMap[wtName][r.standort].kosten+=r.vorKosten;
     aufbauWtStMap[wtName][r.standort].count++;
+    if(!aufbauWtDetail[wtName])aufbauWtDetail[wtName]=[];
+    aufbauWtDetail[wtName].push({datum:r.datum,standort:r.standort,mitarbeiter:r.mitarbeiter,bereich:r.bereich,stunden:r.vorStd,shiftTags:r.shiftTags||""});
   });
 
   // Team-Kombination Analyse für Abbau
@@ -4777,8 +4795,12 @@ function renderPersonal(){
               '<div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;padding:10px 0 6px;border-top:1px solid #1e2d40;margin-top:8px">Mitarbeiter</div>'+
               d.ma.sort(function(a,b){return a.startZeit.localeCompare(b.startZeit);}).map(function(m){
                 var bereichCol=m.bereich==="Kitchen"?"#E84393":m.bereich==="Service"?"#22c55e":m.bereich==="Social Media"?"#E84393":"#00EEFC";
+                var tagBadges=m.shiftTags?m.shiftTags.split(", ").filter(function(t){return t;}).map(function(t){
+                  var bgC=t==="Shiftleader"?"#f59e0b":t==="Delivery"?"#6366f1":t==="Order"?"#22c55e":t==="Deepclean"?"#06b6d4":"#475569";
+                  return'<span style="background:'+bgC+';color:#0f1729;font-size:8px;padding:1px 4px;border-radius:3px;font-weight:600">'+t+'</span>';
+                }).join(" "):"";
                 return'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1e2d40">'+
-                  '<span style="color:#e2e8f0;font-size:12px">'+m.mitarbeiter+'</span>'+
+                  '<span style="color:#e2e8f0;font-size:12px">'+m.mitarbeiter+' '+(tagBadges||'')+'</span>'+
                   '<span style="display:flex;align-items:center;gap:8px">'+
                     '<span style="font-size:11px;color:#64748b">'+m.startZeit+'–'+m.endeZeit+'</span>'+
                     '<span style="font-size:10px;background:'+bereichCol+'20;color:'+bereichCol+';border-radius:4px;padding:1px 6px">'+m.bereich+'</span>'+
@@ -4821,8 +4843,8 @@ function renderPersonal(){
 
     <!-- Aufbau/Abbau Wochentag-Sektionen folgen direkt -->
 
-    <!-- AUFBAU NACH WOCHENTAG (mit Standort) -->
-    ${Object.keys(aufbauWtMap).length>0?'<div class="box" style="margin-bottom:14px"><div class="box-title">🌅 Aufbau nach Wochentag</div><div class="box-sub">Ø Stunden & Kosten vor 12:00 · nach Standort</div>'+
+    <!-- AUFBAU NACH WOCHENTAG (mit Standort + Detail) -->
+    ${Object.keys(aufbauWtMap).length>0?'<div class="box" style="margin-bottom:14px"><div class="box-title">🌅 Aufbau nach Wochentag</div><div class="box-sub">Ø Stunden & Kosten vor 12:00 · Klick für Details mit Shift-Tags</div>'+
       '<div class="wt-flex" style="display:flex;gap:6px;flex-wrap:nowrap">'+
         ["Di","Mi","Do","Fr","Sa","So"].filter(function(wt){return aufbauWtMap[wt];}).map(function(wt){
           var d=aufbauWtMap[wt];
@@ -4835,19 +4857,40 @@ function renderPersonal(){
             var sCol=e[0]==="Mehringdamm"?"#ef4444":"#00EEFC";
             return'<span style="color:'+sCol+';font-size:9px">'+e[0].substring(0,2)+': '+sAvg.toFixed(1)+'h</span>';
           }).join(' · ');
-          return'<div style="flex:1;min-width:0;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center;border-top:3px solid #f59e0b">'+
+          // Detail-Panel Inhalt
+          var detailRows=aufbauWtDetail[wt]||[];
+          var byDate={};
+          detailRows.forEach(function(r){if(!byDate[r.datum])byDate[r.datum]=[];byDate[r.datum].push(r);});
+          var detailHtml=Object.keys(byDate).sort().reverse().map(function(dat){
+            var rows=byDate[dat];
+            var sl=rows.filter(function(r){return r.shiftTags&&r.shiftTags.indexOf("Shiftleader")>-1;});
+            var slName=sl.length>0?sl[0].mitarbeiter:"—";
+            return'<div style="margin-bottom:8px"><div style="font-size:10px;color:#f59e0b;font-weight:600;margin-bottom:3px">'+dat+' · Shiftleader: '+slName+'</div>'+
+              '<table style="width:100%;font-size:10px;border-collapse:collapse">'+
+              '<tr style="color:#64748b"><td>Mitarbeiter</td><td>Standort</td><td>Bereich</td><td>Std</td><td>Tags</td></tr>'+
+              rows.map(function(r){
+                var tagBadges=r.shiftTags?r.shiftTags.split(", ").filter(function(t){return t;}).map(function(t){
+                  var bgC=t==="Shiftleader"?"#f59e0b":t==="Delivery"?"#6366f1":t==="Order"?"#22c55e":t==="Deepclean"?"#06b6d4":"#475569";
+                  return'<span style="background:'+bgC+';color:#0f1729;font-size:8px;padding:1px 4px;border-radius:3px;font-weight:600">'+t+'</span>';
+                }).join(" "):"";
+                return'<tr style="border-top:1px solid #1e2d40"><td style="color:#e2e8f0;padding:3px 0">'+r.mitarbeiter+'</td><td style="color:#94a3b8">'+r.standort.substring(0,2)+'</td><td style="color:#94a3b8">'+r.bereich+'</td><td style="color:#94a3b8">'+r.stunden.toFixed(1)+'</td><td>'+tagBadges+'</td></tr>';
+              }).join("")+
+              '</table></div>';
+          }).join("");
+          return'<div style="flex:1;min-width:0;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center;border-top:3px solid #f59e0b;cursor:pointer" onclick="toggleWtDetail(this,\'aufbau_'+wt+'\')">'+
             '<div style="font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:4px">'+wt+'</div>'+
             '<div style="font-size:18px;font-weight:700;color:'+col+'">'+avg.toFixed(1)+'h</div>'+
             '<div style="font-size:10px;color:#94a3b8;margin-top:3px">'+fmt(avgK)+'/Tag</div>'+
             '<div style="font-size:9px;color:#475569;margin-top:2px">'+d.count+'× Aufbau</div>'+
             (stLines?'<div style="margin-top:6px;padding-top:5px;border-top:1px solid #1e2d40">'+stLines+'</div>':'')+
-          '</div>';
+          '</div>'+
+          '<div id="aufbau_'+wt+'" style="display:none;background:#0f1729;border:1px solid #1e2d40;border-radius:8px;padding:12px;margin-top:6px;text-align:left">'+detailHtml+'</div>';
         }).join("")+
       '</div>'+
     '</div>':''}
 
-    <!-- ABBAU NACH WOCHENTAG (mit Standort) -->
-    ${Object.keys(abbauWtMap).length>0?'<div class="box" style="margin-bottom:14px"><div class="box-title">🌙 Abbau nach Wochentag</div><div class="box-sub">Ø Stunden & Kosten nach Ladenschluss · nach Standort</div>'+
+    <!-- ABBAU NACH WOCHENTAG (mit Standort + Detail) -->
+    ${Object.keys(abbauWtMap).length>0?'<div class="box" style="margin-bottom:14px"><div class="box-title">🌙 Abbau nach Wochentag</div><div class="box-sub">Ø Stunden & Kosten nach Ladenschluss · Klick für Details mit Shift-Tags</div>'+
       '<div class="wt-flex" style="display:flex;gap:6px;flex-wrap:nowrap">'+
         ["Di","Mi","Do","Fr","Sa","So"].filter(function(wt){return abbauWtMap[wt];}).map(function(wt){
           var d=abbauWtMap[wt];
@@ -4860,13 +4903,34 @@ function renderPersonal(){
             var sCol=e[0]==="Mehringdamm"?"#ef4444":"#00EEFC";
             return'<span style="color:'+sCol+';font-size:9px">'+e[0].substring(0,2)+': '+sAvg.toFixed(1)+'h</span>';
           }).join(' · ');
-          return'<div style="flex:1;min-width:0;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center;border-top:3px solid #6366f1">'+
+          // Detail-Panel Inhalt
+          var detailRows=abbauWtDetail[wt]||[];
+          var byDate={};
+          detailRows.forEach(function(r){if(!byDate[r.datum])byDate[r.datum]=[];byDate[r.datum].push(r);});
+          var detailHtml=Object.keys(byDate).sort().reverse().map(function(dat){
+            var rows=byDate[dat];
+            var sl=rows.filter(function(r){return r.shiftTags&&r.shiftTags.indexOf("Shiftleader")>-1;});
+            var slName=sl.length>0?sl[0].mitarbeiter:"—";
+            return'<div style="margin-bottom:8px"><div style="font-size:10px;color:#6366f1;font-weight:600;margin-bottom:3px">'+dat+' · Shiftleader: '+slName+'</div>'+
+              '<table style="width:100%;font-size:10px;border-collapse:collapse">'+
+              '<tr style="color:#64748b"><td>Mitarbeiter</td><td>Standort</td><td>Bereich</td><td>Std</td><td>Tags</td></tr>'+
+              rows.map(function(r){
+                var tagBadges=r.shiftTags?r.shiftTags.split(", ").filter(function(t){return t;}).map(function(t){
+                  var bgC=t==="Shiftleader"?"#f59e0b":t==="Delivery"?"#6366f1":t==="Order"?"#22c55e":t==="Deepclean"?"#06b6d4":"#475569";
+                  return'<span style="background:'+bgC+';color:#0f1729;font-size:8px;padding:1px 4px;border-radius:3px;font-weight:600">'+t+'</span>';
+                }).join(" "):"";
+                return'<tr style="border-top:1px solid #1e2d40"><td style="color:#e2e8f0;padding:3px 0">'+r.mitarbeiter+'</td><td style="color:#94a3b8">'+r.standort.substring(0,2)+'</td><td style="color:#94a3b8">'+r.bereich+'</td><td style="color:#94a3b8">'+r.stunden.toFixed(1)+'</td><td>'+tagBadges+'</td></tr>';
+              }).join("")+
+              '</table></div>';
+          }).join("");
+          return'<div style="flex:1;min-width:0;background:#1a2538;border-radius:8px;padding:10px 8px;text-align:center;border-top:3px solid #6366f1;cursor:pointer" onclick="toggleWtDetail(this,\'abbau_'+wt+'\')">'+
             '<div style="font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:4px">'+wt+'</div>'+
             '<div style="font-size:18px;font-weight:700;color:'+col+'">'+avg.toFixed(1)+'h</div>'+
             '<div style="font-size:10px;color:#94a3b8;margin-top:3px">'+fmt(avgK)+'/Tag</div>'+
             '<div style="font-size:9px;color:#475569;margin-top:2px">'+d.count+'× Abbau</div>'+
             (stLines?'<div style="margin-top:6px;padding-top:5px;border-top:1px solid #1e2d40">'+stLines+'</div>':'')+
-          '</div>';
+          '</div>'+
+          '<div id="abbau_'+wt+'" style="display:none;background:#0f1729;border:1px solid #1e2d40;border-radius:8px;padding:12px;margin-top:6px;text-align:left">'+detailHtml+'</div>';
         }).join("")+
       '</div>'+
     '</div>':''}
