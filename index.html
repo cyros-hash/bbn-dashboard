@@ -2387,8 +2387,8 @@ async function ladeDaten(){
           return{
             name:(v[0]||"").trim(),
             rolle:(v[1]||"").trim(),
-            gesamtMonat:parseFloat((v[8]||"0").replace(/[^\d.,-]/g,"").replace(",","."))||0,
-            bruttoMonat:parseFloat((v[2]||"0").replace(/[^\d.,-]/g,"").replace(",","."))||0,
+            gesamtMonat:parseFloat((v[8]||"0").replace(/[^\d.,-]/g,"").replace(/\./g,"").replace(",","."))||0,
+            bruttoMonat:parseFloat((v[2]||"0").replace(/[^\d.,-]/g,"").replace(/\./g,"").replace(",","."))||0,
             gueltigVon:parseMgmtDatum(gVon),
             gueltigBis:parseMgmtDatum(gBis),
             gueltigVonStr:gVon,
