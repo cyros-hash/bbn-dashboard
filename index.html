@@ -1629,7 +1629,8 @@ var CSV = {
   itemSales: "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=904654095",
   fcReal:  "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=PLACEHOLDER_FC_REAL",
   bestand: "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=1296587739",
-  stornos: "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=14074857"
+  stornos: "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=14074857",
+  mgmt:    "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=237380344"
 };
 
 // ============================================================
@@ -1641,6 +1642,8 @@ var gefiltert=[];
 var fcReal=[]; // Reale FC: Inventuren + Bestellungen
 var bestandDaten=[]; // Bestandsbericht (Sheet 18)
 var stornoDetails=[]; // Storno-Rohdaten mit Gründen (Sheet 15)
+var mgmtGehaelter=[]; // Management-Gehälter aus Sheet (22_management_gehaelter)
+var MGMT_FROM_SHEET=[]; // Namen deren Kosten aus Sheet kommen (nicht aus Ordio)
 var stundeVon=-1, stundeBis=-1; // -1 = kein Stundenfilter
 var aktivWT=new Set([0,1,2,3,4,5,6]); // aktive Wochentage (0=So...6=Sa)
 var charts={}, simV={p:0,v:0,f:0,a:0}, aktQ="gestern";
@@ -1676,7 +1679,7 @@ var FIXKOSTEN_GESAMT = Object.values(FIXKOSTEN).reduce(function(s,v){return s+v;
 
 // Operative Mitarbeiter die NICHT in Personalkosten-Quote fließen
 // (sind über Personalgemeinkosten abgedeckt)
-var MGMT_MITARBEITER = ["Kevin Weber","Jan Haring","Buted Deleg"];
+var MGMT_MITARBEITER = ["Kevin Weber","Jan Haring","Buted Deleg","Christian Beutling"];
 
 // Öffnungszeiten {wochentag(0=So): {open:Stunde, close:Stunde}, null=geschlossen}
 var OEFFNUNG={
@@ -1707,9 +1710,10 @@ function getFixkostenTage(von, bis) {
   var v = new Date(von+"T12:00:00"), b = new Date(bis+"T12:00:00");
   var tage = Math.round((b - v) / 86400000) + 1;
   if(isNaN(tage)||tage<=0) tage = 1; // Guard gegen NaN
-  return {
+  var pgDyn=getPersonalGemein(von,bis);
+  var r={
     tage: tage,
-    personalGemein: FIXKOSTEN.personalGemein / 30 * tage,
+    personalGemein: pgDyn.total, // dynamisch aus Sheet + Ordio (war: FIXKOSTEN.personalGemein / 30 * tage)
     managementFee:  FIXKOSTEN.managementFee  / 30 * tage,
     miete:          FIXKOSTEN.miete          / 30 * tage,
     versicherung:   FIXKOSTEN.versicherung   / 30 * tage,
@@ -1717,9 +1721,10 @@ function getFixkostenTage(von, bis) {
     sonstBetrieb:   FIXKOSTEN.sonstBetrieb   / 30 * tage,
     verwaltung:     FIXKOSTEN.verwaltung     / 30 * tage,
     instandhaltung: FIXKOSTEN.instandhaltung / 30 * tage,
-    abschreibung:   FIXKOSTEN.abschreibung   / 30 * tage,
-    gesamt:         FIXKOSTEN_GESAMT         / 30 * tage
+    abschreibung:   FIXKOSTEN.abschreibung   / 30 * tage
   };
+  r.gesamt=r.personalGemein+r.managementFee+r.miete+r.versicherung+r.werbeReise+r.sonstBetrieb+r.verwaltung+r.instandhaltung+r.abschreibung;
+  return r;
 }
 
 // ============================================================
@@ -2023,6 +2028,81 @@ function getSocialMediaKosten(von,bis,st){
   return d.reduce(function(s,r){return s+r.kosten;},0);
 }
 
+// ============================================================
+// MANAGEMENT-KOSTEN (dynamisch aus Sheet + Ordio)
+// ============================================================
+
+/**
+ * Berechnet Personalgemeinkosten für einen Zeitraum.
+ * Sheet-basiert: Jan Haring, Christian Beutling (mit Gültigkeitszeitraum)
+ * Ordio-basiert: Buted Deleg, Kevin Weber (MGMT in Ordio, nicht im Sheet)
+ * Gibt {total, details:[{name, kosten, quelle}]} zurück.
+ */
+function getPersonalGemein(von, bis) {
+  var vonD=new Date(von+"T12:00:00"), bisD=new Date(bis+"T12:00:00");
+  var tage=Math.round((bisD-vonD)/86400000)+1;
+  if(isNaN(tage)||tage<=0) tage=1;
+  var details=[], total=0;
+
+  // 1) Sheet-basierte Kosten (pro rata mit Gültigkeitszeitraum)
+  mgmtGehaelter.forEach(function(m){
+    var gVon=m.gueltigVon||new Date("2020-01-01T12:00:00");
+    var gBis=m.gueltigBis||new Date("2099-12-31T12:00:00");
+    var start=vonD>gVon?vonD:gVon;
+    var end=bisD<gBis?bisD:gBis;
+    var overlap=Math.round((end-start)/86400000)+1;
+    if(overlap>0){
+      var kosten=m.gesamtMonat/30*overlap;
+      total+=kosten;
+      details.push({name:m.name,kosten:kosten,monat:m.gesamtMonat,tage:overlap,quelle:"Sheet"});
+    }
+  });
+
+  // 2) Ordio-basierte MGMT-Kosten (MGMT_MITARBEITER die NICHT im Sheet sind)
+  var ordioMgmt=ordio.filter(function(r){
+    return r.datum>=von&&r.datum<=bis&&
+           MGMT_MITARBEITER.indexOf(r.mitarbeiter)!==-1&&
+           MGMT_FROM_SHEET.indexOf(r.mitarbeiter)===-1&&
+           r.bereich!=="Social Media"&&
+           datumPasstWT(r.datum);
+  });
+  // Pro Mitarbeiter aggregieren
+  var ordioMap={};
+  ordioMgmt.forEach(function(r){
+    if(!ordioMap[r.mitarbeiter]) ordioMap[r.mitarbeiter]=0;
+    ordioMap[r.mitarbeiter]+=r.kosten;
+  });
+  Object.keys(ordioMap).forEach(function(name){
+    total+=ordioMap[name];
+    details.push({name:name,kosten:ordioMap[name],monat:ordioMap[name]/tage*30,tage:tage,quelle:"Ordio"});
+  });
+
+  return{total:total,details:details,tage:tage};
+}
+
+/**
+ * Generiert Drill-Down HTML für Personalgemeinkosten in der GuV.
+ */
+function getMgmtDrillHtml(von,bis,fkMul,sm){
+  var pg=getPersonalGemein(von,bis);
+  var html="";
+  // Deduplizieren nach Name (falls mehrere Sheet-Einträge)
+  var byName={};
+  pg.details.forEach(function(d){
+    if(!byName[d.name]) byName[d.name]={kosten:0,monat:0,quelle:d.quelle};
+    byName[d.name].kosten+=d.kosten;
+    byName[d.name].monat=d.monat; // letzter Wert
+  });
+  Object.keys(byName).forEach(function(name){
+    var d=byName[name];
+    var label=name+" ("+d.quelle+")";
+    var val="€ "+Math.round(d.monat).toLocaleString("de-DE")+"/Mo"+(fkMul<1?" × 50%":"");
+    html+='<div style="display:flex;justify-content:space-between;padding:4px 12px;font-size:11px;color:#94a3b8"><span>'+label+'</span><span>'+val+'</span></div>';
+  });
+  html+='<div style="display:flex;justify-content:space-between;padding:4px 12px;font-size:11px;color:#94a3b8"><span>Social Media</span><span>'+fmt(sm)+'</span></div>';
+  return html;
+}
+
 function toggleSchwund(st){
   var top=document.getElementById('schwund-top-'+st);
   var all=document.getElementById('schwund-all-'+st);
@@ -2289,6 +2369,37 @@ async function ladeDaten(){
         console.log("✓ Storno-Details: "+stornoDetails.length+" Einträge");
       }
     } catch(e) { console.warn('Storno-Details nicht geladen: '+e.message); stornoDetails=[]; }
+
+    // MANAGEMENT-GEHÄLTER (22_management_gehaelter)
+    try {
+      var rMgmt=await fetch(CSV.mgmt); var tMgmt=await rMgmt.text();
+      if(tMgmt&&tMgmt.trim().length>10) {
+        mgmtGehaelter=tMgmt.trim().split("\n").slice(1).map(function(l){
+          var v=pCSV(l);
+          var gVon=v[9]?v[9].trim():"";
+          var gBis=v[10]?v[10].trim():"";
+          // Datum parsen: DD.MM.YYYY oder YYYY-MM-DD
+          function parseMgmtDatum(s){
+            if(!s)return null;
+            if(s.indexOf(".")>-1){var p=s.split(".");return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]),12,0,0);}
+            return new Date(s+"T12:00:00");
+          }
+          return{
+            name:(v[0]||"").trim(),
+            rolle:(v[1]||"").trim(),
+            gesamtMonat:parseFloat((v[8]||"0").replace(/[^\d.,-]/g,"").replace(",","."))||0,
+            bruttoMonat:parseFloat((v[2]||"0").replace(/[^\d.,-]/g,"").replace(",","."))||0,
+            gueltigVon:parseMgmtDatum(gVon),
+            gueltigBis:parseMgmtDatum(gBis),
+            gueltigVonStr:gVon,
+            gueltigBisStr:gBis
+          };
+        }).filter(function(r){return r.name&&r.gesamtMonat>0;});
+        MGMT_FROM_SHEET=[];
+        mgmtGehaelter.forEach(function(m){if(MGMT_FROM_SHEET.indexOf(m.name)===-1)MGMT_FROM_SHEET.push(m.name);});
+        console.log("✓ Management-Gehälter: "+mgmtGehaelter.length+" Einträge ("+MGMT_FROM_SHEET.join(", ")+")");
+      }
+    } catch(e){ console.warn("Management-Gehälter nicht geladen: "+e.message); mgmtGehaelter=[]; MGMT_FROM_SHEET=[]; }
 
     // SET FILTER
     var daten=alle.map(function(r){return r.datum;}).sort();
@@ -3432,6 +3543,12 @@ function renderUmsatz(){
     stundenMap={};
     artStd.forEach(function(r){if(!stundenMap[r.stunde])stundenMap[r.stunde]=0;stundenMap[r.stunde]+=r.preisN;});
   }
+  // Lückenlose Stunden: von erster bis letzter Stunde alle anzeigen (auch €0)
+  var sRaw=Object.keys(stundenMap).map(function(k){return parseInt(k);});
+  if(sRaw.length>0){
+    var sMin=Math.min.apply(null,sRaw),sMax=Math.max.apply(null,sRaw);
+    for(var h=sMin;h<=sMax;h++){if(!stundenMap[h])stundenMap[h]=0;}
+  }
   var sKeys=Object.keys(stundenMap).sort(function(a,b){return parseInt(a)-parseInt(b);});
 
   document.getElementById("t-umsatz").innerHTML=`
@@ -4267,10 +4384,7 @@ function renderGuV(){
       // Personalgemeinkosten
       +gR("— Personalgemein + SM","- "+fmt(fk.personalGemein*_fk+_sm),"#ef4444","d-guv-"+id+"-pg")
       +'<div id="d-guv-'+id+'-pg" class="drill-panel">'
-        +dR("Kevin Weber","€ 4.175/Mo"+(p.fkMul<1?" × 50%":""))
-        +dR("Jan Haring","€ 6.050/Mo"+(p.fkMul<1?" × 50%":""))
-        +dR("Buted Deleg","€ 800/Mo"+(p.fkMul<1?" × 50%":""))
-        +dR("Social Media",fmt(_sm))
+        +getMgmtDrillHtml(von,bis,_fk,_sm)
       +'</div>'
 
       // Management Fee
