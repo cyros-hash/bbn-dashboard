@@ -1648,6 +1648,7 @@ var bestandDaten=[]; // Bestandsbericht (Sheet 18)
 var stornoDetails=[]; // Storno-Rohdaten mit Gründen (Sheet 15)
 var mgmtGehaelter=[]; // Management-Gehälter aus Sheet (22_management_gehaelter)
 var zielManuell=[]; // Zielvereinbarung Jan — manuelle Einträge (23_zielvereinbarung_manuell)
+var abwesenheitTest=[]; // D3-Fenster aus Kalender-Automatik (25_abwesenheitstest, via abwesenheit_jan.gs)
 var MGMT_FROM_SHEET=[]; // Namen deren Kosten aus Sheet kommen (nicht aus Ordio)
 var stundeVon=-1, stundeBis=-1; // -1 = kein Stundenfilter
 var aktivWT=new Set([0,1,2,3,4,5,6]); // aktive Wochentage (0=So...6=Sa)
@@ -2442,6 +2443,23 @@ async function ladeDaten(){
       }
     } catch(e){ console.warn("Zielvereinbarung-Tab nicht geladen: "+e.message); zielManuell=[]; }
 
+    // ABWESENHEITSTEST JAN (Tab 25, automatisch befüllt von abwesenheit_jan.gs)
+    // gviz-by-name statt gid: Tab wird vom Script bei Bedarf selbst angelegt
+    try{
+      var rAt=await fetch("https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:csv&sheet=25_abwesenheitstest");
+      var tAt=await rAt.text();
+      if(tAt&&tAt.trim().length>5&&!tAt.includes("DOCTYPE")){
+        abwesenheitTest=tAt.trim().split("\n").slice(1).map(function(l){
+          var v=pCSV(l);
+          function ndA(x){x=(x||"").trim();var m=x.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);if(m)return m[3]+"-"+("0"+m[2]).slice(-2)+"-"+("0"+m[1]).slice(-2);return /^\d{4}-\d{2}-\d{2}/.test(x)?x.substring(0,10):"";}
+          return{von:ndA(v[0]),bis:ndA(v[1]),betriebstage:parseInt(v[2],10)||0,
+                 bestanden:String(v[9]||"").trim().toLowerCase().indexOf("ja")===0,
+                 detail:"U/h "+(v[5]||"?")+" · PA "+(v[8]||"?")};
+        }).filter(function(r){return r.von&&r.bis;});
+        console.log("✓ Abwesenheitstest: "+abwesenheitTest.length+" Fenster");
+      }
+    }catch(e){ console.warn("Abwesenheitstest-Tab nicht geladen: "+e.message); abwesenheitTest=[]; }
+
     // SET FILTER
     var daten=alle.map(function(r){return r.datum;}).sort();
     var maxD=daten[daten.length-1]||toISODateLocal(new Date());
@@ -2706,10 +2724,18 @@ function zielJanScore(von,bis){
   kpis.push({id:"D2",block:"D",wg:0.3,name:"Standort-Synchronität",einheit:"% Abw.",
     min:20,ziel:10,stretch:5,ist:devs.length===3?devs.reduce(function(a,b){return a+b;},0)/3:null,
     note:devs.length<3?"nicht alle Kern-KPIs verfügbar":""});
-  // D3 Abwesenheitstest (binär)
-  var d3=null,d3Note="kein Eintrag in Tab 23 (typ=abwesenheit)";
+  // D3 Abwesenheitstest (binär) — Quelle 1: Kalender-Automatik (Tab 25),
+  // Fallback: manueller Eintrag in Tab 23 (typ=abwesenheit)
+  var d3=null,d3Note="kein Eintrag (weder Tab 25 Automatik noch Tab 23 manuell)";
+  var atF=abwesenheitTest.filter(function(r){return r.bis>=von&&r.von<=bis&&r.betriebstage>=5;});
+  if(atF.length){
+    var best=atF.filter(function(r){return r.bestanden;});
+    d3=best.length?100:0;
+    var f0=best.length?best[0]:atF[0];
+    d3Note="Automatik: "+f0.von+" bis "+f0.bis+" ("+f0.betriebstage+" Betriebstage) — "+(d3===100?"bestanden":"nicht bestanden")+" · "+f0.detail;
+  }
   var abw=zielManuell.filter(function(r){return r.typ==="abwesenheit"&&r.datum&&r.bisDatum;});
-  if(abw.length){
+  if(d3===null&&abw.length){
     var a0=abw[0];
     var fVon=a0.datum>von?a0.datum:von, fBis=a0.bisDatum<bis?a0.bisDatum:bis;
     if(fVon<=fBis){
@@ -2763,6 +2789,12 @@ function zielJanScore(von,bis){
   var gSum=aktive.reduce(function(s,b){return s+bloecke[b].gewicht;},0);
   var gesamt=aktive.length?aktive.reduce(function(s,b){return s+bloecke[b].score*(bloecke[b].gewicht/gSum);},0):null;
   var auszahlung=gesamt===null?null:Math.max(0,Math.min(1,(gesamt-50)/50));
+  // Effektives Gesamt-Gewicht + Beitrag je KPI (Σ Beiträge = Gesamtscore)
+  kpis.forEach(function(k){
+    var blockAktiv=aktive.indexOf(k.block)>-1;
+    k.wgGesamt=(blockAktiv&&k.punkte!==null)?(k.wgEff||0)*(bloecke[k.block].gewicht/gSum):0;
+    k.beitrag=k.punkte!==null?k.punkte*k.wgGesamt:null;
+  });
   return{kpis:kpis,bloecke:bloecke,gesamt:gesamt,auszahlung:auszahlung,umverteilt:umverteilt};
 }
 
@@ -2773,8 +2805,9 @@ function renderZielJan(){
   if(!el)return;
   var von=document.getElementById("von").value;
   var bis=document.getElementById("bis").value;
-  var bonusRow=zielManuell.filter(function(r){return r.typ==="config_bonussumme"&&r.wert>0;})[0];
-  var bonus=bonusRow?bonusRow.wert:0;
+  // Entscheidung 25.08.2026: Payout NUR in Prozent — kein €-Betrag im Dashboard
+  // (Quelltext ist öffentlich lesbar; Bonussumme bleibt privat im Arbeitsvertrag)
+  var bonus=0;
 
   var s=zielJanScore(von,bis);
   var inZeitraum=!(bis<ZIEL_JAN.zeitraumVon||von>ZIEL_JAN.zeitraumBis);
@@ -2834,10 +2867,10 @@ function renderZielJan(){
         <div class="kpi-ai">Das ist der Stand, der am Ende zählt (eine Auszahlung, Q1/2027)</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">💶 Bonussumme</div>
-        <div class="kpi-val" style="color:#E84393">${bonus>0?fmt(bonus):"—"}</div>
-        <div class="kpi-delta">${bonus>0?"aus Tab 23 (config_bonussumme)":"in Tab 23 bei config_bonussumme eintragen"}</div>
-        <div class="kpi-ai">Formel: Bonus × (Score − 50) / 50 · begrenzt 0–100 %</div>
+        <div class="kpi-label">🧮 Auszahlungslogik</div>
+        <div class="kpi-val" style="color:#E84393">(Score−50)/50</div>
+        <div class="kpi-delta">50 → 0 % · 75 → 50 % · 100 → 100 %</div>
+        <div class="kpi-ai">Prozent der vereinbarten Bonussumme · €-Betrag bewusst nicht im Dashboard</div>
       </div>
       ${["A","B","C","D","E"].map(function(b){
         var bl=s.bloecke[b];
@@ -2849,18 +2882,28 @@ function renderZielJan(){
 
     <div class="box" style="margin-top:14px">
       <div class="box-title">📋 KPI-Detail — Soll vs. Ist</div>
-      <div class="box-sub">Punkte: 0 am Mindestwert · 100 am Ziel · max. 120 am Stretch (linear)</div>
+      <div class="box-sub">Punkte: 0 am Mindestwert · 100 am Soll (Ziel) · max. 120 am Stretch (linear) — Beitrag = Punkte × Gewicht, Summe = Gesamtscore</div>
       <table style="width:100%;border-collapse:collapse;font-size:12px">
-        <tr style="color:#475569;text-align:left"><th style="padding:6px 8px">KPI</th><th>Gewicht</th><th>Ist</th><th>Skala (0→100→120)</th><th style="text-align:right">Punkte</th></tr>
+        <tr style="color:#475569;text-align:left"><th style="padding:6px 8px">KPI</th><th>Soll</th><th>Ist</th><th>Skala (0→100→120)</th><th style="text-align:right">Punkte</th><th style="text-align:right">× Gewicht</th><th style="text-align:right">= Beitrag</th></tr>
         ${s.kpis.map(function(k){
+          var soll=k.binaer?"bestanden":(k.stufen?"3 / 3":(k.ziel+" "+k.einheit).trim());
+          var istBesser=k.punkte!==null&&k.punkte>=100;
           return '<tr style="border-top:1px solid #1e2d40">'+
           '<td style="padding:7px 8px"><b style="color:#E84393">'+k.id+'</b> '+k.name+(k.note?'<div style="font-size:10px;color:#475569">'+k.note+'</div>':'')+'</td>'+
-          '<td style="color:#475569">'+ (k.wg*100).toFixed(0)+'% v. '+k.block+'</td>'+
-          '<td style="font-weight:600;color:#f1f5f9">'+fmtIst(k)+'</td>'+
+          '<td style="color:#94a3b8;font-weight:600">'+soll+'</td>'+
+          '<td style="font-weight:700;color:'+(k.punkte===null?"#475569":istBesser?"#22c55e":"#f1f5f9")+'">'+fmtIst(k)+'</td>'+
           '<td style="color:#475569">'+skala(k)+'</td>'+
-          '<td style="text-align:right;font-weight:700;color:'+pCol(k.punkte)+'">'+(k.punkte===null?"n/a":k.punkte.toFixed(0))+'</td></tr>';
+          '<td style="text-align:right;font-weight:700;color:'+pCol(k.punkte)+'">'+(k.punkte===null?"n/a":k.punkte.toFixed(0))+'</td>'+
+          '<td style="text-align:right;color:#475569">'+(k.wgGesamt>0?(k.wgGesamt*100).toFixed(1)+" %":"—")+'</td>'+
+          '<td style="text-align:right;font-weight:700;color:'+pCol(k.punkte)+'">'+(k.beitrag===null?"—":k.beitrag.toFixed(1))+'</td></tr>';
         }).join("")}
+        <tr style="border-top:2px solid #E84393">
+          <td colspan="5" style="padding:8px;font-weight:700;color:#f1f5f9;text-align:right">Gesamtscore (Σ Beiträge)</td>
+          <td style="text-align:right;color:#475569">${(s.kpis.reduce(function(t,k){return t+k.wgGesamt;},0)*100).toFixed(0)} %</td>
+          <td style="text-align:right;font-weight:800;font-size:14px;color:${pCol(s.gesamt)}">${s.gesamt===null?"—":s.gesamt.toFixed(1)}</td>
+        </tr>
       </table>
+      ${s.umverteilt.length?'<div style="font-size:10px;color:#475569;margin-top:6px">Gewichte sind effektive Gewichte am Gesamtscore — nach Umverteilung fehlender KPIs ('+s.umverteilt.join(", ")+') gemäß Regel 4.3.</div>':''}
     </div>
 
     <div class="box" style="margin-top:14px">
