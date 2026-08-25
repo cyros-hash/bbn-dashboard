@@ -1383,9 +1383,9 @@ var _emailRoles={
   "umut.baser@bangbangnoodles.de":   {role:"owner", hidden:[]},
   "natalia@bangbangnoodles.de":      {role:"owner", hidden:["lieferando"]},
   "gegee@bangbangnoodles.de":        {role:"owner", hidden:["lieferando"]},
-  "jan@bangbangnoodles.de":          {role:"team",  hidden:["overview","guv","simulator","lieferando"]},
-  "christian@bangbangnoodles.de":    {role:"team",  hidden:["overview","guv","simulator","lieferando"]},
-  "gerayeli.geschaeftlich@gmail.com":{role:"team",  hidden:["overview","guv","simulator","lieferando"]}
+  "jan@bangbangnoodles.de":          {role:"team",  hidden:["overview","guv","simulator","lieferando","zieljan"]},
+  "christian@bangbangnoodles.de":    {role:"team",  hidden:["overview","guv","simulator","lieferando","zieljan"]},
+  "gerayeli.geschaeftlich@gmail.com":{role:"team",  hidden:["overview","guv","simulator","lieferando","zieljan"]}
 };
 
 var _currentRole=null;
@@ -1596,6 +1596,7 @@ setInterval(function(){
   <button class="tab" onclick="showTab('rabatte',this)">🏷️ Rabatte</button>
   <button class="tab" onclick="showTab('simulator',this)">🧮 Simulator</button>
   <button class="tab" onclick="showTab('lieferando',this)">🛵 Lieferando</button>
+  <button class="tab" onclick="showTab('zieljan',this)">🎯 Ziele Jan</button>
 </div>
 
 <div class="content">
@@ -1610,6 +1611,7 @@ setInterval(function(){
   <div id="t-rabatte" style="display:none"></div>
   <div id="t-simulator" style="display:none"></div>
   <div id="t-lieferando" style="display:none"></div>
+  <div id="t-zieljan" style="display:none"></div>
 </div>
 
 <script>
@@ -1631,7 +1633,8 @@ var CSV = {
   fcReal:  "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=PLACEHOLDER_FC_REAL",
   bestand: "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=1296587739",
   stornos: "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=14074857",
-  mgmt:    "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=237380344"
+  mgmt:    "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=237380344",
+  zielManuell: "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv&gid=1665593308"
 };
 
 // ============================================================
@@ -1644,6 +1647,7 @@ var fcReal=[]; // Reale FC: Inventuren + Bestellungen
 var bestandDaten=[]; // Bestandsbericht (Sheet 18)
 var stornoDetails=[]; // Storno-Rohdaten mit Gründen (Sheet 15)
 var mgmtGehaelter=[]; // Management-Gehälter aus Sheet (22_management_gehaelter)
+var zielManuell=[]; // Zielvereinbarung Jan — manuelle Einträge (23_zielvereinbarung_manuell)
 var MGMT_FROM_SHEET=[]; // Namen deren Kosten aus Sheet kommen (nicht aus Ordio)
 var stundeVon=-1, stundeBis=-1; // -1 = kein Stundenfilter
 var aktivWT=new Set([0,1,2,3,4,5,6]); // aktive Wochentage (0=So...6=Sa)
@@ -1803,12 +1807,12 @@ function tageDiff(von,bis){
 // Diese Quote gilt konstant für jeden Tag innerhalb des Zeitraums.
 // Rückgabe: quote (FC%), gesamt (absoluter FC im Bestandszeitraum),
 //           revBestand (Umsatz im Bestandszeitraum), plus Traceability-Aufschlüsselung
-function getRealFC(stFilter){
+function getRealFC(stFilter,vonOpt,bisOpt){
   if(bestandDaten.length===0)return{hat:false,quote:0,gesamt:0,revBestand:0,verkauft:0,verschwendet:0,unkontrolliert:0,von:'',bis:'',tage:0};
 
-  // Dashboard-Zeitfilter lesen
-  var dashVon=document.getElementById("von").value;
-  var dashBis=document.getElementById("bis").value;
+  // Dashboard-Zeitfilter lesen (optional überschreibbar, z.B. für Zielvereinbarungs-Monatsloop)
+  var dashVon=vonOpt||document.getElementById("von").value;
+  var dashBis=bisOpt||document.getElementById("bis").value;
 
   // Alle einzigartigen Perioden (von/bis) für einen Standort
   function _getPeriodenKeys(stN){
@@ -2425,6 +2429,19 @@ async function ladeDaten(){
       }
     } catch(e){ console.warn("Management-Gehälter nicht geladen: "+e.message); mgmtGehaelter=[]; MGMT_FROM_SHEET=[]; }
 
+    // ZIELVEREINBARUNG JAN — manuelle Einträge (Tab 23)
+    try{
+      var rZm=await fetch(CSV.zielManuell); var tZm=await rZm.text();
+      if(tZm&&tZm.trim().length>5&&!tZm.includes("DOCTYPE")){
+        zielManuell=tZm.trim().split("\n").slice(1).map(function(l){
+          var v=pCSV(l);
+          return{typ:(v[0]||"").trim().toLowerCase(),datum:pDat(v[1]||""),standort:(v[2]||"").trim(),
+                 wert:pDE(v[3]||""),bisDatum:pDat(v[4]||""),notiz:(v[5]||"").trim()};
+        }).filter(function(r){return r.typ;});
+        console.log("✓ Zielvereinbarung manuell: "+zielManuell.length+" Einträge");
+      }
+    } catch(e){ console.warn("Zielvereinbarung-Tab nicht geladen: "+e.message); zielManuell=[]; }
+
     // SET FILTER
     var daten=alle.map(function(r){return r.datum;}).sort();
     var maxD=daten[daten.length-1]||toISODateLocal(new Date());
@@ -2559,6 +2576,326 @@ function renderAll(){
   renderRabatte();
   renderSimulator();
   renderLieferando();
+  renderZielJan();
+}
+
+// ============================================================
+// ZIELVEREINBARUNG JAN (Bonusmodell Jul–Dez 2026, Stand Juni 2026)
+// Quelle der Regeln: Bonusmodell_Jan_Haring_BBN.pdf
+// Manuelle Einträge: Sheet-Tab 23_zielvereinbarung_manuell
+// ============================================================
+
+var ZIEL_JAN={
+  zeitraumVon:"2026-07-01", zeitraumBis:"2026-12-31", monate:6,
+  // A1-Skala inkl. Saison-Abschlag −15% auf die gesamte Skala (Regel 4.4,
+  // Auslegung 25.08.2026: Original 69/76/82 → 58,65/64,60/69,70)
+  bloecke:{A:{name:"Umsatz-Effizienz",gewicht:0.25},B:{name:"Personalkosten",gewicht:0.25},
+           C:{name:"Kostenmanagement",gewicht:0.15},D:{name:"Hygiene & Autonomie",gewicht:0.20},
+           E:{name:"Team & Schulung",gewicht:0.15}}
+};
+
+function zjPunkte(ist,min,ziel,stretch){
+  if(ist===null||ist===undefined||isNaN(ist))return null;
+  if(ziel>min){
+    if(ist<=min)return 0;
+    if(ist<=ziel)return (ist-min)/(ziel-min)*100;
+    if(stretch===null)return 100;
+    if(ist>=stretch)return 120;
+    return 100+(ist-ziel)/(stretch-ziel)*20;
+  }else{
+    if(ist>=min)return 0;
+    if(ist>=ziel)return (min-ist)/(min-ziel)*100;
+    if(stretch===null)return 100;
+    if(ist<=stretch)return 120;
+    return 100+(ziel-ist)/(ziel-stretch)*20;
+  }
+}
+
+function zjAlleRows(von,bis){
+  return alle.filter(function(r){return r.datum>=von&&r.datum<=bis;});
+}
+
+function zjTageMitUmsatz(von,bis){
+  var t={};
+  zjAlleRows(von,bis).forEach(function(r){if(r.u>300)t[r.datum+"|"+r.st]=1;});
+  return Object.keys(t).length;
+}
+
+// Kern-Kennzahlen je Standort ("Alle Standorte" = beide) für Zeitraum
+function zjKern(von,bis,st){
+  var pk=getOrdio(von,bis,st==="Alle"?"Alle Standorte":st);
+  var rows=zjAlleRows(von,bis).filter(function(r){return st==="Alle"||r.st===st;});
+  var basis=getPaBasis(pk,rows.map(function(r){return{datum:r.datum,u:r.u};}));
+  var uStd=(basis.umsatz>0&&pk.stunden>0)?basis.umsatz/pk.stunden:null;
+  var paQ=(basis.umsatz>0&&pk.total>0)?pk.total/basis.umsatz:null;
+  var bw=getBonWert(von,bis,st==="Alle"?"Alle Standorte":st);
+  return{uStd:uStd,paQ:paQ,bon:bw.count>0?bw.avg:null,basis:basis,pk:pk};
+}
+
+function zielJanScore(von,bis){
+  var kpis=[];
+  var kAll=zjKern(von,bis,"Alle");
+
+  // A1 Umsatz/Personalstunde (Skala −15%)
+  kpis.push({id:"A1",block:"A",wg:0.6,name:"Umsatz / Personalstunde",einheit:"€/h",
+    min:58.65,ziel:64.60,stretch:69.70,ist:kAll.uStd,
+    note:kAll.basis.voll?"":"Ordio "+kAll.basis.tageGedeckt+"/"+kAll.basis.tageUmsatz+" Tage"});
+  // A2 Ø Bon-Wert (brutto)
+  kpis.push({id:"A2",block:"A",wg:0.4,name:"Ø Bon-Wert (brutto)",einheit:"€",
+    min:25,ziel:28,stretch:30,ist:kAll.bon,note:""});
+  // B1 PA-Quote operativ (niedriger besser)
+  kpis.push({id:"B1",block:"B",wg:0.7,name:"Personalkosten-Quote operativ",einheit:"%",
+    min:24,ziel:22,stretch:20,ist:kAll.paQ!==null?kAll.paQ*100:null,note:""});
+  // B2 Fluktuation (Eigenkündigungen, niedriger besser)
+  var abg=zielManuell.filter(function(r){return r.typ==="abgang"&&r.datum&&r.datum>=von&&r.datum<=bis;}).length;
+  kpis.push({id:"B2",block:"B",wg:0.3,name:"Fluktuation (Eigenkündigungen)",einheit:"Abgänge",
+    min:5,ziel:2,stretch:0,ist:abg,note:"aus Tab 23 (typ=abgang)"});
+  // C1 Food-Cost-Abweichung |Ist−Soll| in PP (niedriger besser)
+  var c1Devs=[];
+  ["Mehringdamm","Rosenthaler Straße"].forEach(function(stN){
+    var rfc=getRealFC(stN,von,bis);
+    var rowsSt=zjAlleRows(von,bis).filter(function(r){return r.st===stN;});
+    var u=rowsSt.reduce(function(s,r){return s+r.u;},0);
+    var f=rowsSt.reduce(function(s,r){return s+r.f;},0);
+    var soll=u>0?f/u:0;
+    if(rfc.hat&&rfc.quote>0&&soll>0)c1Devs.push(Math.abs(rfc.quote-soll)*100);
+  });
+  kpis.push({id:"C1",block:"C",wg:0.6,name:"Food-Cost-Abweichung Ist vs. Soll",einheit:"PP",
+    min:4,ziel:2,stretch:1,ist:c1Devs.length?c1Devs.reduce(function(a,b){return a+b;},0)/c1Devs.length:null,
+    note:c1Devs.length<2?(c1Devs.length===1?"nur 1 Standort":"keine Inventurdaten"):""});
+  // C2 Inventur-Disziplin
+  var kalTageZj=Math.round((new Date(bis+"T12:00:00")-new Date(von+"T12:00:00"))/86400000)+1;
+  var c2Ist=null;
+  if(kalTageZj>=7&&bestandDaten.length>0){
+    var perioden={};
+    bestandDaten.forEach(function(r){
+      var bisISO=bestandDatISO(r.bis);
+      if(bisISO>=von&&bisISO<=bis)perioden[r.standort+"|"+r.von+"|"+r.bis]=1;
+    });
+    var geplant=Math.max(Math.round(kalTageZj/7)*2,1);
+    c2Ist=Math.min(Object.keys(perioden).length/geplant,1.2)*100;
+  }
+  kpis.push({id:"C2",block:"C",wg:0.2,name:"Inventur-Disziplin",einheit:"%",
+    min:80,ziel:90,stretch:100,ist:c2Ist,note:c2Ist===null?"Zeitraum <7 Tage o. keine Daten":""});
+  // C3 Waste-Erfassung
+  var wTage={};
+  waste.filter(function(r){return r.datum>=von&&r.datum<=bis;}).forEach(function(r){wTage[r.datum+"|"+r.standort]=1;});
+  var basisTage=zjTageMitUmsatz(von,bis);
+  kpis.push({id:"C3",block:"C",wg:0.2,name:"Waste-Erfassung",einheit:"% Tage",
+    min:50,ziel:90,stretch:100,ist:basisTage>0?Object.keys(wTage).length/basisTage*100:null,note:""});
+  // D1 Hygiene-Audit (mit Store-Floor-Regel)
+  var audits=zielManuell.filter(function(r){return r.typ==="audit"&&r.datum&&r.datum>=von&&r.datum<=bis&&r.wert>0;});
+  var d1Ist=null,d1Floor=false;
+  if(audits.length){
+    d1Ist=audits.reduce(function(s,r){return s+r.wert;},0)/audits.length;
+    ["Mehringdamm","Rosenthaler Straße"].forEach(function(stN){
+      var a=audits.filter(function(r){return r.standort===stN;});
+      if(a.length&&a.reduce(function(s,r){return s+r.wert;},0)/a.length<60)d1Floor=true;
+    });
+  }
+  kpis.push({id:"D1",block:"D",wg:0.4,name:"Hygiene-Audit Score",einheit:"%",
+    min:75,ziel:90,stretch:97,ist:d1Ist,forceZero:d1Floor,
+    note:d1Floor?"⚠️ Store-Floor: ein Standort <60% → 0 Pkt.":(d1Ist===null?"keine Audits in Tab 23 (typ=audit)":"")});
+  // D2 Standort-Synchronität (niedriger besser)
+  var kMd=zjKern(von,bis,"Mehringdamm"),kRs=zjKern(von,bis,"Rosenthaler Straße");
+  var devs=[];
+  [["uStd"],["paQ"],["bon"]].forEach(function(p){
+    var a=kMd[p[0]],b=kRs[p[0]];
+    if(a!==null&&b!==null&&(a+b)>0)devs.push(Math.abs(a-b)/((a+b)/2)*100);
+  });
+  kpis.push({id:"D2",block:"D",wg:0.3,name:"Standort-Synchronität",einheit:"% Abw.",
+    min:20,ziel:10,stretch:5,ist:devs.length===3?devs.reduce(function(a,b){return a+b;},0)/3:null,
+    note:devs.length<3?"nicht alle Kern-KPIs verfügbar":""});
+  // D3 Abwesenheitstest (binär)
+  var d3=null,d3Note="kein Eintrag in Tab 23 (typ=abwesenheit)";
+  var abw=zielManuell.filter(function(r){return r.typ==="abwesenheit"&&r.datum&&r.bisDatum;});
+  if(abw.length){
+    var a0=abw[0];
+    var fVon=a0.datum>von?a0.datum:von, fBis=a0.bisDatum<bis?a0.bisDatum:bis;
+    if(fVon<=fBis){
+      var fTage={};zjAlleRows(fVon,fBis).forEach(function(r){if(r.u>300)fTage[r.datum]=1;});
+      if(Object.keys(fTage).length>=5){
+        var kF=zjKern(fVon,fBis,"Alle");
+        var ok=true;
+        if(kF.uStd===null||kAll.uStd===null||Math.abs(kF.uStd-kAll.uStd)/kAll.uStd>0.15)ok=false;
+        if(kF.paQ===null||kAll.paQ===null||Math.abs(kF.paQ-kAll.paQ)/kAll.paQ>0.15)ok=false;
+        d3=ok?100:0;
+        d3Note=(a0.datum||"")+" bis "+(a0.bisDatum||"")+" — "+(ok?"bestanden (±15%)":"nicht bestanden");
+      }else{d3Note="Abwesenheitsfenster hat <5 Betriebstage im Zeitraum";}
+    }else{d3Note="Abwesenheit liegt außerhalb des Zeitraums";}
+  }
+  kpis.push({id:"D3",block:"D",wg:0.3,name:"Abwesenheitstest (≥5 Tage)",einheit:"",
+    min:0,ziel:100,stretch:null,ist:d3,binaer:true,note:d3Note});
+  // E1 Schulungs-Meilensteine (0/30/70/100)
+  var msDone=["meilenstein_inhalt","meilenstein_rollout","meilenstein_nutzung"].filter(function(t){
+    return zielManuell.some(function(r){return r.typ===t&&r.datum&&r.datum<=bis;});
+  }).length;
+  kpis.push({id:"E1",block:"E",wg:0.6,name:"Schulungsplattform (Meilensteine)",einheit:"von 3",
+    min:0,ziel:3,stretch:null,ist:msDone,stufen:[0,30,70,100],
+    note:"Termine: Inhalt 31.08. · Rollout 30.09. · Nutzung 31.12."});
+  // E2 Trinkgeld-Quote Service
+  var bZj=bons.filter(function(r){return r.datum>=von&&r.datum<=bis&&r.storniert===0;});
+  var bM=bZj.filter(function(r){return r.mitarbeiter!=="Online Order"&&r.mitarbeiter.indexOf("Online")===-1&&r.kanal!=="Lieferando"&&r.mitarbeiter.indexOf(",")===-1;});
+  var tkM=bM.reduce(function(s,r){return s+r.trinkgeld;},0),totM=bM.reduce(function(s,r){return s+r.total;},0);
+  kpis.push({id:"E2",block:"E",wg:0.4,name:"Trinkgeld-Quote Service",einheit:"%",
+    min:6,ziel:7,stretch:8,ist:totM>0?tkM/totM*100:null,note:""});
+
+  // Punkte je KPI
+  kpis.forEach(function(k){
+    if(k.forceZero){k.punkte=0;return;}
+    if(k.binaer){k.punkte=k.ist;return;}
+    if(k.stufen){k.punkte=(k.ist===null||k.ist===undefined)?null:k.stufen[Math.max(0,Math.min(3,Math.round(k.ist)))];return;}
+    k.punkte=zjPunkte(k.ist,k.min,k.ziel,k.stretch);
+  });
+
+  // Block-Scores mit Gewichts-Umverteilung (Regel 4.3)
+  var bloecke={},umverteilt=[];
+  Object.keys(ZIEL_JAN.bloecke).forEach(function(b){
+    var bk=kpis.filter(function(k){return k.block===b;});
+    var mit=bk.filter(function(k){return k.punkte!==null;});
+    if(!mit.length){bloecke[b]={score:null,gewicht:ZIEL_JAN.bloecke[b].gewicht};umverteilt.push("Block "+b+" komplett");return;}
+    var wSum=mit.reduce(function(s,k){return s+k.wg;},0);
+    var score=mit.reduce(function(s,k){return s+k.punkte*(k.wg/wSum);},0);
+    bk.forEach(function(k){if(k.punkte===null)umverteilt.push(k.id);k.wgEff=k.punkte!==null?(k.wg/wSum):0;});
+    bloecke[b]={score:score,gewicht:ZIEL_JAN.bloecke[b].gewicht};
+  });
+  var aktive=Object.keys(bloecke).filter(function(b){return bloecke[b].score!==null;});
+  var gSum=aktive.reduce(function(s,b){return s+bloecke[b].gewicht;},0);
+  var gesamt=aktive.length?aktive.reduce(function(s,b){return s+bloecke[b].score*(bloecke[b].gewicht/gSum);},0):null;
+  var auszahlung=gesamt===null?null:Math.max(0,Math.min(1,(gesamt-50)/50));
+  return{kpis:kpis,bloecke:bloecke,gesamt:gesamt,auszahlung:auszahlung,umverteilt:umverteilt};
+}
+
+var zjChartInst=null;
+
+function renderZielJan(){
+  var el=document.getElementById("t-zieljan");
+  if(!el)return;
+  var von=document.getElementById("von").value;
+  var bis=document.getElementById("bis").value;
+  var bonusRow=zielManuell.filter(function(r){return r.typ==="config_bonussumme"&&r.wert>0;})[0];
+  var bonus=bonusRow?bonusRow.wert:0;
+
+  var s=zielJanScore(von,bis);
+  var inZeitraum=!(bis<ZIEL_JAN.zeitraumVon||von>ZIEL_JAN.zeitraumBis);
+
+  function fmtIst(k){
+    if(k.ist===null||k.ist===undefined)return"—";
+    if(k.binaer)return k.ist===100?"bestanden":"nicht bestanden";
+    if(k.einheit==="von 3")return k.ist+" / 3";
+    if(k.einheit==="Abgänge")return k.ist+"";
+    if(k.einheit==="€/h")return k.ist.toFixed(1)+" €/h";
+    if(k.einheit==="€")return k.ist.toFixed(2)+" €";
+    if(k.einheit==="PP")return k.ist.toFixed(1)+" PP";
+    return k.ist.toFixed(1)+" %";
+  }
+  function skala(k){
+    if(k.binaer)return"binär";
+    if(k.stufen)return"0/1/2/3 → 0/30/70/100 Pkt.";
+    return k.min+" → "+k.ziel+(k.stretch!==null?" → "+k.stretch:"")+" "+k.einheit;
+  }
+  function pCol(p){return p===null?"#475569":p>=100?"#22c55e":p>=50?"#eab308":"#ef4444";}
+
+  // Monatszeilen im gewählten Zeitraum + kumuliert ab Bewertungsstart
+  var monate=[];
+  var mCur=new Date(von.substring(0,7)+"-01T12:00:00");
+  var mEndAll=new Date(bis+"T12:00:00");
+  var guard=0;
+  while(mCur<=mEndAll&&guard<12){
+    guard++;
+    var mVon=toISODateLocal(new Date(mCur.getFullYear(),mCur.getMonth(),1));
+    var mBis=toISODateLocal(new Date(mCur.getFullYear(),mCur.getMonth()+1,0));
+    if(mVon<von)mVon=von;
+    if(mBis>bis)mBis=bis;
+    var ms=zielJanScore(mVon,mBis);
+    var kumBis=mBis<ZIEL_JAN.zeitraumBis?mBis:ZIEL_JAN.zeitraumBis;
+    var kum=(kumBis>=ZIEL_JAN.zeitraumVon)?zielJanScore(ZIEL_JAN.zeitraumVon,kumBis):null;
+    monate.push({label:mCur.toLocaleDateString("de-DE",{month:"short",year:"2-digit"}),
+      score:ms.gesamt,ausz:ms.auszahlung,kumScore:kum?kum.gesamt:null,kumAusz:kum?kum.auszahlung:null});
+    mCur=new Date(mCur.getFullYear(),mCur.getMonth()+1,1,12);
+  }
+
+  var kum6=zielJanScore(ZIEL_JAN.zeitraumVon,(bis<ZIEL_JAN.zeitraumBis?bis:ZIEL_JAN.zeitraumBis));
+
+  el.innerHTML=`
+    ${!inZeitraum?'<div style="background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:8px 10px;font-size:11px;color:#E84393;margin-bottom:12px">⚠️ Gewählter Zeitraum liegt außerhalb des Bewertungszeitraums Jul–Dez 2026 — Werte rein informativ.</div>':''}
+    <div style="font-size:11px;color:#475569;margin-bottom:10px">Bewertungszeitraum: 01.07.–31.12.2026 · Auszahlung Q1/2027 · Standort-/Stundenfilter werden hier ignoriert (Ziele gelten für beide Standorte) · Regeln: Bonusmodell Stand Juni 2026</div>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">🎯 Gesamtscore (gewählter Zeitraum)</div>
+        <div class="kpi-val" style="color:${pCol(s.gesamt)}">${s.gesamt===null?"—":s.gesamt.toFixed(1)}</div>
+        <div class="kpi-delta">${s.auszahlung===null?"":"Auszahlung: "+(s.auszahlung*100).toFixed(0)+" %"+(bonus>0?" ≈ "+fmt(s.auszahlung*bonus):"")}</div>
+        <div class="kpi-ai">${s.umverteilt.length?"⚠️ Ohne Daten (Gewicht umverteilt): "+s.umverteilt.join(", "):"Alle KPIs berechenbar"}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">📈 Kumuliert seit 01.07.2026</div>
+        <div class="kpi-val" style="color:${pCol(kum6.gesamt)}">${kum6.gesamt===null?"—":kum6.gesamt.toFixed(1)}</div>
+        <div class="kpi-delta">${kum6.auszahlung===null?"":"Auszahlung: "+(kum6.auszahlung*100).toFixed(0)+" %"+(bonus>0?" ≈ "+fmt(kum6.auszahlung*bonus):"")}</div>
+        <div class="kpi-ai">Das ist der Stand, der am Ende zählt (eine Auszahlung, Q1/2027)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">💶 Bonussumme</div>
+        <div class="kpi-val" style="color:#E84393">${bonus>0?fmt(bonus):"—"}</div>
+        <div class="kpi-delta">${bonus>0?"aus Tab 23 (config_bonussumme)":"in Tab 23 bei config_bonussumme eintragen"}</div>
+        <div class="kpi-ai">Formel: Bonus × (Score − 50) / 50 · begrenzt 0–100 %</div>
+      </div>
+      ${["A","B","C","D","E"].map(function(b){
+        var bl=s.bloecke[b];
+        return '<div class="kpi-card"><div class="kpi-label">Block '+b+' — '+ZIEL_JAN.bloecke[b].name+' ('+(ZIEL_JAN.bloecke[b].gewicht*100).toFixed(0)+'%)</div>'+
+        '<div class="kpi-val" style="color:'+pCol(bl.score)+'">'+(bl.score===null?"—":bl.score.toFixed(0))+'</div>'+
+        '<div class="kpi-delta">'+(bl.score===null?"keine Daten":"Punkte (0–120)")+'</div></div>';
+      }).join("")}
+    </div>
+
+    <div class="box" style="margin-top:14px">
+      <div class="box-title">📋 KPI-Detail — Soll vs. Ist</div>
+      <div class="box-sub">Punkte: 0 am Mindestwert · 100 am Ziel · max. 120 am Stretch (linear)</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <tr style="color:#475569;text-align:left"><th style="padding:6px 8px">KPI</th><th>Gewicht</th><th>Ist</th><th>Skala (0→100→120)</th><th style="text-align:right">Punkte</th></tr>
+        ${s.kpis.map(function(k){
+          return '<tr style="border-top:1px solid #1e2d40">'+
+          '<td style="padding:7px 8px"><b style="color:#E84393">'+k.id+'</b> '+k.name+(k.note?'<div style="font-size:10px;color:#475569">'+k.note+'</div>':'')+'</td>'+
+          '<td style="color:#475569">'+ (k.wg*100).toFixed(0)+'% v. '+k.block+'</td>'+
+          '<td style="font-weight:600;color:#f1f5f9">'+fmtIst(k)+'</td>'+
+          '<td style="color:#475569">'+skala(k)+'</td>'+
+          '<td style="text-align:right;font-weight:700;color:'+pCol(k.punkte)+'">'+(k.punkte===null?"n/a":k.punkte.toFixed(0))+'</td></tr>';
+        }).join("")}
+      </table>
+    </div>
+
+    <div class="box" style="margin-top:14px">
+      <div class="box-title">📆 Monatsverlauf & Kumuliert</div>
+      <div class="box-sub">Monatswerte = Steuerungs-Indikation · verbindlich ist nur der kumulierte Gesamtzeitraum</div>
+      <div style="height:180px"><canvas id="zjChart"></canvas></div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:10px">
+        <tr style="color:#475569;text-align:left"><th style="padding:6px 8px">Monat</th><th>Score</th><th>Auszahlungs-%</th>${bonus>0?'<th>≈ €/Monat (indikativ)</th>':''}<th>Kumuliert-Score</th><th>Kumuliert-Auszahlung</th></tr>
+        ${monate.map(function(m){
+          return '<tr style="border-top:1px solid #1e2d40">'+
+          '<td style="padding:6px 8px;color:#f1f5f9">'+m.label+'</td>'+
+          '<td style="color:'+pCol(m.score)+';font-weight:600">'+(m.score===null?"—":m.score.toFixed(1))+'</td>'+
+          '<td>'+(m.ausz===null?"—":(m.ausz*100).toFixed(0)+" %")+'</td>'+
+          (bonus>0?'<td>'+(m.ausz===null?"—":fmt(m.ausz*bonus/ZIEL_JAN.monate))+'</td>':'')+
+          '<td>'+(m.kumScore===null?"—":m.kumScore.toFixed(1))+'</td>'+
+          '<td>'+(m.kumAusz===null?"—":(m.kumAusz*100).toFixed(0)+" %"+(bonus>0?" ≈ "+fmt(m.kumAusz*bonus):""))+'</td></tr>';
+        }).join("")}
+      </table>
+    </div>`;
+
+  if(typeof Chart!=="undefined"&&document.getElementById("zjChart")){
+    if(zjChartInst)zjChartInst.destroy();
+    zjChartInst=new Chart(document.getElementById("zjChart"),{
+      type:"line",
+      data:{labels:monate.map(function(m){return m.label;}),
+        datasets:[
+          {label:"Monats-Score",data:monate.map(function(m){return m.score;}),borderColor:"#E84393",backgroundColor:"#E8439333",tension:0.3},
+          {label:"Kumuliert",data:monate.map(function(m){return m.kumScore;}),borderColor:"#22c55e",backgroundColor:"#22c55e33",tension:0.3}
+        ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:"#94a3b8",font:{size:10}}}},
+        scales:{y:{min:0,max:120,ticks:{color:"#475569"},grid:{color:"#1e2d40"}},
+                x:{ticks:{color:"#475569"},grid:{display:false}}}}
+    });
+  }
 }
 
 // ============================================================
