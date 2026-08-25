@@ -2599,12 +2599,9 @@ function renderOverview(){
   // Fixkosten: auf tatsächliche Datentage prorate
   var fkOvKal=getFixkostenTage(von,bis); // für Kalender-Anzeigen behalten
   var fkOv=getFixkostenTage(von,bis);
-  if(dataTage<kalTage){
-    // Prorate: Fixkosten nur für Datentage
-    var fkFaktor=dataTage/kalTage;
-    Object.keys(fkOv).forEach(function(key){if(key!=="tage")fkOv[key]=fkOv[key]*fkFaktor;});
-    fkOv.tage=dataTage;
-  }
+  // FIX M2 25.08.2026: KEINE Proration auf Datentage mehr — Fixkosten laufen
+  // über volle Kalendertage (Miete/Gehälter laufen auch am Montags-Ruhetag).
+  // Vorher fehlten ~4-5 Tage × ~1.550€ ≈ 6-8 T€/Monat und EBITDA war geschönt.
 
   var cm=k.u-k.f-ldoProvOv-pa;
   var bonWertData=getBonWert(von,bis,st);
@@ -2888,7 +2885,7 @@ function renderOverview(){
       ${cmpMd>0&&cmpRs>0?" · Rosenthaler effizienter als Mehringdamm ("+fmtP(cmpRs)+" vs "+fmtP(cmpMd)+")":""}
     </div>
     <div style="font-size:10px;color:#64748b;text-align:right;margin:4px 0 8px;padding:0 2px">📊 Vergleich: ${vpOv.von.slice(8,10)}.${vpOv.von.slice(5,7)}. – ${vpOv.bis.slice(8,10)}.${vpOv.bis.slice(5,7)}. (${vpLabel})</div>
-    ${dataTage<kalTage?'<div style="background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:8px 10px;font-size:11px;color:#E84393;margin-bottom:12px">⚠️ Nur '+dataTage+' von '+kalTage+' Tagen haben Apicbase-Daten. Kosten (Fixkosten, Lieferando-Provision) wurden auf Datentage heruntergerechnet.</div>':''}
+    ${dataTage<kalTage?'<div style="background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:8px 10px;font-size:11px;color:#E84393;margin-bottom:12px">⚠️ Nur '+dataTage+' von '+kalTage+' Tagen haben Apicbase-Daten. Fixkosten laufen über alle '+kalTage+' Kalendertage (inkl. Ruhetage) — bei Datenlücken fehlt entsprechender Umsatz.</div>':''}
 
     <div class="kpi-grid">
       <div class="kpi-card" onclick="drill('d-ov-umsatz')">
@@ -4287,12 +4284,7 @@ function renderGuV(){
   var ldoProv=ldoUmsatz*0.20;
   var ldoProvPct=k.u>0?ldoProv/k.u:0;
 
-  // Fixkosten auf Datentage prorate
-  if(guvDataTage<guvKalTage){
-    var guvFkFaktor=guvDataTage/guvKalTage;
-    Object.keys(fk).forEach(function(key){if(key!=="tage")fk[key]=fk[key]*guvFkFaktor;});
-    fk.tage=guvDataTage;
-  }
+  // FIX M2 25.08.2026: keine Proration — Fixkosten = volle Kalendertage (siehe Übersicht)
 
   // Ist-FC aus Bestandsbericht (eigener Aufruf, da eigener Scope)
   var uRfc=getRealFC(st);
@@ -7591,11 +7583,7 @@ function renderSimulator(){
   // Prorate Fixkosten auf Datentage — gleiche Logik wie Übersicht
   var dataTageS=k.t;
   var kalTageS=Math.round((new Date(bis+"T12:00:00")-new Date(von+"T12:00:00"))/86400000)+1;
-  if(dataTageS<kalTageS){
-    var fkFaktorS=dataTageS/kalTageS;
-    Object.keys(fkSim).forEach(function(key){if(key!=="tage")fkSim[key]=fkSim[key]*fkFaktorS;});
-    fkSim.tage=dataTageS;
-  }
+  // FIX M2 25.08.2026: keine Proration — Fixkosten = volle Kalendertage (siehe Übersicht)
 
   // Basis LDO Provision — nur Tage mit Umsatzdaten (wie Übersicht)
   var uDatumSetSim={}; gefiltert.forEach(function(r){uDatumSetSim[r.datum]=1;});
