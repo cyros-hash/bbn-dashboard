@@ -1800,6 +1800,33 @@ function tageDiff(von,bis){
   return Math.max(Math.round((b-a)/86400000)+1,1);
 }
 
+// ZENTRALE Inventur-Sonntags-Logik (FIX 25.08.2026):
+// Regel: jeden Sonntag eine Inventur je Standort. Endet die Sonntagsschicht
+// nach Mitternacht, trägt der Bestandsbericht das MONTAGS-Datum — die Woche
+// zählt trotzdem als erfüllt (Bis-Datum = Sonntag ODER Montag danach).
+// Wird von Übersicht, Food-Cost-Tab und Zieltab (C2) gemeinsam genutzt.
+function invSonntage(von,bis,stName){
+  var bisSet={};
+  bestandDaten.forEach(function(b){
+    if(b.standort!==stName)return;
+    var iso=bestandDatISO(b.bis);
+    if(iso)bisSet[iso]=1;
+  });
+  var erfuellt=0,gesamt=0,fehlend=[];
+  var d=new Date(von+"T12:00:00"),e=new Date(bis+"T12:00:00");
+  while(d<=e){
+    if(d.getDay()===0){
+      gesamt++;
+      var so=toISODateLocal(d);
+      var mo=new Date(d);mo.setDate(mo.getDate()+1);
+      if(bisSet[so]||bisSet[toISODateLocal(mo)])erfuellt++;
+      else fehlend.push(so);
+    }
+    d.setDate(d.getDate()+1);
+  }
+  return{erfuellt:erfuellt,gesamt:gesamt,quote:gesamt>0?erfuellt/gesamt:null,fehlend:fehlend};
+}
+
 // Echte Food Cost aus Bestandsbericht (Ist-FC in Euro)
 // FC = Öffne + Zugänge - Schliesse (= Gesamtverbrauch)
 // Aufschlüsselung: Verkauft + Verschwendet + Unkontrolliert + Hergestellt + Umverlagert + Versandt
@@ -2681,20 +2708,17 @@ function zielJanScore(von,bis){
   kpis.push({id:"C1",block:"C",wg:0.6,name:"Food-Cost-Abweichung Ist vs. Soll",einheit:"PP",
     min:4,ziel:2,stretch:1,ist:c1Devs.length?c1Devs.reduce(function(a,b){return a+b;},0)/c1Devs.length:null,
     note:c1Devs.length<2?(c1Devs.length===1?"nur 1 Standort":"keine Inventurdaten"):""});
-  // C2 Inventur-Disziplin
-  var kalTageZj=Math.round((new Date(bis+"T12:00:00")-new Date(von+"T12:00:00"))/86400000)+1;
-  var c2Ist=null;
-  if(kalTageZj>=7&&bestandDaten.length>0){
-    var perioden={};
-    bestandDaten.forEach(function(r){
-      var bisISO=bestandDatISO(r.bis);
-      if(bisISO>=von&&bisISO<=bis)perioden[r.standort+"|"+r.von+"|"+r.bis]=1;
-    });
-    var geplant=Math.max(Math.round(kalTageZj/7)*2,1);
-    c2Ist=Math.min(Object.keys(perioden).length/geplant,1.2)*100;
+  // C2 Inventur-Disziplin — Sonntags-Logik inkl. Montags-Erfassung
+  // (Sonntagsschicht endet oft nach Mitternacht; FIX 25.08.2026)
+  var invMdC2=invSonntage(von,bis,"Mehringdamm");
+  var invRsC2=invSonntage(von,bis,"Rosenthaler Straße");
+  var c2Ist=null,c2Note="kein Sonntag im Zeitraum";
+  if(invMdC2.gesamt>0){
+    c2Ist=(invMdC2.erfuellt+invRsC2.erfuellt)/(invMdC2.gesamt+invRsC2.gesamt)*100;
+    c2Note="MD "+invMdC2.erfuellt+"/"+invMdC2.gesamt+" So · RS "+invRsC2.erfuellt+"/"+invRsC2.gesamt+" So (Mo-Erfassung zählt)";
   }
   kpis.push({id:"C2",block:"C",wg:0.2,name:"Inventur-Disziplin",einheit:"%",
-    min:80,ziel:90,stretch:100,ist:c2Ist,note:c2Ist===null?"Zeitraum <7 Tage o. keine Daten":""});
+    min:80,ziel:90,stretch:100,ist:c2Ist,note:c2Note});
   // C3 Waste-Erfassung
   var wTage={};
   waste.filter(function(r){return r.datum>=von&&r.datum<=bis;}).forEach(function(r){wTage[r.datum+"|"+r.standort]=1;});
@@ -3176,24 +3200,12 @@ function renderOverview(){
   var wasteKonsMd=bizDays>0?wasteMdDays/bizDays:0;
   var wasteKonsRs=bizDays>0?wasteRsDays/bizDays:0;
   var wasteKonsGes=bizDays>0?(wasteMdDays+wasteRsDays)/(bizDays*2):0;
-  // Inventur-Konsistenz (Sonntage mit Bestandsbericht)
-  var invMdDays=0,invRsDays=0,totalSonntage=0;
-  var _dSo=new Date(von);
-  while(_dSo<=_dEnd){
-    if(_dSo.getDay()===0){
-      totalSonntage++;
-      var soISO=_dSo.toISOString().slice(0,10);
-      var moDate=new Date(_dSo);moDate.setDate(moDate.getDate()+1);var moISO=moDate.toISOString().slice(0,10);
-      // Prüfe ob an diesem Sonntag ODER Montag danach ein Bestandsbericht vorliegt (Inventur oft nach Mitternacht)
-      if(bestandDaten.length>0){
-        var hatMd=false,hatRs=false;
-        bestandDaten.forEach(function(b){var bISO=bestandDatISO(b.bis);if((bISO===soISO||bISO===moISO)&&!hatMd&&b.standort==="Mehringdamm"){invMdDays++;hatMd=true;}if((bISO===soISO||bISO===moISO)&&!hatRs&&b.standort==="Rosenthaler Straße"){invRsDays++;hatRs=true;}});
-      }
-    }
-    _dSo.setDate(_dSo.getDate()+1);
-  }
-  var invKonsMd=totalSonntage>0?invMdDays/totalSonntage:0;
-  var invKonsRs=totalSonntage>0?invRsDays/totalSonntage:0;
+  // Inventur-Konsistenz (Sonntage mit Bestandsbericht) — zentrale Logik (FIX 25.08.2026)
+  var _invSoMd=invSonntage(von,bis,"Mehringdamm");
+  var _invSoRs=invSonntage(von,bis,"Rosenthaler Straße");
+  var invMdDays=_invSoMd.erfuellt,invRsDays=_invSoRs.erfuellt,totalSonntage=_invSoMd.gesamt;
+  var invKonsMd=_invSoMd.quote||0;
+  var invKonsRs=_invSoRs.quote||0;
   var invKonsGes=totalSonntage>0?(invMdDays+invRsDays)/(totalSonntage*2):0;
   // Aufbau/Abbau
   var aufMdStd=0,aufMdK=0,aufMdN=0,aufRsStd=0,aufRsK=0,aufRsN=0;
@@ -5931,25 +5943,10 @@ function renderFoodCost(){
   }
   var wkMd = wasteKonsistenz('Mehringdamm');
   var wkRs = wasteKonsistenz('Rosenthaler Straße');
-  // Inventur-Konsistenz (Sonntage mit Bestandsbericht)
+  // Inventur-Konsistenz (Sonntage mit Bestandsbericht) — zentrale Logik (FIX 25.08.2026)
   function invKonsistenz(stName){
-    var totalSo=0,soMitInv=0;
-    var _d=new Date(von),_e=new Date(bis);
-    while(_d<=_e){
-      if(_d.getDay()===0){
-        totalSo++;
-        var iso=_d.toISOString().slice(0,10);
-        // Montag danach: Inventur oft nach Mitternacht erfasst → fällt auf Mo
-        var moD=new Date(_d);moD.setDate(moD.getDate()+1);var moISO=moD.toISOString().slice(0,10);
-        if(bestandDaten.length>0){
-          var hat=false;
-          bestandDaten.forEach(function(b){var bISO=bestandDatISO(b.bis);if(!hat&&(bISO===iso||bISO===moISO)&&b.standort===stName){hat=true;}});
-          if(hat)soMitInv++;
-        }
-      }
-      _d.setDate(_d.getDate()+1);
-    }
-    return{soMitInv:soMitInv,totalSo:totalSo,quote:totalSo>0?soMitInv/totalSo:0};
+    var r=invSonntage(von,bis,stName);
+    return{soMitInv:r.erfuellt,totalSo:r.gesamt,quote:r.quote||0,fehlend:r.fehlend};
   }
   var ikMd=invKonsistenz('Mehringdamm');
   var ikRs=invKonsistenz('Rosenthaler Straße');
