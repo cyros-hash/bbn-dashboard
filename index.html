@@ -1680,7 +1680,7 @@ var FIXKOSTEN_GESAMT = Object.values(FIXKOSTEN).reduce(function(s,v){return s+v;
 
 // Operative Mitarbeiter die NICHT in Personalkosten-Quote fließen
 // (sind über Personalgemeinkosten abgedeckt)
-var MGMT_MITARBEITER = ["Kevin Weber","Jan Haring","Buted Deleg","Christian Beutling","Philipp Walther"];
+var MGMT_MITARBEITER = ["Kevin Weber","Jan Haring","Buted Deleg","Christian Beutling"]; // Philipp Walther entfernt 28.07.2026 — Job nicht angetreten
 
 // Öffnungszeiten {wochentag(0=So): {open:Stunde, close:Stunde}, null=geschlossen}
 var OEFFNUNG={
@@ -1750,6 +1750,13 @@ function pCSV(line){
   }
   res.push(cur.trim());
   return res;
+}
+
+// Lokales Datum als YYYY-MM-DD.
+// FIX 28.07.2026: toISOString() auf lokale Mitternacht lieferte in Berlin (UTC+1/+2)
+// den VORTAG — Monats-/Jahres-Presets enthielten dadurch immer einen Fremdtag.
+function toISODateLocal(d){
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
 
 function kpi(d){
@@ -1907,6 +1914,22 @@ function istInBestandZeitraum(dashVon,dashBis,rfc){
   if(!rfc.hat)return false;
   var bVon=bestandDatISO(rfc.von),bBis=bestandDatISO(rfc.bis);
   return dashVon>=bVon&&dashBis<=bBis;
+}
+
+// PA-Quoten-Basis: Umsatz nur über Tage MIT Ordio-Daten.
+// FIX 28.07.2026: Bei Teilabdeckung (laufender Backfill, Ordio-Lücken) würde
+// Kosten(gedeckte Tage) ÷ Umsatz(alle Tage) die Quote künstlich drücken
+// (Beispiel: 10% statt echter 31%). rows = gefilterte 'alle'-Zeilen.
+function getPaBasis(pk,rows){
+  var ordioTage={};
+  (pk.data||[]).forEach(function(r){ordioTage[r.datum]=1;});
+  var u=0,tageU={},tageG={};
+  rows.forEach(function(r){
+    tageU[r.datum]=1;
+    if(ordioTage[r.datum]){u+=r.u;tageG[r.datum]=1;}
+  });
+  var tU=Object.keys(tageU).length,tG=Object.keys(tageG).length;
+  return{umsatz:u,tageUmsatz:tU,tageGedeckt:tG,voll:tG>=tU};
 }
 
 function getOrdio(von,bis,st){
@@ -2161,11 +2184,11 @@ function prevPeriod(von,bis){
   if(tage<=7){
     var pVon=new Date(v.getTime()-7*86400000);
     var pBis=new Date(b.getTime()-7*86400000);
-    return{von:pVon.toISOString().split("T")[0],bis:pBis.toISOString().split("T")[0],label:"VW",tage:tage};
+    return{von:toISODateLocal(pVon),bis:toISODateLocal(pBis),label:"VW",tage:tage};
   }else{
     var pBis2=new Date(v.getTime()-86400000);
     var pVon2=new Date(pBis2.getTime()-(tage-1)*86400000);
-    return{von:pVon2.toISOString().split("T")[0],bis:pBis2.toISOString().split("T")[0],label:"Vorperiode",tage:tage};
+    return{von:toISODateLocal(pVon2),bis:toISODateLocal(pBis2),label:"Vorperiode",tage:tage};
   }
 }
 
@@ -2404,9 +2427,9 @@ async function ladeDaten(){
 
     // SET FILTER
     var daten=alle.map(function(r){return r.datum;}).sort();
-    var maxD=daten[daten.length-1]||new Date().toISOString().split("T")[0];
+    var maxD=daten[daten.length-1]||toISODateLocal(new Date());
     var max=new Date(maxD+"T12:00:00");
-    document.getElementById("von").value=new Date(max.getFullYear(),max.getMonth(),1).toISOString().split("T")[0];
+    document.getElementById("von").value=toISODateLocal(new Date(max.getFullYear(),max.getMonth(),1));
     document.getElementById("bis").value=maxD;
     // Standard: Gestern (Daten kommen immer einen Tag später)
     setQuick("gestern");
@@ -2440,10 +2463,10 @@ function setQuick(k){
   // Echter heutiger Tag — unabhängig von den Daten im Sheet
   var today = new Date();
   today.setHours(12,0,0,0);
-  var todayStr = today.toISOString().split("T")[0];
+  var todayStr = toISODateLocal(today);
   var yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
-  var yesterdayStr = yesterday.toISOString().split("T")[0];
+  var yesterdayStr = toISODateLocal(yesterday);
 
   setQ(k);
 
@@ -2459,10 +2482,10 @@ function setQuick(k){
     var diffToMon = (day === 0) ? 6 : day - 1; // Tage seit Montag
     var mon = new Date(today);
     mon.setDate(today.getDate() - diffToMon);
-    document.getElementById("von").value = mon.toISOString().split("T")[0];
+    document.getElementById("von").value = toISODateLocal(mon);
     document.getElementById("bis").value = todayStr;
   } else if(k==="monat"){
-    document.getElementById("von").value = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0];
+    document.getElementById("von").value = toISODateLocal(new Date(today.getFullYear(), today.getMonth(), 1));
     document.getElementById("bis").value = todayStr;
   } else if(k==="letzteWoche"){
     var day2=today.getDay();
@@ -2473,10 +2496,10 @@ function setQuick(k){
     letztenMo.setDate(diesenMo.getDate()-7);
     var letztenSo=new Date(diesenMo);
     letztenSo.setDate(diesenMo.getDate()-1);
-    document.getElementById("von").value=letztenMo.toISOString().split("T")[0];
-    document.getElementById("bis").value=letztenSo.toISOString().split("T")[0];
+    document.getElementById("von").value=toISODateLocal(letztenMo);
+    document.getElementById("bis").value=toISODateLocal(letztenSo);
   } else if(k==="jahr"){
-    document.getElementById("von").value = new Date(today.getFullYear(), 0, 1).toISOString().split("T")[0];
+    document.getElementById("von").value = toISODateLocal(new Date(today.getFullYear(), 0, 1));
     document.getElementById("bis").value = todayStr;
   }
 }
@@ -2607,7 +2630,10 @@ function renderOverview(){
   var ebitda=cm-fkOv.gesamt-smKosten;
   var ebitdaPct=k.u>0?ebitda/k.u:0;
   var mi=fkOv.miete,en=fkOv.versicherung,so=fkOv.werbeReise+fkOv.sonstBetrieb+fkOv.verwaltung+fkOv.instandhaltung+fkOv.abschreibung+fkOv.personalGemein+fkOv.managementFee;
-  var paPct=k.u>0?pa/k.u:0;
+  // PA-Quote auf Ordio-gedeckte Tage beziehen (FIX 28.07.2026, siehe getPaBasis)
+  var paBasisOv=(paReal&&!hatStundenfilter())?getPaBasis(pk,gefiltert):null;
+  var paUOv=paBasisOv&&paBasisOv.umsatz>0?paBasisOv.umsatz:k.u;
+  var paPct=paUOv>0?pa/paUOv:0;
   // Umsatz/Stunde: nur Tage mit Umsatz>0 UND Stunden>0
   var aktivOvMap={};
   pk.data.forEach(function(r){
@@ -2874,7 +2900,7 @@ function renderOverview(){
       <div class="kpi-card" onclick="drill('d-ov-pa')">
         <div class="kpi-label">👥 Personalkosten ${paReal?'<span class="badge bb">Live</span>':'<span class="badge by">Schätzung</span>'}</div>
         <div class="kpi-val" style="color:${paPct>ZIELE.pa?'#ef4444':'#22c55e'}">${fmt(pa)}</div>
-        <div class="kpi-delta ${paPct>ZIELE.pa?'delta-dn':'delta-up'}">${fmtP(paPct)} vom Umsatz · Ziel ${fmtP(ZIELE.pa)}</div>
+        <div class="kpi-delta ${paPct>ZIELE.pa?'delta-dn':'delta-up'}">${fmtP(paPct)} vom Umsatz · Ziel ${fmtP(ZIELE.pa)}${paBasisOv&&!paBasisOv.voll?' · ⚠️ Ordio nur '+paBasisOv.tageGedeckt+'/'+paBasisOv.tageUmsatz+' Tage':''}</div>
         <div class="kpi-ai">${pk.stunden>0?Math.round(pk.stunden)+" h · Ø "+fmtD(pa/pk.stunden)+"/h":""} · Closing-Check Mehringdamm</div>
       </div>
       <div class="kpi-card" onclick="drill('d-ov-fc')">
@@ -2977,7 +3003,7 @@ function renderOverview(){
           <canvas id="c-ov-pa-quote"></canvas>
         </div>
       </div>
-      <div class="ai-box" style="margin-top:8px">${paPct>ZIELE.pa?"Personalkosten "+fmtP(paPct-ZIELE.pa)+" über Ziel. Potenzial: "+fmt((paPct-ZIELE.pa)*k.u)+" Einsparung möglich bei Ziel-Quote.":"Personalkosten im Zielbereich."} ${cmpMd>0&&cmpRs>0&&cmpMd<cmpRs?" Mehringdamm hat "+fmtP(cmpRs-cmpMd)+" schlechtere Effizienz als Rosenthaler.":""}</div>
+      <div class="ai-box" style="margin-top:8px">${paPct>ZIELE.pa?"Personalkosten "+fmtP(paPct-ZIELE.pa)+" über Ziel. Potenzial: "+fmt((paPct-ZIELE.pa)*paUOv)+" Einsparung möglich bei Ziel-Quote.":"Personalkosten im Zielbereich."} ${cmpMd>0&&cmpRs>0&&cmpMd<cmpRs?" Mehringdamm hat "+fmtP(cmpRs-cmpMd)+" schlechtere Effizienz als Rosenthaler.":""}</div>
     </div>
 
     <div id="d-ov-fc" class="drill-panel">
@@ -4488,7 +4514,10 @@ function renderPersonal(){
     return;
   }
 
-  var paPct=k.u>0?pk.total/k.u:0;
+  // PA-Quote auf Ordio-gedeckte Tage beziehen (FIX 28.07.2026, siehe getPaBasis)
+  var paBasisP=(!hatStundenfilter())?getPaBasis(pk,lokalGefiltert):null;
+  var paU=paBasisP&&paBasisP.umsatz>0?paBasisP.umsatz:k.u;
+  var paPct=paU>0?pk.total/paU:0;
   var stdKosten=pk.stunden>0?pk.total/pk.stunden:0;
   // Tag-Map
   var tagMap={};
@@ -4800,13 +4829,13 @@ function renderPersonal(){
         <div class="kpi-label">Personalkosten <span class="badge bb">Ordio Live</span> <span style="font-size:9px;color:#475569;font-weight:400">▾ Bereiche & Tags</span></div>
         <div class="kpi-val" style="color:#E84393">${fmt(pk.total)}</div>
         <div class="kpi-delta ${paPct>ZIELE.pa?'delta-dn':'delta-up'}">${fmtP(paPct)} vom Umsatz · Ziel ${fmtP(ZIELE.pa)}</div>
-        <div class="kpi-ai" style="color:${paPct>ZIELE.pa?'#ef4444':'#22c55e'}">${paPct>ZIELE.pa?"⚠️ "+fmtP(paPct-ZIELE.pa)+" über Ziel — Potenzial: "+fmt((paPct-ZIELE.pa)*k.u):"✓ Im Zielbereich"}</div>
+        <div class="kpi-ai" style="color:${paPct>ZIELE.pa?'#ef4444':'#22c55e'}">${paPct>ZIELE.pa?"⚠️ "+fmtP(paPct-ZIELE.pa)+" über Ziel — Potenzial: "+fmt((paPct-ZIELE.pa)*paU):"✓ Im Zielbereich"}</div>
       </div>
       <div class="kpi-card" onclick="drill('d-pa-quote-detail')" style="cursor:pointer">
         <div class="kpi-label">Personalkostenquote <span style="font-size:9px;color:#475569;font-weight:400">▾ Details</span></div>
         <div class="kpi-val" style="color:${paPct>ZIELE.pa?'#ef4444':'#22c55e'}">${fmtP(paPct)}</div>
         <div class="kpi-delta ${paPct>ZIELE.pa?'delta-dn':'delta-up'}">Ziel ${fmtP(ZIELE.pa)} · ${Math.round(pk.stunden)}h Gesamt</div>
-        <div class="kpi-ai">${pk.count} Schichten · ${maList.length} MA · Ø ${(pk.stunden/Math.max(tagKeys.length,1)).toFixed(1)}h/Tag</div>
+        <div class="kpi-ai">${pk.count} Schichten · ${maList.length} MA · Ø ${(pk.stunden/Math.max(tagKeys.length,1)).toFixed(1)}h/Tag${paBasisP&&!paBasisP.voll?' · ⚠️ Ordio deckt nur '+paBasisP.tageGedeckt+' von '+paBasisP.tageUmsatz+' Umsatz-Tagen':''}</div>
       </div>
       <div class="kpi-card" onclick="drill('d-umsatz-std')" style="cursor:pointer">
         <div class="kpi-label">Umsatz / Personalstunde</div>
@@ -5560,7 +5589,7 @@ function renderFoodCost(){
       <div class="kpi-card">
         <div class="kpi-label">Food Cost gesamt ${hatIstFC?'<span style="font-size:9px;background:#22c55e;color:#000;padding:1px 5px;border-radius:3px;margin-left:4px">Ist (direkt)</span>':'<span class="badge bb">Apicbase Soll</span>'}</div>
         <div class="kpi-val" style="color:${fcQuote>0.25?'#ef4444':'#22c55e'}">${fmt(totalFC)}</div>
-        <div class="kpi-delta ${fcQuote>0.25?'delta-dn':'delta-up'}">${fmtP(fcQuote)} vom Umsatz · Ziel 22%</div>
+        <div class="kpi-delta ${fcQuote>0.25?'delta-dn':'delta-up'}">${fmtP(fcQuote)} vom Umsatz · Ziel ${fmtP(ZIELE.fc)}</div>
         <div class="kpi-ai">${hatIstFC?'Ist-Daten aus Bestandsbericht '+rfcFC.von+' → '+rfcFC.bis+' · Soll: '+fmtP(k.u>0?k.f/k.u:0):'Soll (Rezeptur) · Wareneinsatz: '+fmt(wareneinsatz)+' · Waste: '+fmt(totalWaste)}</div>
       </div>
       <div class="kpi-card" onclick="drill('d-fc-we')">
@@ -6800,7 +6829,7 @@ function renderStornierungen(){
     sdChart.forEach(function(r){
       var d=new Date(r.datum+"T12:00:00");
       var wStart=new Date(d);wStart.setDate(d.getDate()-d.getDay()+1);
-      var wKey=wStart.toISOString().split("T")[0];
+      var wKey=toISODateLocal(wStart);
       if(!wMap[wKey])wMap[wKey]={count:0,betrag:0};
       wMap[wKey].count++;
       if(r.betrag<0)wMap[wKey].betrag+=r.betrag;
