@@ -2904,7 +2904,10 @@ function renderZielJan(){
     mCur=new Date(mCur.getFullYear(),mCur.getMonth()+1,1,12);
   }
 
-  var kum6=zielJanScore(ZIEL_JAN.zeitraumVon,(bis<ZIEL_JAN.zeitraumBis?bis:ZIEL_JAN.zeitraumBis));
+  // Durchschnitts-Karte ist vom Filter ENTKOPPELT: immer 01.07. bis heute
+  // (FIX 26.08.2026 — vorher änderte sie sich mit dem Zeitraum-Ende → verwirrend)
+  var heuteISO=toISODateLocal(new Date());
+  var kum6=zielJanScore(ZIEL_JAN.zeitraumVon,(heuteISO<ZIEL_JAN.zeitraumBis?heuteISO:ZIEL_JAN.zeitraumBis));
 
   el.innerHTML=`
     ${!inZeitraum?'<div style="background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:8px 10px;font-size:11px;color:#E84393;margin-bottom:12px">⚠️ Gewählter Zeitraum liegt außerhalb des Bewertungszeitraums Jul–Dez 2026 — Werte rein informativ.</div>':''}
@@ -2932,7 +2935,7 @@ function renderZielJan(){
         }
         var k1=scoreKarte("🎯 Score — gewählter Zeitraum",s,
           s.umverteilt.length?"⚠️ Ohne Daten (Gewicht umverteilt): "+s.umverteilt.join(", "):"Alle KPIs berechenbar");
-        var k2=scoreKarte("📈 Durchschnitt seit 01.07.2026 — dieser Stand zählt",kum6,
+        var k2=scoreKarte("📈 Durchschnitt 01.07. bis heute — dieser Stand zählt",kum6,
           "Eine Auszahlung am Ende (Q1/2027) · 50→0 % · 75→50 % · 100→100 %");
         return k1+k2;
       })()}
