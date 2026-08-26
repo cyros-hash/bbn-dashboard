@@ -6324,11 +6324,17 @@ function renderFoodCost(){
         var vonDisplay = perioden[0].von;
         var bisDisplay = perioden[perioden.length-1].bis;
 
+        // Zählungen = distinct Inventur-Zeitpunkte (von+bis aller Berichte);
+        // bei lückenloser Wochenkette: Berichte + 1
+        var zaehlSet = {};
+        perioden.forEach(function(p){ zaehlSet[p.von]=1; zaehlSet[p.bis]=1; });
+
         return {
           von: vonDisplay, bis: bisDisplay,
           offen: gesOffen, waren: gesWaren, verkauft: gesVerkauft,
           schluss: gesSchluss, schwund: gesSchwund,
-          artikel: gesArtikel, perioden: perioden.length, fallback: fallback
+          artikel: gesArtikel, perioden: perioden.length,
+          zaehlungen: Object.keys(zaehlSet).length, fallback: fallback
         };
       }
 
@@ -6377,7 +6383,7 @@ function renderFoodCost(){
         var schwundPct = realFC>0?Math.abs(kpi.schwund)/realFC:0;
         var schwundCol = kpi.schwund<-50?'#ef4444':kpi.schwund<0?'#E84393':'#22c55e';
         var periodenHint = '';
-        if(kpi.perioden > 1) periodenHint = '<span style="font-size:9px;color:#E84393;margin-left:4px">('+kpi.perioden+' Inventuren aggregiert)</span>';
+        if(kpi.perioden > 1) periodenHint = '<span style="font-size:9px;color:#E84393;margin-left:4px">('+kpi.perioden+' Wochen-Berichte · '+kpi.zaehlungen+' Zählungen)</span>';
         else if(kpi.fallback) periodenHint = '<span style="font-size:9px;color:#f59e0b;margin-left:4px">(keine Daten im Zeitraum — zeige neueste)</span>';
         return '<div style="background:#0a1628;border-radius:10px;padding:16px;border:1px solid #0a3545">' +
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
