@@ -2695,6 +2695,16 @@ function zjKern(von,bis,st){
 }
 
 function zielJanScore(von,bis){
+  // FIX 26.08.2026: Bewertung schaut nie in die Zukunft — Zeitraum-Ende wird
+  // auf heute gecappt (sonst zählen z.B. künftige Sonntage als verpasste
+  // Inventuren und drücken den Score). Komplett zukünftige Zeiträume → null.
+  var heuteZj=toISODateLocal(new Date());
+  if(bis>heuteZj)bis=heuteZj;
+  if(von>bis){
+    var leerB={};
+    Object.keys(ZIEL_JAN.bloecke).forEach(function(b){leerB[b]={score:null,gewicht:ZIEL_JAN.bloecke[b].gewicht};});
+    return{kpis:[],bloecke:leerB,gesamt:null,auszahlung:null,umverteilt:[]};
+  }
   var kpis=[];
   var kAll=zjKern(von,bis,"Alle");
 
@@ -2933,8 +2943,9 @@ function renderZielJan(){
             '<div class="kpi-delta" style="margin-top:4px">'+status+'</div>'+
             '<div class="kpi-ai">'+sub+'</div></div>';
         }
+        var zukunftHinweis=bis>toISODateLocal(new Date())?" · Zukunftstage werden nicht bewertet (gerechnet bis heute)":"";
         var k1=scoreKarte("🎯 Score — gewählter Zeitraum",s,
-          s.umverteilt.length?"⚠️ Ohne Daten (Gewicht umverteilt): "+s.umverteilt.join(", "):"Alle KPIs berechenbar");
+          (s.umverteilt.length?"⚠️ Ohne Daten (Gewicht umverteilt): "+s.umverteilt.join(", "):"Alle KPIs berechenbar")+zukunftHinweis);
         var k2=scoreKarte("📈 Durchschnitt 01.07. bis heute — dieser Stand zählt",kum6,
           "Eine Auszahlung am Ende (Q1/2027) · 50→0 % · 75→50 % · 100→100 %");
         return k1+k2;
