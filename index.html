@@ -2688,7 +2688,26 @@ function zjKern(von,bis,st){
   var pk=getOrdio(von,bis,st==="Alle"?"Alle Standorte":st);
   var rows=zjAlleRows(von,bis).filter(function(r){return st==="Alle"||r.st===st;});
   var basis=getPaBasis(pk,rows.map(function(r){return{datum:r.datum,u:r.u};}));
-  var uStd=(basis.umsatz>0&&pk.stunden>0)?basis.umsatz/pk.stunden:null;
+  // Umsatz/Personalstunde EXAKT wie Dashboard › Personal (= PDF-Quelle für A1):
+  // "aktive Standort-Tage" — nur Tag+Standort-Paare mit Stunden UND Umsatz.
+  // Prep-/Ruhetagsschichten ohne Umsatz verzerren sonst den Nenner.
+  // (FIX 26.08.2026 — vorher 59,5 vs. 61 € Abweichung zum Personal-Tab)
+  var mapSt={};
+  pk.data.forEach(function(r){
+    var key=r.datum+"|"+r.standort;
+    if(!mapSt[key])mapSt[key]={u:0,std:0};
+    mapSt[key].std+=r.stunden;
+  });
+  rows.forEach(function(r){
+    var key=r.datum+"|"+r.st;
+    if(mapSt[key])mapSt[key].u+=r.u;
+  });
+  var aktU=0,aktStd=0;
+  Object.keys(mapSt).forEach(function(k){
+    var d=mapSt[k];
+    if(d.u>0&&d.std>0){aktU+=d.u;aktStd+=d.std;}
+  });
+  var uStd=aktStd>0?aktU/aktStd:null;
   var paQ=(basis.umsatz>0&&pk.total>0)?pk.total/basis.umsatz:null;
   var bw=getBonWert(von,bis,st==="Alle"?"Alle Standorte":st);
   return{uStd:uStd,paQ:paQ,bon:bw.count>0?bw.avg:null,basis:basis,pk:pk};
