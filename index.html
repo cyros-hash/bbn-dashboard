@@ -2497,8 +2497,8 @@ async function ladeDaten(){
           var v=pCSV(l);
           function ndF(x){x=(x||"").trim();var m=x.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);if(m)return m[3]+"-"+("0"+m[2]).slice(-2)+"-"+("0"+m[1]).slice(-2);return /^\d{4}-\d{2}-\d{2}/.test(x)?x.substring(0,10):"";}
           return{name:(v[1]||"").trim(),standort:(v[2]||"").trim(),bereich:(v[3]||"").trim(),
-                 art:(v[4]||"").trim(),letzterTag:ndF(v[5]||""),notiz:(v[7]||"").trim()};
-        }).filter(function(r){return r.name&&r.letzterTag;});
+                 art:(v[4]||"").trim(),letzterTag:ndF(v[5]||""),eingang:ndF(v[6]||""),notiz:(v[7]||"").trim()};
+        }).filter(function(r){return r.name&&(r.eingang||r.letzterTag);});
         fluktuationGeladen=true;
         console.log("✓ Fluktuation: "+fluktuation.length+" Einträge (Formular)");
       }
@@ -2713,9 +2713,14 @@ function zielJanScore(von,bis){
   // Stichtag = Letzter Arbeitstag). Fallback: Tab 23 (typ=abgang).
   var abg,abgNote;
   if(fluktuationGeladen){
-    var abgL=fluktuation.filter(function(r){return r.art==="Eigenkündigung"&&r.letzterTag>=von&&r.letzterTag<=bis;});
+    // Stichtag = "Kündigung eingegangen am" (Entscheidung 26.08.2026);
+    // Fallback auf letzten Arbeitstag, falls Eingangsdatum nicht ausgefüllt
+    var abgL=fluktuation.filter(function(r){
+      var stichtag=r.eingang||r.letzterTag;
+      return r.art==="Eigenkündigung"&&stichtag>=von&&stichtag<=bis;
+    });
     abg=abgL.length;
-    abgNote="Formular Fluktuationstabelle · nur Eigenkündigungen"+(abg?" ("+abgL.map(function(r){return r.standort.substring(0,2);}).join(", ")+")":"");
+    abgNote="Formular · nur Eigenkündigungen · Stichtag: Kündigungseingang"+(abg?" ("+abgL.map(function(r){return r.standort.substring(0,2);}).join(", ")+")":"");
   }else{
     abg=zielManuell.filter(function(r){return r.typ==="abgang"&&r.datum&&r.datum>=von&&r.datum<=bis;}).length;
     abgNote="Fallback Tab 23 (Formular-Tab nicht ladbar)";
