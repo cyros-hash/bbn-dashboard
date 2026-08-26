@@ -1649,6 +1649,7 @@ var stornoDetails=[]; // Storno-Rohdaten mit Gründen (Sheet 15)
 var mgmtGehaelter=[]; // Management-Gehälter aus Sheet (22_management_gehaelter)
 var zielManuell=[]; // Zielvereinbarung Jan — manuelle Einträge (23_zielvereinbarung_manuell)
 var abwesenheitTest=[]; // D3-Fenster aus Kalender-Automatik (25_abwesenheitstest, via abwesenheit_jan.gs)
+var fluktuation=[],fluktuationGeladen=false; // B2-Quelle: Google-Form-Antworten "Fluktuationstabelle"
 var MGMT_FROM_SHEET=[]; // Namen deren Kosten aus Sheet kommen (nicht aus Ordio)
 var stundeVon=-1, stundeBis=-1; // -1 = kein Stundenfilter
 var aktivWT=new Set([0,1,2,3,4,5,6]); // aktive Wochentage (0=So...6=Sa)
@@ -2487,6 +2488,22 @@ async function ladeDaten(){
       }
     }catch(e){ console.warn("Abwesenheitstest-Tab nicht geladen: "+e.message); abwesenheitTest=[]; }
 
+    // FLUKTUATION (Google-Form "Fluktuationstabelle", seit 26.08.2026 — B2-Quelle)
+    try{
+      var rFl=await fetch("https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:csv&sheet="+encodeURIComponent("Fluktuationstabelle"));
+      var tFl=await rFl.text();
+      if(tFl&&tFl.trim().length>5&&!tFl.includes("DOCTYPE")){
+        fluktuation=tFl.trim().split("\n").slice(1).map(function(l){
+          var v=pCSV(l);
+          function ndF(x){x=(x||"").trim();var m=x.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);if(m)return m[3]+"-"+("0"+m[2]).slice(-2)+"-"+("0"+m[1]).slice(-2);return /^\d{4}-\d{2}-\d{2}/.test(x)?x.substring(0,10):"";}
+          return{name:(v[1]||"").trim(),standort:(v[2]||"").trim(),bereich:(v[3]||"").trim(),
+                 art:(v[4]||"").trim(),letzterTag:ndF(v[5]||""),notiz:(v[7]||"").trim()};
+        }).filter(function(r){return r.name&&r.letzterTag;});
+        fluktuationGeladen=true;
+        console.log("✓ Fluktuation: "+fluktuation.length+" Einträge (Formular)");
+      }
+    }catch(e){ console.warn("Fluktuationstabelle nicht geladen: "+e.message); }
+
     // SET FILTER
     var daten=alle.map(function(r){return r.datum;}).sort();
     var maxD=daten[daten.length-1]||toISODateLocal(new Date());
@@ -2692,9 +2709,19 @@ function zielJanScore(von,bis){
   kpis.push({id:"B1",block:"B",wg:0.7,name:"Personalkosten-Quote operativ",einheit:"%",
     min:24,ziel:22,stretch:20,ist:kAll.paQ!==null?kAll.paQ*100:null,note:""});
   // B2 Fluktuation (Eigenkündigungen, niedriger besser)
-  var abg=zielManuell.filter(function(r){return r.typ==="abgang"&&r.datum&&r.datum>=von&&r.datum<=bis;}).length;
+  // Quelle: Google-Form "Fluktuationstabelle" (nur Art = "Eigenkündigung",
+  // Stichtag = Letzter Arbeitstag). Fallback: Tab 23 (typ=abgang).
+  var abg,abgNote;
+  if(fluktuationGeladen){
+    var abgL=fluktuation.filter(function(r){return r.art==="Eigenkündigung"&&r.letzterTag>=von&&r.letzterTag<=bis;});
+    abg=abgL.length;
+    abgNote="Formular Fluktuationstabelle · nur Eigenkündigungen"+(abg?" ("+abgL.map(function(r){return r.standort.substring(0,2);}).join(", ")+")":"");
+  }else{
+    abg=zielManuell.filter(function(r){return r.typ==="abgang"&&r.datum&&r.datum>=von&&r.datum<=bis;}).length;
+    abgNote="Fallback Tab 23 (Formular-Tab nicht ladbar)";
+  }
   kpis.push({id:"B2",block:"B",wg:0.3,name:"Fluktuation (Eigenkündigungen)",einheit:"Abgänge",
-    min:5,ziel:2,stretch:0,ist:abg,note:"aus Tab 23 (typ=abgang)"});
+    min:5,ziel:2,stretch:0,ist:abg,note:abgNote});
   // C1 Food-Cost-Abweichung |Ist−Soll| in PP (niedriger besser)
   var c1Devs=[];
   ["Mehringdamm","Rosenthaler Straße"].forEach(function(stN){
