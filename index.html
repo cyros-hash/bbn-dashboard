@@ -2905,29 +2905,39 @@ function renderZielJan(){
     ${!inZeitraum?'<div style="background:#78350f20;border:1px solid #92400e40;border-radius:6px;padding:8px 10px;font-size:11px;color:#E84393;margin-bottom:12px">⚠️ Gewählter Zeitraum liegt außerhalb des Bewertungszeitraums Jul–Dez 2026 — Werte rein informativ.</div>':''}
     <div style="font-size:11px;color:#475569;margin-bottom:10px">Bewertungszeitraum: 01.07.–31.12.2026 · Auszahlung Q1/2027 · Standort-/Stundenfilter werden hier ignoriert (Ziele gelten für beide Standorte) · Regeln: Bonusmodell Stand Juni 2026</div>
     <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-label">🎯 Gesamtscore (gewählter Zeitraum)</div>
-        <div class="kpi-val" style="color:${pCol(s.gesamt)}">${s.gesamt===null?"—":s.gesamt.toFixed(1)}</div>
-        <div class="kpi-delta">${s.auszahlung===null?"":"Auszahlung: "+(s.auszahlung*100).toFixed(0)+" %"+(bonus>0?" ≈ "+fmt(s.auszahlung*bonus):"")}</div>
-        <div class="kpi-ai">${s.umverteilt.length?"⚠️ Ohne Daten (Gewicht umverteilt): "+s.umverteilt.join(", "):"Alle KPIs berechenbar"}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">📈 Kumuliert seit 01.07.2026</div>
-        <div class="kpi-val" style="color:${pCol(kum6.gesamt)}">${kum6.gesamt===null?"—":kum6.gesamt.toFixed(1)}</div>
-        <div class="kpi-delta">${kum6.auszahlung===null?"":"Auszahlung: "+(kum6.auszahlung*100).toFixed(0)+" %"+(bonus>0?" ≈ "+fmt(kum6.auszahlung*bonus):"")}</div>
-        <div class="kpi-ai">Das ist der Stand, der am Ende zählt (eine Auszahlung, Q1/2027)</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">🧮 Auszahlungslogik</div>
-        <div class="kpi-val" style="color:#E84393">(Score−50)/50</div>
-        <div class="kpi-delta">50 → 0 % · 75 → 50 % · 100 → 100 %</div>
-        <div class="kpi-ai">Prozent der vereinbarten Bonussumme · €-Betrag bewusst nicht im Dashboard</div>
-      </div>
+      ${(function(){
+        function balken(score){
+          if(score===null)return"";
+          var p=Math.max(0,Math.min(120,score))/120*100;
+          return '<div style="position:relative;height:8px;background:#1e2d40;border-radius:4px;margin:8px 0 4px">'+
+            '<div style="position:absolute;left:0;top:0;height:8px;width:'+p.toFixed(1)+'%;background:'+pCol(score)+';border-radius:4px"></div>'+
+            '<div style="position:absolute;left:'+(50/120*100)+'%;top:-2px;height:12px;width:2px;background:#94a3b8" title="Auszahlungsschwelle 50"></div>'+
+            '<div style="position:absolute;left:'+(100/120*100)+'%;top:-2px;height:12px;width:2px;background:#22c55e" title="Voller Bonus 100"></div>'+
+          '</div>'+
+          '<div style="display:flex;justify-content:space-between;font-size:9px;color:#475569"><span>0</span><span>50 = Schwelle</span><span>100 = voll</span></div>';
+        }
+        function scoreKarte(titel,sc,sub){
+          if(sc.gesamt===null)return '<div class="kpi-card"><div class="kpi-label">'+titel+'</div><div class="kpi-val">—</div><div class="kpi-ai">'+sub+'</div></div>';
+          var status=sc.gesamt<50?("Noch "+(50-sc.gesamt).toFixed(1)+" Punkte bis zur Auszahlungsschwelle"):("Auszahlung: "+(sc.auszahlung*100).toFixed(0)+" % der Bonussumme");
+          return '<div class="kpi-card"><div class="kpi-label">'+titel+'</div>'+
+            '<div class="kpi-val" style="color:'+pCol(sc.gesamt)+'">'+sc.gesamt.toFixed(1)+'<span style="font-size:13px;color:#475569;font-weight:400"> / 100</span></div>'+
+            balken(sc.gesamt)+
+            '<div class="kpi-delta" style="margin-top:4px">'+status+'</div>'+
+            '<div class="kpi-ai">'+sub+'</div></div>';
+        }
+        var k1=scoreKarte("🎯 Score — gewählter Zeitraum",s,
+          s.umverteilt.length?"⚠️ Ohne Daten (Gewicht umverteilt): "+s.umverteilt.join(", "):"Alle KPIs berechenbar");
+        var k2=scoreKarte("📈 Kumuliert seit 01.07.2026 — dieser Stand zählt",kum6,
+          "Eine Auszahlung am Ende (Q1/2027) · 50→0 % · 75→50 % · 100→100 %");
+        return k1+k2;
+      })()}
       ${["A","B","C","D","E"].map(function(b){
         var bl=s.bloecke[b];
+        var beitrag=s.kpis.filter(function(k){return k.block===b&&k.beitrag!==null;}).reduce(function(t,k){return t+k.beitrag;},0);
+        var maxBeitrag=s.kpis.filter(function(k){return k.block===b;}).reduce(function(t,k){return t+k.wgGesamt;},0)*100;
         return '<div class="kpi-card"><div class="kpi-label">Block '+b+' — '+ZIEL_JAN.bloecke[b].name+' ('+(ZIEL_JAN.bloecke[b].gewicht*100).toFixed(0)+'%)</div>'+
-        '<div class="kpi-val" style="color:'+pCol(bl.score)+'">'+(bl.score===null?"—":bl.score.toFixed(0))+'</div>'+
-        '<div class="kpi-delta">'+(bl.score===null?"keine Daten":"Punkte (0–120)")+'</div></div>';
+        '<div class="kpi-val" style="color:'+pCol(bl.score)+'">'+(bl.score===null?"—":bl.score.toFixed(0))+'<span style="font-size:12px;color:#475569;font-weight:400"> / 100 Pkt.</span></div>'+
+        '<div class="kpi-delta">'+(bl.score===null?"keine Daten — Gewicht umverteilt":"Beitrag zum Score: "+beitrag.toFixed(1)+" von "+maxBeitrag.toFixed(0)+" möglichen")+'</div></div>';
       }).join("")}
     </div>
 
