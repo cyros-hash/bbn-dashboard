@@ -2927,7 +2927,7 @@ function renderZielJan(){
         }
         var k1=scoreKarte("🎯 Score — gewählter Zeitraum",s,
           s.umverteilt.length?"⚠️ Ohne Daten (Gewicht umverteilt): "+s.umverteilt.join(", "):"Alle KPIs berechenbar");
-        var k2=scoreKarte("📈 Kumuliert seit 01.07.2026 — dieser Stand zählt",kum6,
+        var k2=scoreKarte("📈 Durchschnitt seit 01.07.2026 — dieser Stand zählt",kum6,
           "Eine Auszahlung am Ende (Q1/2027) · 50→0 % · 75→50 % · 100→100 %");
         return k1+k2;
       })()}
@@ -2968,11 +2968,11 @@ function renderZielJan(){
     </div>
 
     <div class="box" style="margin-top:14px">
-      <div class="box-title">📆 Monatsverlauf & Kumuliert</div>
-      <div class="box-sub">Monatswerte = Steuerungs-Indikation · verbindlich ist nur der kumulierte Gesamtzeitraum</div>
+      <div class="box-title">📆 Monatsverlauf & Durchschnitt</div>
+      <div class="box-sub">Monatswerte = Steuerungs-Indikation · verbindlich ist der Durchschnitt über den gesamten Bewertungszeitraum</div>
       <div style="height:180px"><canvas id="zjChart"></canvas></div>
       <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:10px">
-        <tr style="color:#475569;text-align:left"><th style="padding:6px 8px">Monat</th><th>Score</th><th>Auszahlungs-%</th>${bonus>0?'<th>≈ €/Monat (indikativ)</th>':''}<th>Kumuliert-Score</th><th>Kumuliert-Auszahlung</th></tr>
+        <tr style="color:#475569;text-align:left"><th style="padding:6px 8px">Monat</th><th>Score</th><th>Auszahlungs-%</th>${bonus>0?'<th>≈ €/Monat (indikativ)</th>':''}<th>Ø-Score seit Jul</th><th>Ø-Auszahlung</th></tr>
         ${monate.map(function(m){
           return '<tr style="border-top:1px solid #1e2d40">'+
           '<td style="padding:6px 8px;color:#f1f5f9">'+m.label+'</td>'+
@@ -2992,7 +2992,7 @@ function renderZielJan(){
       data:{labels:monate.map(function(m){return m.label;}),
         datasets:[
           {label:"Monats-Score",data:monate.map(function(m){return m.score;}),borderColor:"#E84393",backgroundColor:"#E8439333",tension:0.3},
-          {label:"Kumuliert",data:monate.map(function(m){return m.kumScore;}),borderColor:"#22c55e",backgroundColor:"#22c55e33",tension:0.3}
+          {label:"Ø seit Juli",data:monate.map(function(m){return m.kumScore;}),borderColor:"#22c55e",backgroundColor:"#22c55e33",tension:0.3}
         ]},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{labels:{color:"#94a3b8",font:{size:10}}}},
