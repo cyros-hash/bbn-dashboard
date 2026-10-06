@@ -1675,10 +1675,12 @@ var FIXKOSTEN = {
   versicherung:     43.63,
   werbeReise:      3528.04,
   sonstBetrieb:    5353.71,
-  verwaltung:      5441.25,
+  // Verwaltung 5.441,25 (BWA-Ø) + Mindspace-Büro 1.800,00 netto/Monat
+  // (neu ab Aug 2026; 3-Mo-Vorauszahlung 6.426 brutto = 5.400 netto ÷ 3 — Beleg Moss 08/26)
+  verwaltung:      7241.25,
   instandhaltung:   717.58,
   abschreibung:       0.00
-  // Gesamt: 46.450,62/Monat = 1.548,35/Tag
+  // Gesamt: 48.250,62/Monat = 1.608,35/Tag (inkl. Mindspace ab 08/2026)
 };
 // Gesamte Fixkosten pro Monat
 var FIXKOSTEN_GESAMT = Object.values(FIXKOSTEN).reduce(function(s,v){return s+v;},0);
@@ -1691,19 +1693,38 @@ var MGMT_MITARBEITER = ["Kevin Weber","Jan Haring","Buted Deleg","Christian Beut
 // Öffnungszeiten {wochentag(0=So): {open:Stunde, close:Stunde}, null=geschlossen}
 var OEFFNUNG={
   0:{open:12,close:21},  // Sonntag
-  1:null,                 // Montag geschlossen
+  1:null,                 // Montag: Ruhetag nur 28.07.2025–04.10.2026 → siehe getOeffnung()
   2:{open:12,close:21},  // Dienstag
   3:{open:12,close:21},  // Mittwoch
   4:{open:12,close:21},  // Donnerstag
   5:{open:12,close:22},  // Freitag
   6:{open:12,close:22}   // Samstag
 };
+// ============================================================
+// MONTAG-REGEL (Stichtage) — FIX 06.10.2026
+// Montag war Ruhetag vom 28.07.2025 bis 04.10.2026. Seit 05.10.2026 ist Montag
+// regulärer Betriebstag (beide Standorte). Davor (bis 27.07.2025) war ebenfalls offen.
+// ALLE Montag-Sonderregeln (Waste→Sonntag, Betriebstage ohne Montag, Öffnungszeiten)
+// laufen über istMontagRuhetag(iso) — nie mehr über getDay()===1 allein.
+// Ausnahme: Inventur-Logik (Bis-Datum Montag = Sonntagsschicht nach Mitternacht) bleibt,
+// weil die Inventur weiterhin sonntags gemacht wird.
+// ============================================================
+var MONTAG_RUHETAG_VON="2025-07-28", MONTAG_RUHETAG_BIS="2026-10-04";
+var OEFFNUNG_MONTAG_OFFEN={open:12,close:21}; // Annahme: wie Di–Do
+function istMontagRuhetag(iso){
+  if(!iso) return false;
+  var d=new Date(iso+"T12:00:00");
+  return d.getDay()===1 && iso>=MONTAG_RUHETAG_VON && iso<=MONTAG_RUHETAG_BIS;
+}
+function getOeffnung(iso){
+  var d=new Date(iso+"T12:00:00"), wt=d.getDay();
+  if(wt===1) return istMontagRuhetag(iso)?null:OEFFNUNG_MONTAG_OFFEN;
+  return OEFFNUNG[wt];
+}
 // Berechnet Aufbau-Stunden (vor Öffnung) und Abbau-Stunden (nach Ladenschluss) pro Schicht
 // Stundenlohn = kosten/stunden der Schicht, dann anteilig auf vor/nach rechnen
 function getShiftOverhead(r){
-  var d=new Date(r.datum+"T12:00:00");
-  var wt=d.getDay();
-  var oz=OEFFNUNG[wt];
+  var oz=getOeffnung(r.datum); // Montag datumsabhängig (Ruhetag-Fenster)
   var stdLohn=r.stunden>0?r.kosten/r.stunden:0;
   var vorStd=0,nachStd=0;
   if(oz){
@@ -1853,7 +1874,8 @@ function getRealFC(stFilter,vonOpt,bisOpt){
     return Object.keys(keys).map(function(k){return keys[k];});
   }
 
-  // Montag-Inventuren der Vorwoche zuordnen
+  // Montag-Inventuren der Vorwoche zuordnen (Sonntagsschicht endet nach Mitternacht → Bis = Montag).
+  // Bleibt auch nach Öffnung der Montage (05.10.2026) gültig: Inventur ist weiterhin sonntags.
   function _normBis(isoDate){
     var d=new Date(isoDate+'T12:00:00');
     if(d.getDay()===1) d.setDate(d.getDate()-1);
@@ -2382,11 +2404,11 @@ async function ladeDaten(){
         kosten:    pDE(v[8])
       };
     }).filter(function(r){return r.datum&&r.artikel;});
-    // Montag ist Ruhetag — Waste am Montag stammt vom Sonntagabend (nach 0 Uhr erfasst)
-    // → Datum auf den vorherigen Sonntag umschreiben
+    // Montag-Ruhetag (28.07.2025–04.10.2026): Waste am Montag stammt vom Sonntagabend
+    // (nach 0 Uhr erfasst) → Datum auf den Sonntag davor. Seit 05.10.2026 ist Montag
+    // Betriebstag → Montags-Waste bleibt auf dem Montag (FIX 06.10.2026).
     waste.forEach(function(r){
-      var d=new Date(r.datum+"T12:00:00");
-      if(d.getDay()===1){d.setDate(d.getDate()-1);r.datum=d.toISOString().slice(0,10);}
+      if(istMontagRuhetag(r.datum)){var d=new Date(r.datum+"T12:00:00");d.setDate(d.getDate()-1);r.datum=d.toISOString().slice(0,10);}
     });
 
     // ITEM SALES (FC pro Artikel — Apicbase)
@@ -2914,23 +2936,28 @@ function renderZielJan(){
   }
   function pCol(p){return p===null?"#475569":p>=100?"#22c55e":p>=50?"#eab308":"#ef4444";}
 
-  // Monatszeilen im gewählten Zeitraum + kumuliert ab Bewertungsstart
+  // KPI-Monatstabelle (Umbau 06.10.2026): Spalten IMMER ab Bewertungsstart (Juli) bis zum
+  // Monat des gewählten Zeitraum-Endes — gecappt auf heute und auf Dezember. Jeder Monat wird
+  // als VOLLER Monat gerechnet (unabhängig vom gewählten "von"); der laufende Monat bis heute.
+  var heuteISO0=toISODateLocal(new Date());
+  var tabEnde=bis<heuteISO0?bis:heuteISO0; if(tabEnde>ZIEL_JAN.zeitraumBis)tabEnde=ZIEL_JAN.zeitraumBis;
   var monate=[];
-  var mCur=new Date(von.substring(0,7)+"-01T12:00:00");
-  var mEndAll=new Date(bis+"T12:00:00");
-  var guard=0;
-  while(mCur<=mEndAll&&guard<12){
-    guard++;
-    var mVon=toISODateLocal(new Date(mCur.getFullYear(),mCur.getMonth(),1));
-    var mBis=toISODateLocal(new Date(mCur.getFullYear(),mCur.getMonth()+1,0));
-    if(mVon<von)mVon=von;
-    if(mBis>bis)mBis=bis;
-    var ms=zielJanScore(mVon,mBis);
-    var kumBis=mBis<ZIEL_JAN.zeitraumBis?mBis:ZIEL_JAN.zeitraumBis;
-    var kum=(kumBis>=ZIEL_JAN.zeitraumVon)?zielJanScore(ZIEL_JAN.zeitraumVon,kumBis):null;
-    monate.push({label:mCur.toLocaleDateString("de-DE",{month:"short",year:"2-digit"}),
-      score:ms.gesamt,ausz:ms.auszahlung,kumScore:kum?kum.gesamt:null,kumAusz:kum?kum.auszahlung:null});
-    mCur=new Date(mCur.getFullYear(),mCur.getMonth()+1,1,12);
+  if(tabEnde>=ZIEL_JAN.zeitraumVon){
+    var mCur=new Date(ZIEL_JAN.zeitraumVon.substring(0,7)+"-01T12:00:00");
+    var mEndAll=new Date(tabEnde+"T12:00:00");
+    var guard=0;
+    while(mCur<=mEndAll&&guard<12){
+      guard++;
+      var mVon=toISODateLocal(new Date(mCur.getFullYear(),mCur.getMonth(),1));
+      var mBisVoll=toISODateLocal(new Date(mCur.getFullYear(),mCur.getMonth()+1,0));
+      var mBis=mBisVoll>tabEnde?tabEnde:mBisVoll;
+      var ms=zielJanScore(mVon,mBis);
+      var kum=zielJanScore(ZIEL_JAN.zeitraumVon,mBis);
+      monate.push({label:mCur.toLocaleDateString("de-DE",{month:"short",year:"2-digit"}),
+        laufend:mBis<mBisVoll, bisLabel:mBis.split("-").reverse().join("."),
+        s:ms, kumScore:kum.gesamt});
+      mCur=new Date(mCur.getFullYear(),mCur.getMonth()+1,1,12);
+    }
   }
 
   // Durchschnitts-Karte ist vom Filter ENTKOPPELT: immer 01.07. bis heute
@@ -3006,38 +3033,62 @@ function renderZielJan(){
     </div>
 
     <div class="box" style="margin-top:14px">
-      <div class="box-title">📆 Monatsverlauf & Durchschnitt</div>
-      <div class="box-sub">Monatswerte = Steuerungs-Indikation · verbindlich ist der Durchschnitt über den gesamten Bewertungszeitraum</div>
-      <div style="height:180px"><canvas id="zjChart"></canvas></div>
-      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:10px">
-        <tr style="color:#475569;text-align:left"><th style="padding:6px 8px">Monat</th><th>Score</th><th>Auszahlungs-%</th>${bonus>0?'<th>≈ €/Monat (indikativ)</th>':''}<th>Ø-Score seit Jul</th><th>Ø-Auszahlung</th></tr>
-        ${monate.map(function(m){
-          return '<tr style="border-top:1px solid #1e2d40">'+
-          '<td style="padding:6px 8px;color:#f1f5f9">'+m.label+'</td>'+
-          '<td style="color:'+pCol(m.score)+';font-weight:600">'+(m.score===null?"—":m.score.toFixed(1))+'</td>'+
-          '<td>'+(m.ausz===null?"—":(m.ausz*100).toFixed(0)+" %")+'</td>'+
-          (bonus>0?'<td>'+(m.ausz===null?"—":fmt(m.ausz*bonus/ZIEL_JAN.monate))+'</td>':'')+
-          '<td>'+(m.kumScore===null?"—":m.kumScore.toFixed(1))+'</td>'+
-          '<td>'+(m.kumAusz===null?"—":(m.kumAusz*100).toFixed(0)+" %"+(bonus>0?" ≈ "+fmt(m.kumAusz*bonus):""))+'</td></tr>';
-        }).join("")}
-      </table>
+      <div class="box-title">📆 KPI-Verlauf Monat für Monat</div>
+      <div class="box-sub">Je Monat: Ist-Wert und erreichte Punkte (0–120) · ▲▼ = Punkte gegenüber Vormonat · Spalten laufen immer ab Juli bis zum gewählten Monat · Monatswerte = Steuerung, verbindlich ist der Durchschnitt 01.07. bis heute (Karte oben)</div>
+      ${(function(){
+        if(!monate.length)return '<div style="font-size:11px;color:#475569;padding:8px 0">Gewähltes Zeitraum-Ende liegt vor dem Bewertungsstart (01.07.2026).</div>';
+        function trend(cur,prev){
+          if(cur===null||cur===undefined||prev===null||prev===undefined)return '<span style="color:#475569">·</span>';
+          var d=cur-prev;
+          if(d>=0.5)return '<span style="color:#22c55e" title="+'+d.toFixed(0)+' Pkt. vs. Vormonat">▲</span>';
+          if(d<=-0.5)return '<span style="color:#ef4444" title="'+d.toFixed(0)+' Pkt. vs. Vormonat">▼</span>';
+          return '<span style="color:#94a3b8" title="unverändert">▬</span>';
+        }
+        function zelle(k,prevK){
+          if(!k||k.punkte===null||k.punkte===undefined||k.ist===null||k.ist===undefined)
+            return '<td style="text-align:center;color:#475569;padding:6px 8px" title="'+(k&&k.note?k.note.replace(/"/g,'&quot;'):'keine Daten')+'">—</td>';
+          var prevP=prevK&&prevK.punkte!==null&&prevK.punkte!==undefined?prevK.punkte:null;
+          return '<td style="text-align:center;padding:6px 8px;white-space:nowrap" title="'+(k.note?k.note.replace(/"/g,'&quot;'):'')+'">'+
+            '<div style="color:#f1f5f9;font-weight:600">'+fmtIst(k)+'</div>'+
+            '<div style="font-size:11px"><span style="color:'+pCol(k.punkte)+';font-weight:700">'+k.punkte.toFixed(0)+' Pkt.</span> '+trend(k.punkte,prevP)+'</div></td>';
+        }
+        function scoreZelle(cur,prev,bold){
+          if(cur===null||cur===undefined)return '<td style="text-align:center;color:#475569;padding:6px 8px">—</td>';
+          return '<td style="text-align:center;padding:6px 8px;font-weight:'+(bold?'800':'700')+';color:'+pCol(cur)+'">'+cur.toFixed(bold?1:0)+' '+trend(cur,prev)+'</td>';
+        }
+        var kpiIds=s.kpis.map(function(k){return k.id;});
+        var head='<tr style="color:#475569;text-align:left"><th style="padding:6px 8px">KPI</th><th style="padding:6px 8px">Ziel</th>'+
+          monate.map(function(m){return '<th style="text-align:center;padding:6px 8px;color:#f1f5f9">'+m.label+(m.laufend?'<div style="font-size:9px;color:#475569;font-weight:400">bis '+m.bisLabel+'</div>':'')+'</th>';}).join("")+'</tr>';
+        var rows='';
+        ["A","B","C","D","E"].forEach(function(b){
+          kpiIds.forEach(function(id){
+            var k0=s.kpis.filter(function(k){return k.id===id;})[0];
+            if(k0.block!==b)return;
+            var soll=k0.binaer?"bestanden":(k0.stufen?"3 / 3":(k0.ziel+" "+k0.einheit).trim());
+            rows+='<tr style="border-top:1px solid #1e2d40"><td style="padding:6px 8px"><b style="color:#E84393">'+id+'</b> '+k0.name+'</td>'+
+              '<td style="padding:6px 8px;color:#94a3b8;white-space:nowrap">'+soll+'</td>'+
+              monate.map(function(m,i){
+                var k=m.s.kpis.filter(function(x){return x.id===id;})[0];
+                var kp=i>0?monate[i-1].s.kpis.filter(function(x){return x.id===id;})[0]:null;
+                return zelle(k,kp);
+              }).join("")+'</tr>';
+          });
+          rows+='<tr style="border-top:1px solid #1e2d40;background:#0f1829"><td colspan="2" style="padding:6px 8px;color:#94a3b8;font-weight:700">Block '+b+' — '+ZIEL_JAN.bloecke[b].name+' ('+(ZIEL_JAN.bloecke[b].gewicht*100).toFixed(0)+' %)</td>'+
+            monate.map(function(m,i){
+              var cur=m.s.bloecke[b]?m.s.bloecke[b].score:null;
+              var prev=i>0&&monate[i-1].s.bloecke[b]?monate[i-1].s.bloecke[b].score:null;
+              return scoreZelle(cur,prev,false);
+            }).join("")+'</tr>';
+        });
+        rows+='<tr style="border-top:2px solid #E84393"><td colspan="2" style="padding:8px;font-weight:800;color:#f1f5f9">Gesamtscore Monat</td>'+
+          monate.map(function(m,i){return scoreZelle(m.s.gesamt,i>0?monate[i-1].s.gesamt:null,true);}).join("")+'</tr>';
+        rows+='<tr style="border-top:1px solid #1e2d40"><td colspan="2" style="padding:6px 8px;color:#94a3b8">Ø 01.07. bis Monatsende <span style="font-size:10px;color:#475569">(verbindlich, Regel 2.3)</span></td>'+
+          monate.map(function(m,i){return scoreZelle(m.kumScore,i>0?monate[i-1].kumScore:null,false);}).join("")+'</tr>';
+        return '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'+head+rows+'</table></div>'+
+          '<div style="font-size:10px;color:#475569;margin-top:6px">Punkte-Farben: grün ≥ 100 · gelb ≥ 50 · rot < 50 · „—" = im Monat nicht messbar (Gewicht nach Regel 4.3 umverteilt). Trendpfeile vergleichen Punkte, damit „besser" bei allen KPIs dieselbe Richtung hat (auch bei „niedriger ist besser").</div>';
+      })()}
     </div>`;
 
-  if(typeof Chart!=="undefined"&&document.getElementById("zjChart")){
-    if(zjChartInst)zjChartInst.destroy();
-    zjChartInst=new Chart(document.getElementById("zjChart"),{
-      type:"line",
-      data:{labels:monate.map(function(m){return m.label;}),
-        datasets:[
-          {label:"Monats-Score",data:monate.map(function(m){return m.score;}),borderColor:"#E84393",backgroundColor:"#E8439333",tension:0.3},
-          {label:"Ø seit Juli",data:monate.map(function(m){return m.kumScore;}),borderColor:"#22c55e",backgroundColor:"#22c55e33",tension:0.3}
-        ]},
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{labels:{color:"#94a3b8",font:{size:10}}}},
-        scales:{y:{min:0,max:120,ticks:{color:"#475569"},grid:{color:"#1e2d40"}},
-                x:{ticks:{color:"#475569"},grid:{display:false}}}}
-    });
-  }
 }
 
 // ============================================================
@@ -3231,18 +3282,18 @@ function renderOverview(){
   var fcSollIstDiff=hatIstFC?(anzFcPct-k.fp):0;
   var fcSollIstMd=hatIstFC&&rfc.md?(anzFcMdPct-km.fp):0;
   var fcSollIstRs=hatIstFC&&rfc.rs?(anzFcRsPct-kr.fp):0;
-  // Waste — Montag=Ruhetag, Montag-Waste gehört zum Sonntag davor
-  // Filter erweitert: bis+1 Tag holen, damit Montag-Waste nach Zeitraumende dem letzten Sonntag zugeordnet wird
+  // Waste — Montag-Ruhetag (bis 04.10.2026): Montag-Waste gehört zum Sonntag davor; offene Montage zählen normal
+  // Filter erweitert: bis+1 Tag holen, damit Ruhetag-Montag-Waste nach Zeitraumende dem letzten Sonntag zugeordnet wird
   var _bisPlus1Ov=new Date(bis+'T12:00:00');_bisPlus1Ov.setDate(_bisPlus1Ov.getDate()+1);var _bisPlus1OvISO=_bisPlus1Ov.toISOString().slice(0,10);
   var wasteMdOvRaw=waste.filter(function(r){return r.datum>=von&&r.datum<=_bisPlus1OvISO&&r.standort==="Mehringdamm";});
   var wasteRsOvRaw=waste.filter(function(r){return r.datum>=von&&r.datum<=_bisPlus1OvISO&&r.standort==="Rosenthaler Straße";});
-  // Montag-Normalisierung: Montag→Sonntag, dann nur Tage innerhalb [von,bis] zählen
+  // Montag-Normalisierung: Ruhetag-Montag→Sonntag, dann nur Tage innerhalb [von,bis] zählen
   function _wasteNormFilter(rows){
     var kept=[];
     rows.forEach(function(r){
       var d=new Date(r.datum+'T12:00:00');
-      if(d.getDay()===1){
-        // Montag → Sonntag davor
+      if(istMontagRuhetag(r.datum)){
+        // Ruhetag-Montag → Sonntag davor
         d.setDate(d.getDate()-1);
         var normISO=d.toISOString().slice(0,10);
         if(normISO>=von&&normISO<=bis) kept.push({datum:normISO,kosten:r.kosten,standort:r.standort});
@@ -3268,10 +3319,10 @@ function renderOverview(){
   }
   var wasteMdDays=_wasteTagNorm(wasteMdOv);
   var wasteRsDays=_wasteTagNorm(wasteRsOv);
-  // Geschäftstage berechnen (exkl. Montag)
+  // Geschäftstage berechnen (exkl. Ruhetag-Montage bis 04.10.2026; danach zählt Montag mit)
   var bizDays=0;
-  var _dBiz=new Date(von);var _dEnd=new Date(bis);
-  while(_dBiz<=_dEnd){if(_dBiz.getDay()!==1)bizDays++;_dBiz.setDate(_dBiz.getDate()+1);}
+  var _dBiz=new Date(von+'T12:00:00');var _dEnd=new Date(bis+'T12:00:00');
+  while(_dBiz<=_dEnd){if(!istMontagRuhetag(toISODateLocal(_dBiz)))bizDays++;_dBiz.setDate(_dBiz.getDate()+1);}
   var wasteKonsMd=bizDays>0?wasteMdDays/bizDays:0;
   var wasteKonsRs=bizDays>0?wasteRsDays/bizDays:0;
   var wasteKonsGes=bizDays>0?(wasteMdDays+wasteRsDays)/(bizDays*2):0;
@@ -5964,15 +6015,15 @@ function renderFoodCost(){
   // Waste-Konsistenz pro Standort
   var betriebsTage = new Set(gefiltert.map(function(r){return r.datum;})).size || 1;
   function wasteKonsistenz(stName) {
-    // Waste im Zeitraum + 1 Tag danach holen (Montag-Waste gehört zum Sonntag davor)
+    // Waste im Zeitraum + 1 Tag danach holen (Ruhetag-Montag-Waste gehört zum Sonntag davor)
     var _bP1=new Date(bis+'T12:00:00');_bP1.setDate(_bP1.getDate()+1);var bP1ISO=_bP1.toISOString().slice(0,10);
     var stWasteRaw = waste.filter(function(r){return r.datum>=von&&r.datum<=bP1ISO&&r.standort===stName;});
-    // Montag → Sonntag normalisieren, nur Tage innerhalb [von,bis] behalten
+    // Ruhetag-Montag → Sonntag normalisieren, nur Tage innerhalb [von,bis] behalten
     var wasteTage = new Set();
     var totalW = 0;
     stWasteRaw.forEach(function(r){
       var d=new Date(r.datum+'T12:00:00');
-      if(d.getDay()===1){ // Montag → Sonntag davor
+      if(istMontagRuhetag(r.datum)){ // Ruhetag-Montag → Sonntag davor
         d.setDate(d.getDate()-1);
         var normISO=d.toISOString().slice(0,10);
         if(normISO>=von&&normISO<=bis){wasteTage.add(normISO);totalW+=r.kosten;}
@@ -5981,10 +6032,10 @@ function renderFoodCost(){
       }
     });
     var tageMitWaste = wasteTage.size;
-    // Betriebstage = alle Tage im Zeitraum OHNE Montag
+    // Betriebstage = alle Tage im Zeitraum ohne Ruhetag-Montage (seit 05.10.2026 zählt Montag mit)
     var bTage=0;
     var _db=new Date(von+'T12:00:00'),_de=new Date(bis+'T12:00:00');
-    while(_db<=_de){if(_db.getDay()!==1)bTage++;_db.setDate(_db.getDate()+1);}
+    while(_db<=_de){if(!istMontagRuhetag(toISODateLocal(_db)))bTage++;_db.setDate(_db.getDate()+1);}
     var avgProWasteTag = tageMitWaste>0?totalW/tageMitWaste:0;
 
     // Detail pro Tag: Datum, ob Waste erfasst, Schichthabende aus Ordio
@@ -5992,8 +6043,7 @@ function renderFoodCost(){
     var _dt=new Date(von+'T12:00:00');
     while(_dt<=_de){
       var iso=_dt.toISOString().slice(0,10);
-      var wt=_dt.getDay(); // 0=So, 1=Mo
-      if(wt!==1){ // Montag überspringen (Ruhetag)
+      if(!istMontagRuhetag(iso)){ // Ruhetag-Montage überspringen (bis 04.10.2026)
         var hatWaste = wasteTage.has(iso);
         // Schichthabende aus Ordio für diesen Tag + Standort
         var schicht = ordio.filter(function(r){return r.datum===iso&&r.standort===stName;})
