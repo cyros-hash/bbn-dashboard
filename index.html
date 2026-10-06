@@ -6043,6 +6043,7 @@ function renderFoodCost(){
     var _dt=new Date(von+'T12:00:00');
     while(_dt<=_de){
       var iso=_dt.toISOString().slice(0,10);
+      var wt=_dt.getDay(); // 0=So, 1=Mo
       if(!istMontagRuhetag(iso)){ // Ruhetag-Montage überspringen (bis 04.10.2026)
         var hatWaste = wasteTage.has(iso);
         // Schichthabende aus Ordio für diesen Tag + Standort
