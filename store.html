@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>BBN Store-Übersicht</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<!--
+  BBN Store-Übersicht v1.0 · 07.10.2026
+  Nur zum Lesen. Daten: Apps-Script-Projekt „BBN Store-Übersicht" (store_api.gs) → Asana Ops-Board.
+  Login: dasselbe Google-Login (Firebase) wie das BBN-Cockpit. Geprüft wird serverseitig.
+  Aufruf: /store.html?store=RS oder ?store=MD
+-->
+<style>
+:root{
+  --bg:#F2F3F5;--card:#FFFFFF;--ink:#15171C;--ink2:#2A2D35;--muted:#555B66;--line:#DDE0E5;--line2:#EEF0F3;
+  --accent:#D7263D;--dark:#15171C;
+  --neu-bg:#FFEDD5;--neu-fg:#9A3412;--neu-dot:#EA580C;
+  --kl-bg:#EDE9FE;--kl-fg:#5B21B6;--kl-dot:#7C3AED;
+  --ar-bg:#DBEAFE;--ar-fg:#1E40AF;--ar-dot:#2563EB;
+  --ok-bg:#DCFCE7;--ok-fg:#166534;--ok-dot:#16A34A;
+  --ue-bg:#FEE2E2;--ue-fg:#991B1B;--ue-dot:#DC2626;
+  --hw-bg:#FFF7D6;--hw-line:#EEDC9A;--hw-fg:#6B4E00;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Public Sans',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
+button{font:inherit;cursor:pointer;color:inherit}
+button:disabled{cursor:default;opacity:.35}
+button:focus-visible,a:focus-visible{outline:3px solid #2563EB;outline-offset:2px}
+h1,h2,h3{font-family:Archivo,'Public Sans',sans-serif;margin:0}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+/* Kopf */
+.kopf{background:var(--dark);color:#fff}
+.kopf .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-top:12px;padding-bottom:12px}
+.marke{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:Archivo,sans-serif;font-weight:800;font-size:13px;letter-spacing:.04em}
+.marke b{display:block;font-family:Archivo,sans-serif;font-size:19px;line-height:1.2}
+.marke small{display:block;font-size:12px;color:#B9BEC7}
+.kopf-rechts{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.storewahl{display:flex;gap:4px;padding:4px;background:#2A2D35;border-radius:12px}
+.storewahl button{min-height:44px;padding:0 18px;border:0;border-radius:9px;font-weight:600;font-size:14px;background:transparent;color:#D5D9E0}
+.storewahl button[aria-pressed="true"]{background:#fff;color:var(--ink)}
+.kbtn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border-radius:10px;border:1px solid #3A3F48;background:transparent;color:#fff;font-weight:600;font-size:14px;text-decoration:none}
+.kbtn.voll{background:var(--accent);border-color:var(--accent)}
+/* Inhalt */
+main.wrap{display:flex;flex-direction:column;gap:18px;padding-top:20px;padding-bottom:28px}
+.karte{background:var(--card);border:1px solid var(--line);border-radius:14px}
+.datum{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.datum-kopf{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.datum-nav{display:flex;align-items:center;gap:12px;min-width:0}
+.pfeil{flex:0 0 auto;width:44px;height:44px;border:1px solid #C9CDD4;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center}
+.datum-titel b{display:block;font-family:Archivo,sans-serif;font-weight:800;font-size:24px;line-height:1.15}
+.datum-titel small{display:block;font-size:13px;color:var(--muted)}
+.modus{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:700}
+.modus i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.btn2{min-height:44px;padding:0 16px;border:1px solid var(--ink);border-radius:10px;background:#fff;font-weight:600;font-size:14px}
+.tage{position:relative;display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.tag{flex:0 0 88px;min-height:64px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:#fff;display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left}
+.tag small{font-size:12px;font-weight:600;color:var(--muted)}
+.tag b{font-family:Archivo,sans-serif;font-size:17px}
+.tag span{font-size:12px;color:var(--muted)}
+.tag[aria-pressed="true"]{background:var(--dark);border-color:var(--dark);color:#fff}
+.tag[aria-pressed="true"] small,.tag[aria-pressed="true"] span{color:#D5D9E0}
+.cis{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding-top:12px;border-top:1px solid var(--line2)}
+.cis>b{font-size:13px;color:#3A3F48}
+.ci{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border-radius:999px;font-size:13px}
+.ci i{flex:0 0 auto;width:24px;height:24px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-style:normal}
+.ci.ok{background:#F0FAF3}.ci.ok i{background:var(--ok-dot)}
+.ci.offen{background:#F2F3F5}.ci.offen i{background:#6B7280}
+.ci.fehlt{background:#FDF0F0;color:var(--ue-fg)}.ci.fehlt i{background:#B91C1C}
+.wichtig{padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.wichtig-kopf{display:flex;align-items:center;gap:10px}
+.wichtig h2{font-size:19px;font-weight:800}
+.wichtig ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.wichtig li{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;padding:10px 12px;border-radius:10px;background:var(--hw-bg)}
+.chip{padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.02em}
+.chip.rub{background:#F3DE8A;color:#4D3800}
+.wichtig li b{font-size:14px}
+.wichtig li .hwtxt{flex:1 1 260px;min-width:0;font-size:14px;color:var(--ink2);white-space:pre-line}
+.abschnitt-kopf{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 16px}
+.abschnitt-kopf h2{font-size:22px;font-weight:800}
+.abschnitt-kopf small{font-size:13px;color:var(--muted)}
+.kacheln{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kachel{min-height:104px;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:#fff;display:flex;flex-direction:column;justify-content:space-between;gap:6px;text-align:left}
+.kachel[aria-pressed="true"]{border-color:var(--ink)}
+.kachel.rot{border-color:#EBA5A5}
+.kachel.rot[aria-pressed="true"]{border-color:var(--ink)}
+.kachel .n{font-family:Archivo,sans-serif;font-weight:800;font-size:30px;line-height:1}
+.kachel .bar{display:flex;gap:2px;height:6px}
+.kachel .bar i{border-radius:3px;display:block}
+.kachel .note{font-size:12px;font-weight:600}
+.legende{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:#3A3F48}
+.legende span{display:inline-flex;align-items:center;gap:6px}
+.legende i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.info{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;background:#E9EBEF;font-size:13px;color:var(--ink2)}
+.gruppe{padding:14px 18px 8px;display:flex;flex-direction:column}
+.gruppe.rot{border-color:#EBA5A5}
+.gruppe-kopf{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;padding-bottom:10px}
+.gruppe-kopf h3{font-size:18px;font-weight:800;display:flex;align-items:center;gap:10px}
+.gruppe-kopf h3 span{padding:2px 9px;border-radius:999px;background:var(--ink);color:#fff;font-size:12px;font-family:'Public Sans',sans-serif}
+.gruppe-kopf small{font-size:13px;color:var(--muted)}
+.gruppe ul{margin:0;padding:0;list-style:none}
+.gruppe li.fall{border-top:1px solid var(--line2)}
+.zeile{width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:12px 2px;border:0;background:transparent;text-align:left}
+.pill{flex:0 0 196px;display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}
+.pill i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.zeile .txt{flex:999 1 240px;min-width:0;display:flex;flex-direction:column;gap:2px}
+.zeile .txt b{font-weight:600;font-size:15px;line-height:1.35}
+.zeile .txt small{font-size:12px;color:var(--muted)}
+.zeile .rechts{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px}
+.hw-mini{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:8px;background:var(--hw-bg);color:var(--hw-fg);font-size:12px;font-weight:700}
+.frist{display:inline-flex;align-items:center;padding:4px 10px;border-radius:8px;font-size:13px;font-weight:700}
+.chev{transition:transform .15s}
+.details{display:flex;flex-direction:column;gap:12px;padding:2px 2px 16px}
+.stufen{display:flex;gap:4px;margin:0;padding:0;list-style:none}
+.stufen li{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:6px;font-size:12px}
+.stufen li i{display:block;height:6px;border-radius:3px}
+.frist-lang{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:14px;font-weight:600}
+.hw-box{display:flex;gap:10px;padding:12px 14px;border-radius:10px;background:var(--hw-bg);border:1px solid var(--hw-line)}
+.hw-box div{display:flex;flex-direction:column;gap:3px}
+.hw-box b{font-size:12px;color:var(--hw-fg);letter-spacing:.03em}
+.hw-box span{font-size:15px;white-space:pre-line}
+.hw-box small{font-size:12px;color:#6B5A2A}
+.verlauf{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.verlauf li{display:flex;gap:12px;align-items:flex-start}
+.verlauf li>i{flex:0 0 auto;width:10px;height:10px;margin-top:5px;border-radius:50%;display:block}
+.verlauf small{display:block;font-size:12px;font-weight:600;color:var(--muted)}
+.verlauf span{font-size:14px}
+.mehr{align-self:flex-start;min-height:44px;padding:0 4px;border:0;background:transparent;color:#1E3A8A;font-size:14px;font-weight:700}
+.leer{display:flex;align-items:center;gap:10px;padding:12px 16px;font-size:14px;color:#3A3F48}
+.haken{flex:0 0 auto;width:24px;height:24px;border-radius:50%;background:var(--ok-dot);color:#fff;display:flex;align-items:center;justify-content:center}
+.liste{padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.liste h2{font-size:18px;font-weight:800}
+.liste ul{margin:0;padding:0;list-style:none}
+.liste li{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px solid var(--line2)}
+.liste li div{display:flex;flex-direction:column;min-width:0}
+.liste li b{font-weight:600;font-size:14px}
+.liste li small{font-size:12px;color:var(--muted)}
+.fuss{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--muted)}
+/* Login / Meldungen */
+.schirm{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--dark)}
+.login{width:100%;max-width:380px;background:#fff;border-radius:16px;padding:28px 24px;display:flex;flex-direction:column;gap:16px;text-align:center}
+.login .logo{margin:0 auto;color:#fff}
+.login h1{font-size:22px;font-weight:800}
+.login p{margin:0;color:var(--muted);font-size:14px}
+.gbtn{min-height:48px;border-radius:10px;border:1px solid #C9CDD4;background:#fff;font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:center;gap:10px}
+.fehler{padding:10px 12px;border-radius:10px;background:#FEE2E2;color:var(--ue-fg);font-size:14px;text-align:left}
+.laden{padding:40px 20px;text-align:center;color:var(--muted)}
+@media (max-width:560px){
+  .wrap{padding:0 14px}
+  .pill{flex-basis:auto}
+  .datum-titel b{font-size:20px}
+  .marke small{display:none}
+}
+</style>
+</head>
+<body>
+<div id="app"><div class="schirm"><div class="login"><p>Lade …</p></div></div></div>
+<script>
+// ── Einstellungen ──────────────────────────────────────────────
+var OPS_API = "https://script.google.com/macros/s/AKfycbyYjnLOLSV97oXhgj9aZ4NPqboBObvSagu1WS0jQ88SK2XXwDtDuJAnfr41JJpxW2XhSQ/exec";          // Web-App-URL aus dem Apps-Script-Projekt „BBN Store-Übersicht"
+var FORM_URL = "";                          // optional: Link zum Schicht-Check-in-Formular
+var FIRMEN_DOMAIN = "bangbangnoodles.de";
+var firebaseConfig = {
+  apiKey:"AIzaSyAH4KEXj2X53QZJv3fXNzVf2jN2rLoUSy8",
+  authDomain:"bbn-dashboard-84c9d.firebaseapp.com",
+  projectId:"bbn-dashboard-84c9d",
+  storageBucket:"bbn-dashboard-84c9d.firebasestorage.app",
+  messagingSenderId:"443212747604",
+  appId:"1:443212747604:web:3c0b9afa916269e7b86ec1"
+};
+// ──────────────────────────────────────────────────────────────
+
+var RUBRIKEN = ['M&R / Technik', 'IT / Kasse', 'Ware / Inventur', 'Qualität', 'People', 'Marketing'];
+var ZEILEN_PRO_RUBRIK = 3;
+var ST = {
+  neu:         { label: 'Noch nicht übernommen', bg: 'var(--neu-bg)', fg: 'var(--neu-fg)', dot: '#EA580C', rang: 1, stufe: 1 },
+  rueckfrage:  { label: 'In Klärung',            bg: 'var(--kl-bg)',  fg: 'var(--kl-fg)',  dot: '#7C3AED', rang: 2, stufe: 1 },
+  uebernommen: { label: 'Übernommen',            bg: 'var(--ar-bg)',  fg: 'var(--ar-fg)',  dot: '#2563EB', rang: 3, stufe: 2 },
+  arbeit:      { label: 'In Arbeit',             bg: 'var(--ar-bg)',  fg: 'var(--ar-fg)',  dot: '#2563EB', rang: 4, stufe: 3 },
+  erledigt:    { label: 'Behoben',               bg: 'var(--ok-bg)',  fg: 'var(--ok-fg)',  dot: '#16A34A', rang: 5, stufe: 4 }
+};
+
+var S = { user: null, authBereit: false, email: '', stores: [], storeKurz: urlParam('store'), daten: null,
+          tag: null, rub: null, offen: {}, mehr: {}, laden: false, fehler: null, loginFehler: '', abgefragt: 0 };
+
+// ── Hilfen ──
+function urlParam(k) { var m = new RegExp('[?&]' + k + '=([^&]+)').exec(location.search); return m ? decodeURIComponent(m[1]).toUpperCase() : null; }
+function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function ms(iso) { var p = iso.split('-'); return Date.UTC(+p[0], +p[1] - 1, +p[2]); }
+function diff(a, b) { return Math.round((ms(b) - ms(a)) / 86400000); }
+function wd(iso) { return new Date(ms(iso)).getUTCDay(); }
+function dm(iso) { return iso.slice(8, 10) + '.' + iso.slice(5, 7) + '.'; }
+function kurz(iso) { return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][wd(iso)] + ' ' + dm(iso); }
+function lang(iso) { return ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'][wd(iso)] + ', ' + dm(iso) + iso.slice(0, 4); }
+var IC = {
+  links: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>',
+  rechts: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>',
+  haken: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  uhr: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 1.5"/></svg>',
+  ausruf: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v7M12 17.5v.01"/></svg>',
+  info: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>',
+  warn: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.5v.01"/></svg>',
+  frist: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  chev: '<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3A3F48" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
+  neuLaden: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg>',
+  google: '<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>'
+};
+
+// ── Login ──
+firebase.initializeApp(firebaseConfig);
+var auth = firebase.auth();
+auth.onAuthStateChanged(function (u) {
+  S.user = u; S.authBereit = true;
+  if (u) laden(false); else { S.daten = null; render(); }
+});
+function anmelden() {
+  var p = new firebase.auth.GoogleAuthProvider();
+  p.setCustomParameters({ prompt: 'select_account', hd: FIRMEN_DOMAIN });
+  S.loginFehler = '';
+  auth.signInWithPopup(p).catch(function (e) {
+    if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') { auth.signInWithRedirect(p); return; }
+    if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') { S.loginFehler = 'Anmeldung fehlgeschlagen: ' + e.message; render(); }
+  });
+}
+function abmelden() { S.fehler = null; S.daten = null; auth.signOut(); }
+
+// ── Daten holen ──
+function laden(stumm) {
+  if (!S.user) return;
+  if (!stumm) { S.laden = true; render(); }
+  var warHeute = S.daten && S.tag === S.daten.heute;
+  S.user.getIdToken().then(function (tok) {
+    return fetch(OPS_API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ idToken: tok, store: S.storeKurz || '' }) });
+  }).then(function (r) { return r.json(); }).then(function (a) {
+    S.laden = false; S.abgefragt = Date.now();
+    if (!a.ok) { S.fehler = a; render(); return; }
+    var storeWechsel = !S.daten || S.daten.store.kurz !== a.daten.store.kurz;
+    S.fehler = null; S.email = a.email; S.stores = a.stores; S.daten = a.daten; S.storeKurz = a.daten.store.kurz;
+    if (storeWechsel || warHeute || !S.tag || S.daten.tage.indexOf(S.tag) === -1) S.tag = S.daten.heute;
+    if (storeWechsel) { S.rub = null; S.offen = {}; S.mehr = {}; }
+    try { history.replaceState(null, '', location.pathname + '?store=' + S.storeKurz); } catch (e) {}
+    document.title = 'BBN · ' + S.daten.store.name;
+    render();
+  }).catch(function (e) {
+    S.laden = false;
+    S.fehler = { code: 'netz', fehler: 'Keine Verbindung zur Datenquelle. Bitte kurz warten und neu laden.' };
+    render();
+  });
+}
+setInterval(function () { if (S.user && document.visibilityState === 'visible') laden(true); }, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'visible' && S.user && Date.now() - S.abgefragt > 5 * 60 * 1000) laden(true);
+});
+
+// ── Logik: Stand eines Falls am Betriebstag D ──
+function fallAm(f, D) {
+  var v = f.verlauf.filter(function (e) { return e[0] <= D; });
+  if (!v.length) return null;
+  var status = 'neu', sektion = 'neu', erledigtAm = null, frist = null, fristBisD = false, hinweis = '', hinweisAb = null;
+  var fristVerlauf = f.verlauf.some(function (e) { return e[2] === 'frist'; });
+  var hinweisVerlauf = f.verlauf.some(function (e) { return e[2] === 'hinweis'; });
+  v.forEach(function (e) {
+    if (e[2] === 'neu') { status = 'neu'; sektion = 'neu'; }
+    else if (e[2] === 'status') {
+      if (e[3] === 'erledigt') { status = 'erledigt'; erledigtAm = e[0]; }
+      else { status = e[3]; sektion = e[3]; erledigtAm = null; }
+    }
+    else if (e[2] === 'wieder') { status = sektion; erledigtAm = null; }
+    else if (e[2] === 'frist') { frist = e[3]; fristBisD = true; }
+    else if (e[2] === 'hinweis') { hinweis = e[3] || ''; hinweisAb = e[0]; }
+  });
+  if (!fristVerlauf) frist = f.due;
+  else if (!fristBisD) frist = null;
+  if (!hinweisVerlauf && f.hinweis) { hinweis = f.hinweis; hinweisAb = v[0][0]; }
+  return { f: f, v: v, status: status, erledigtAm: erledigtAm, frist: frist, hinweis: status === 'erledigt' ? '' : hinweis,
+           hinweisAb: hinweisAb, gemeldetAm: f.verlauf[0][0] };
+}
+
+function fristInfo(x, D) {
+  var s = x.status;
+  if (s === 'rueckfrage') return { kurz: 'wird geklärt', lang: 'Wird gerade geklärt – Frist folgt', bg: 'var(--kl-bg)', fg: 'var(--kl-fg)', over: false };
+  if (s === 'neu') {
+    var alter = diff(x.gemeldetAm, D);
+    if (alter <= 0) return { kurz: 'neu gemeldet', lang: 'Noch nicht übernommen – wird eingeordnet', bg: '#FFF1E6', fg: 'var(--neu-fg)', over: false };
+    var t = alter + (alter === 1 ? ' Tag' : ' Tage') + ' ohne Rückmeldung';
+    return { kurz: t, lang: 'Seit ' + alter + (alter === 1 ? ' Tag' : ' Tagen') + ' ohne Rückmeldung', bg: '#FFE4D1', fg: '#8A2C0D', over: false };
+  }
+  if (x.frist) {
+    var n = diff(D, x.frist);
+    if (n < 0) return { kurz: 'Frist überschritten', lang: 'Frist überschritten – war geplant bis ' + kurz(x.frist) + ', wird nachgefasst', bg: 'var(--ue-bg)', fg: 'var(--ue-fg)', over: true };
+    var rest = n === 0 ? 'Frist endet heute' : (n === 1 ? 'noch 1 Tag' : 'noch ' + n + ' Tage');
+    return { kurz: n === 0 ? 'Frist heute' : 'bis ' + kurz(x.frist), lang: 'Lösung geplant bis ' + kurz(x.frist) + ' · ' + rest, bg: '#E8F0FE', fg: '#1E3A8A', over: false };
+  }
+  return { kurz: 'keine Frist', lang: 'In Bearbeitung – noch keine Frist gesetzt', bg: '#F2F3F5', fg: '#3A3F48', over: false };
+}
+
+function verlaufText(f, e) {
+  if (e[2] === 'neu') return f.schicht ? 'Gemeldet im ' + f.schicht + '-Check-in' : 'Angelegt';
+  if (e[2] === 'status') return { uebernommen: 'Übernommen', arbeit: 'In Arbeit', rueckfrage: 'In Klärung', neu: 'Zurück auf „Noch nicht übernommen“', erledigt: 'Behoben' }[e[3]] || 'Status geändert';
+  if (e[2] === 'frist') return e[3] ? 'Frist gesetzt: bis ' + kurz(e[3]) : 'Frist entfernt';
+  if (e[2] === 'hinweis') return e[3] ? 'Hinweis für die Schicht aktualisiert' : 'Hinweis entfernt';
+  if (e[2] === 'wieder') return 'Wieder geöffnet';
+  return '';
+}
+function verlaufDot(e) {
+  if (e[2] === 'neu') return ST.neu.dot;
+  if (e[2] === 'status') return (ST[e[3]] || ST.arbeit).dot;
+  if (e[2] === 'hinweis') return '#D4A72C';
+  return '#9AA0AA';
+}
+function stufen(s) {
+  var stufe = ST[s].stufe, farbe = ST[s].dot;
+  return ['Gemeldet', s === 'rueckfrage' ? 'In Klärung' : 'Übernommen', 'In Arbeit', 'Behoben'].map(function (l, i) {
+    var done = i + 1 <= stufe, klaer = s === 'rueckfrage' && i === 1;
+    var cur = klaer || (i + 1 === stufe && s !== 'rueckfrage');
+    var bar = done ? farbe : (klaer ? '#C4B5FD' : '#E3E6EB');
+    return '<li style="color:' + (cur ? '#15171C' : (done ? '#3A3F48' : '#6B7280')) + ';font-weight:' + (cur ? 700 : 500) + '"><i style="background:' + bar + '"></i>' + l + '</li>';
+  }).join('');
+}
+
+// ── Darstellung ──
+function render() {
+  var app = document.getElementById('app');
+  if (!S.authBereit) { app.innerHTML = '<div class="schirm"><div class="login"><p>Lade …</p></div></div>'; return; }
+  if (!S.user || (S.fehler && S.fehler.code === 'login')) { app.innerHTML = loginHtml(); return; }
+  if (S.fehler && !S.daten) { app.innerHTML = fehlerHtml(); return; }
+  if (!S.daten) { app.innerHTML = kopfHtml() + '<main class="wrap"><div class="karte laden">Lade Daten aus Asana …</div></main>'; return; }
+  app.innerHTML = kopfHtml() + seiteHtml();
+  // gewählten Tag in der Tagesleiste sichtbar halten (ohne die Seite zu verschieben)
+  var t = document.getElementById('tage'), sel = t && t.querySelector('[aria-pressed="true"]');
+  if (sel) t.scrollLeft = Math.max(0, sel.offsetLeft - (t.clientWidth - sel.offsetWidth) / 2);
+}
+
+function loginHtml() {
+  var meldung = S.loginFehler || (S.fehler && S.fehler.fehler) || '';
+  return '<div class="schirm"><div class="login">' +
+    '<div class="logo">BBN</div><h1>Store-Übersicht</h1>' +
+    '<p>Offene Punkte, Hinweise und Check-ins eures Stores. Anmeldung mit dem Firmenkonto @' + esc(FIRMEN_DOMAIN) + '.</p>' +
+    (meldung ? '<div class="fehler">' + esc(meldung) + '</div>' : '') +
+    '<button class="gbtn" data-act="anmelden">' + IC.google + 'Mit Google anmelden</button>' +
+    '</div></div>';
+}
+
+function fehlerHtml() {
+  var zugang = S.fehler.code === 'zugang';
+  return '<div class="schirm"><div class="login"><div class="logo">BBN</div><h1>' + (zugang ? 'Kein Zugang' : 'Gerade nicht erreichbar') + '</h1>' +
+    '<div class="fehler">' + esc(S.fehler.fehler) + '</div>' +
+    (zugang ? '<button class="gbtn" data-act="abmelden">Mit anderem Konto anmelden</button>'
+            : '<button class="gbtn" data-act="neuLaden">Erneut versuchen</button><button class="gbtn" data-act="abmelden">Abmelden</button>') +
+    '</div></div>';
+}
+
+function kopfHtml() {
+  var wahl = S.stores.length > 1 ? '<div class="storewahl" role="group" aria-label="Store wählen">' + S.stores.map(function (s) {
+    return '<button data-act="store" data-wert="' + esc(s.kurz) + '" aria-pressed="' + (s.kurz === S.storeKurz) + '">' + esc(s.name) + '</button>';
+  }).join('') + '</div>' : '';
+  return '<header class="kopf"><div class="wrap">' +
+    '<div class="marke"><div class="logo">BBN</div><div><b>Store-Übersicht' + (S.daten && S.stores.length <= 1 ? ' · ' + esc(S.daten.store.name) : '') + '</b><small>Für die Schichtleitung · nur zum Lesen</small></div></div>' +
+    '<div class="kopf-rechts">' + wahl +
+    (FORM_URL ? '<a class="kbtn voll" href="' + esc(FORM_URL) + '" target="_blank" rel="noopener">Check-in ausfüllen</a>' : '') +
+    '<button class="kbtn" data-act="neuLaden" aria-label="Neu laden">' + IC.neuLaden + '</button>' +
+    '<button class="kbtn" data-act="abmelden" title="' + esc(S.email) + '">Abmelden</button>' +
+    '</div></div></header>';
+}
+
+function seiteHtml() {
+  var d = S.daten, D = S.tag, istHeute = D === d.heute, idx = d.tage.indexOf(D);
+  var alle = d.faelle.map(function (f) { return fallAm(f, D); }).filter(Boolean);
+  var offen = alle.filter(function (x) { return x.status !== 'erledigt'; });
+  offen.forEach(function (x) { x.fr = fristInfo(x, D); });
+  var behoben = alle.filter(function (x) { return x.status === 'erledigt' && x.erledigtAm && diff(x.erledigtAm, D) <= 2; });
+  var sortFn = function (a, b) {
+    var ra = a.fr.over ? 0 : ST[a.status].rang, rb = b.fr.over ? 0 : ST[b.status].rang;
+    if (ra !== rb) return ra - rb;
+    if (!!a.f.dringend !== !!b.f.dringend) return a.f.dringend ? -1 : 1;
+    return a.gemeldetAm < b.gemeldetAm ? -1 : (a.gemeldetAm > b.gemeldetAm ? 1 : 0);
+  };
+  var rubriken = RUBRIKEN.slice();
+  if (offen.some(function (x) { return rubriken.indexOf(x.f.rubrik) === -1; })) rubriken.push('Sonstiges');
+  var h = '<main class="wrap">';
+
+  // Datum + Check-ins
+  var stand = d.stand ? d.stand.slice(11, 16) : '';
+  h += '<section class="karte datum" aria-label="Datum"><div class="datum-kopf"><div class="datum-nav">' +
+    '<button class="pfeil" data-act="prev" aria-label="Vorheriger Tag"' + (idx <= 0 ? ' disabled' : '') + '>' + IC.links + '</button>' +
+    '<div class="datum-titel"><b>' + lang(D) + '</b><small>' + esc(d.store.name) + ' · ' +
+    (istHeute ? 'Live-Stand, aktualisiert ' + esc(stand) + ' Uhr' : 'Rückblick: Stand am Ende des Tages') + '</small></div>' +
+    '<button class="pfeil" data-act="next" aria-label="Nächster Tag"' + (istHeute ? ' disabled' : '') + '>' + IC.rechts + '</button></div>' +
+    '<div style="display:flex;align-items:center;gap:10px">' +
+    '<span class="modus" style="background:' + (istHeute ? 'var(--ok-bg);color:var(--ok-fg)' : '#EEF0F3;color:#3A3F48') + '"><i style="background:' + (istHeute ? '#16A34A' : '#6B7280') + '"></i>' + (istHeute ? 'Live' : 'Rückblick') + '</span>' +
+    (istHeute ? '' : '<button class="btn2" data-act="heute">Zu heute</button>') + '</div></div>';
+  h += '<div class="tage" id="tage">' + d.tage.map(function (t) {
+    var n = d.faelle.filter(function (f) { return f.verlauf[0] && f.verlauf[0][0] === t; }).length;
+    return '<button class="tag" data-act="tag" data-wert="' + t + '" aria-pressed="' + (t === D) + '"><small>' + (t === d.heute ? 'Heute · ' : '') +
+      ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][wd(t)] + '</small><b>' + dm(t) + '</b><span>' + (n === 0 ? 'keine Meldung' : (n === 1 ? '1 Meldung' : n + ' Meldungen')) + '</span></button>';
+  }).join('') + '</div>';
+  var ci = d.checkins[D] || [];
+  var ciTeile = [];
+  ['Opening', 'Ad hoc', 'Closing'].forEach(function (s) {
+    var tr = ci.filter(function (c) { return c[0] === s; });
+    tr.forEach(function (c) { ciTeile.push('<span class="ci ok"><i>' + IC.haken + '</i><b>' + (s === 'Ad hoc' ? 'Ad hoc' : s) + '</b>' + esc(c[1]) + ' · ' + esc(c[2]) + '</span>'); });
+    if (!tr.length && s !== 'Ad hoc') ciTeile.push(istHeute ? '<span class="ci offen"><i>' + IC.uhr + '</i><b>' + s + '</b>noch ausstehend</span>'
+                                                             : '<span class="ci fehlt"><i>' + IC.ausruf + '</i><b>' + s + '</b>kein Check-in</span>');
+  });
+  h += '<div class="cis"><b>Check-ins</b>' + ciTeile.join('') + '</div></section>';
+
+  // Für deine Schicht wichtig
+  var wichtig = offen.slice().sort(sortFn).filter(function (x) { return x.hinweis; });
+  if (wichtig.length) {
+    h += '<section class="karte wichtig" aria-labelledby="h-w"><div class="wichtig-kopf">' + IC.warn + '<h2 id="h-w">Für deine Schicht wichtig</h2></div><ul>' +
+      wichtig.map(function (x) {
+        return '<li><span class="chip rub">' + esc(x.f.rubrik) + '</span><b>' + esc(kurzTitel(x.f.titel)) + '</b><span class="hwtxt">' + esc(x.hinweis) + '</span></li>';
+      }).join('') + '</ul></section>';
+  }
+
+  // Lage nach Rubrik
+  h += '<section aria-labelledby="h-r" style="display:flex;flex-direction:column;gap:10px"><div class="abschnitt-kopf"><h2 id="h-r">Lage nach Rubrik</h2><small>' +
+    offen.length + ' offene Punkte · Rubrik antippen zum Filtern</small></div><div class="kacheln" role="group" aria-label="Nach Rubrik filtern">';
+  rubriken.forEach(function (name) {
+    var list = offen.filter(function (x) { return x.f.rubrik === name; });
+    var over = 0, neu = 0, kl = 0, bl = 0;
+    list.forEach(function (x) { if (x.fr.over) over++; else if (x.status === 'neu') neu++; else if (x.status === 'rueckfrage') kl++; else bl++; });
+    var segs = [];
+    if (over) segs.push([over, '#DC2626']); if (neu) segs.push([neu, '#EA580C']); if (kl) segs.push([kl, '#7C3AED']); if (bl) segs.push([bl, '#2563EB']);
+    if (!segs.length) segs.push([1, '#BBE5C8']);
+    var note, nfg;
+    if (over) { note = over + ' Frist überschritten'; nfg = '#B91C1C'; }
+    else if (neu) { note = neu + ' noch nicht übernommen'; nfg = '#C2410C'; }
+    else if (list.length) { note = 'wird bearbeitet'; nfg = '#1E40AF'; }
+    else { note = 'nichts offen'; nfg = '#166534'; }
+    h += '<button class="kachel' + (over ? ' rot' : '') + '" data-act="rub" data-wert="' + esc(name) + '" aria-pressed="' + (S.rub === name) + '">' +
+      '<b style="font-size:13px">' + esc(name) + '</b>' +
+      '<span><span class="n" style="color:' + (list.length ? '#15171C' : '#8A909B') + '">' + list.length + '</span> <small style="color:var(--muted);font-size:12px">offen</small></span>' +
+      '<span class="bar">' + segs.map(function (s) { return '<i style="flex:' + s[0] + ' 1 0;background:' + s[1] + '"></i>'; }).join('') + '</span>' +
+      '<span class="note" style="color:' + nfg + '">' + note + '</span></button>';
+  });
+  h += '</div><div class="legende"><span><i style="background:#DC2626"></i>Frist überschritten</span><span><i style="background:#EA580C"></i>Noch nicht übernommen</span>' +
+    '<span><i style="background:#7C3AED"></i>In Klärung</span><span><i style="background:#2563EB"></i>Übernommen / in Arbeit</span></div></section>';
+
+  // Offene Punkte nach Rubrik
+  h += '<section aria-labelledby="h-o" style="display:flex;flex-direction:column;gap:14px"><div class="abschnitt-kopf"><h2 id="h-o">' +
+    (S.rub ? 'Offene Punkte · ' + esc(S.rub) : 'Offene Punkte nach Rubrik') + '</h2>' +
+    (S.rub ? '<button class="btn2" data-act="rub" data-wert="' + esc(S.rub) + '">Alle Rubriken zeigen</button>' : '') + '</div>' +
+    '<div class="info">' + IC.info + '<span>Steht ein Problem schon hier, bitte nicht neu melden. Zeile antippen für Frist, Hinweis und Verlauf.</span></div>';
+  var gruppen = 0;
+  rubriken.forEach(function (name) {
+    if (S.rub && S.rub !== name) return;
+    var list = offen.filter(function (x) { return x.f.rubrik === name; }).sort(sortFn);
+    if (!list.length) return;
+    gruppen++;
+    var nOver = list.filter(function (x) { return x.fr.over; }).length;
+    var zaehl = {}, reihen = [];
+    list.forEach(function (x) { var l = ST[x.status].label; if (!zaehl[l]) reihen.push(l); zaehl[l] = (zaehl[l] || 0) + 1; });
+    var teile = reihen.map(function (l) { return zaehl[l] + ' ' + l.toLowerCase(); });
+    if (nOver) teile.unshift(nOver + ' Frist überschritten');
+    var alleZeigen = !!S.mehr[name] || !!S.rub;
+    var sicht = alleZeigen ? list : list.slice(0, ZEILEN_PRO_RUBRIK);
+    var rest = list.length - Math.min(list.length, ZEILEN_PRO_RUBRIK);
+    h += '<section class="karte gruppe' + (nOver ? ' rot' : '') + '"><div class="gruppe-kopf"><h3>' + esc(name) + ' <span>' + list.length + '</span></h3><small>' + esc(teile.join(' · ')) + '</small></div><ul>' +
+      sicht.map(function (x) { return zeileHtml(x, D); }).join('') + '</ul>' +
+      (!S.rub && rest > 0 ? '<button class="mehr" data-act="mehr" data-wert="' + esc(name) + '">' + (S.mehr[name] ? 'Weniger anzeigen' : '+ ' + rest + ' weitere anzeigen') + '</button>' : '') +
+      '</section>';
+  });
+  if (!gruppen) h += '<div class="karte leer"><span class="haken">' + IC.haken + '</span>' + (S.rub ? 'In „' + esc(S.rub) + '“ ist an diesem Tag nichts offen.' : 'Keine offenen Punkte an diesem Tag.') + '</div>';
+  var leer = rubriken.filter(function (n) { return n !== 'Sonstiges' && !offen.some(function (x) { return x.f.rubrik === n; }); });
+  if (!S.rub && gruppen && leer.length) h += '<div class="karte leer"><span class="haken">' + IC.haken + '</span>Ohne offene Punkte: ' + esc(leer.join(', ')) + '</div>';
+
+  if (behoben.length) {
+    h += '<section class="karte liste" aria-labelledby="h-b"><div class="abschnitt-kopf" style="padding-bottom:6px"><h2 id="h-b">Kürzlich behoben</h2><small>bleibt 3 Tage sichtbar</small></div><ul>' +
+      behoben.map(function (x) {
+        return '<li><span class="haken">' + IC.haken + '</span><div><b>' + esc(x.f.titel) + '</b><small>' + esc(x.f.rubrik) + ' · gemeldet ' + kurz(x.gemeldetAm) + ' · behoben ' + kurz(x.erledigtAm) + '</small></div></li>';
+      }).join('') + '</ul></section>';
+  }
+  var fb = d.feedback[D] || [];
+  if (fb.length) {
+    h += '<section class="karte liste" aria-labelledby="h-f"><h2 id="h-f">Gästefeedback</h2><ul>' + fb.map(function (g) {
+      return '<li><div><small>' + esc(g[0]) + '-Check-in · ' + esc(g[1]) + ' Uhr</small><b style="font-weight:500;white-space:pre-line">' + esc(g[2]) + '</b></div></li>';
+    }).join('') + '</ul></section>';
+  }
+  h += '</section>';
+  h += '<footer class="fuss"><span>Nur zum Lesen: Meldungen kommen über den Check-in · Status, Frist und Hinweise pflegt Jan in Asana</span><span>Daten aktualisieren sich alle 10 Min.</span><span>' + esc(S.email) + '</span></footer>';
+  return h + '</main>';
+}
+
+function kurzTitel(t) { t = String(t || ''); return t.length > 42 ? t.slice(0, 41).trim() + '…' : t; }
+
+function zeileHtml(x, D) {
+  var f = x.f, st = ST[x.status], alter = diff(x.gemeldetAm, D), offen = !!S.offen[f.id];
+  var meta = 'Gemeldet ' + kurz(x.gemeldetAm) + ' · ' + (alter <= 0 ? 'heute gemeldet' : (alter === 1 ? 'seit 1 Tag offen' : 'seit ' + alter + ' Tagen offen'));
+  if (f.dringend) meta += ' · dringend';
+  var h = '<li class="fall"><button class="zeile" data-act="zeile" data-wert="' + esc(f.id) + '" aria-expanded="' + offen + '">' +
+    '<span class="pill" style="background:' + st.bg + ';color:' + st.fg + '"><i style="background:' + st.dot + '"></i>' + st.label + '</span>' +
+    '<span class="txt"><b>' + esc(f.titel) + '</b><small>' + meta + '</small></span>' +
+    '<span class="rechts">' + (x.hinweis ? '<span class="hw-mini">' + IC.info + 'Hinweis</span>' : '') +
+    '<span class="frist" style="background:' + x.fr.bg + ';color:' + x.fr.fg + '">' + esc(x.fr.kurz) + '</span>' +
+    IC.chev.replace('class="chev"', 'class="chev" style="transform:' + (offen ? 'rotate(180deg)' : 'none') + '"') + '</span></button>';
+  if (offen) {
+    h += '<div class="details"><ol class="stufen" aria-label="Bearbeitungsstand">' + stufen(x.status) + '</ol>' +
+      '<div class="frist-lang" style="background:' + x.fr.bg + ';color:' + x.fr.fg + '">' + IC.frist + '<span>' + esc(x.fr.lang) + '</span></div>' +
+      (x.hinweis ? '<div class="hw-box"><span style="color:#7A5B00">' + IC.info + '</span><div><b>HINWEIS FÜR DIE SCHICHT</b><span>' + esc(x.hinweis) + '</span><small>Stand: ' + (x.hinweisAb ? kurz(x.hinweisAb) : '') + ' · gepflegt in Asana</small></div></div>' : '') +
+      '<ol class="verlauf" aria-label="Verlauf">' + x.v.map(function (e) {
+        return '<li><i style="background:' + verlaufDot(e) + '"></i><div><small>' + kurz(e[0]) + ', ' + esc(e[1]) + ' Uhr</small><span>' + esc(verlaufText(f, e)) + '</span></div></li>';
+      }).join('') + '</ol></div>';
+  }
+  return h + '</li>';
+}
+
+// ── Bedienung ──
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest('[data-act]');
+  if (!b) return;
+  var act = b.getAttribute('data-act'), wert = b.getAttribute('data-wert');
+  var d = S.daten;
+  if (act === 'anmelden') return anmelden();
+  if (act === 'abmelden') return abmelden();
+  if (act === 'neuLaden') { S.fehler = null; return laden(false); }
+  if (!d) return;
+  var i = d.tage.indexOf(S.tag);
+  if (act === 'prev' && i > 0) S.tag = d.tage[i - 1];
+  else if (act === 'next' && i < d.tage.length - 1) S.tag = d.tage[i + 1];
+  else if (act === 'heute') S.tag = d.heute;
+  else if (act === 'tag') S.tag = wert;
+  else if (act === 'rub') S.rub = S.rub === wert ? null : wert;
+  else if (act === 'mehr') S.mehr[wert] = !S.mehr[wert];
+  else if (act === 'zeile') S.offen[wert] = !S.offen[wert];
+  else if (act === 'store') { if (wert !== S.storeKurz) { S.storeKurz = wert; S.daten = null; laden(false); } return; }
+  var y = window.scrollY;
+  render();
+  window.scrollTo(0, y);
+});
+render();
+</script>
+</body>
+</html>
