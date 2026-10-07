@@ -11,7 +11,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <!--
-  BBN Store-Übersicht v1.0 · 07.10.2026
+  BBN Store-Übersicht v1.1 · 07.10.2026
   Nur zum Lesen. Daten: Apps-Script-Projekt „BBN Store-Übersicht" (store_api.gs) → Asana Ops-Board.
   Login: dasselbe Google-Login (Firebase) wie das BBN-Cockpit. Geprüft wird serverseitig.
   Aufruf: /store.html?store=RS oder ?store=MD
@@ -213,8 +213,10 @@ var IC = {
 };
 
 // ── Login ──
-firebase.initializeApp(firebaseConfig);
-var auth = firebase.auth();
+// Eigene Login-Sitzung, unabhängig vom BBN-Cockpit (index.html meldet dort nach 4 h Inaktivität ab –
+// mit der gemeinsamen Standard-Sitzung hätte das auch diese Seite immer wieder abgemeldet)
+var storeApp = firebase.initializeApp(firebaseConfig, 'store-uebersicht');
+var auth = storeApp.auth();
 auth.onAuthStateChanged(function (u) {
   S.user = u; S.authBereit = true;
   if (u) laden(false); else { S.daten = null; render(); }
