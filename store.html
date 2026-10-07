@@ -11,7 +11,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <!--
-  BBN Store-Übersicht v1.1 · 07.10.2026
+  BBN Store-Übersicht v1.2 · 07.10.2026
   Nur zum Lesen. Daten: Apps-Script-Projekt „BBN Store-Übersicht" (store_api.gs) → Asana Ops-Board.
   Login: dasselbe Google-Login (Firebase) wie das BBN-Cockpit. Geprüft wird serverseitig.
   Aufruf: /store.html?store=RS oder ?store=MD
@@ -116,6 +116,8 @@ main.wrap{display:flex;flex-direction:column;gap:18px;padding-top:20px;padding-b
 .hw-mini{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:8px;background:var(--hw-bg);color:var(--hw-fg);font-size:12px;font-weight:700}
 .frist{display:inline-flex;align-items:center;padding:4px 10px;border-radius:8px;font-size:13px;font-weight:700}
 .chev{transition:transform .15s}
+.dreht{animation:dreh 1s linear infinite}
+@keyframes dreh{to{transform:rotate(360deg)}}
 .details{display:flex;flex-direction:column;gap:12px;padding:2px 2px 16px}
 .stufen{display:flex;gap:4px;margin:0;padding:0;list-style:none}
 .stufen li{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:6px;font-size:12px}
@@ -233,15 +235,16 @@ function anmelden() {
 function abmelden() { S.fehler = null; S.daten = null; auth.signOut(); }
 
 // ── Daten holen ──
-function laden(stumm) {
+function laden(stumm, frisch) {
   if (!S.user) return;
-  if (!stumm) { S.laden = true; render(); }
+  if (frisch) S.frischLaeuft = true;
+  if (!stumm || frisch) { S.laden = !stumm; render(); }
   var warHeute = S.daten && S.tag === S.daten.heute;
   S.user.getIdToken().then(function (tok) {
     return fetch(OPS_API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ idToken: tok, store: S.storeKurz || '' }) });
+      body: JSON.stringify({ idToken: tok, store: S.storeKurz || '', frisch: !!frisch }) });
   }).then(function (r) { return r.json(); }).then(function (a) {
-    S.laden = false; S.abgefragt = Date.now();
+    S.laden = false; S.frischLaeuft = false; S.abgefragt = Date.now();
     if (!a.ok) { S.fehler = a; render(); return; }
     var storeWechsel = !S.daten || S.daten.store.kurz !== a.daten.store.kurz;
     S.fehler = null; S.email = a.email; S.stores = a.stores; S.daten = a.daten; S.storeKurz = a.daten.store.kurz;
@@ -251,7 +254,7 @@ function laden(stumm) {
     document.title = 'BBN · ' + S.daten.store.name;
     render();
   }).catch(function (e) {
-    S.laden = false;
+    S.laden = false; S.frischLaeuft = false;
     S.fehler = { code: 'netz', fehler: 'Keine Verbindung zur Datenquelle. Bitte kurz warten und neu laden.' };
     render();
   });
@@ -367,7 +370,8 @@ function kopfHtml() {
     '<div class="marke"><div class="logo">BBN</div><div><b>Store-Übersicht' + (S.daten && S.stores.length <= 1 ? ' · ' + esc(S.daten.store.name) : '') + '</b><small>Für die Schichtleitung · nur zum Lesen</small></div></div>' +
     '<div class="kopf-rechts">' + wahl +
     (FORM_URL ? '<a class="kbtn voll" href="' + esc(FORM_URL) + '" target="_blank" rel="noopener">Check-in ausfüllen</a>' : '') +
-    '<button class="kbtn" data-act="neuLaden" aria-label="Neu laden">' + IC.neuLaden + '</button>' +
+    '<button class="kbtn" data-act="neuLaden" title="Jetzt frisch aus Asana holen"' + (S.frischLaeuft ? ' disabled' : '') + '>' +
+    '<span class="' + (S.frischLaeuft ? 'dreht' : '') + '" style="display:inline-flex">' + IC.neuLaden + '</span>' + (S.frischLaeuft ? 'Hole Daten …' : 'Aktualisieren') + '</button>' +
     '<button class="kbtn" data-act="abmelden" title="' + esc(S.email) + '">Abmelden</button>' +
     '</div></div></header>';
 }
@@ -522,7 +526,7 @@ document.addEventListener('click', function (ev) {
   var d = S.daten;
   if (act === 'anmelden') return anmelden();
   if (act === 'abmelden') return abmelden();
-  if (act === 'neuLaden') { S.fehler = null; return laden(false); }
+  if (act === 'neuLaden') { S.fehler = null; return laden(!!S.daten, true); }
   if (!d) return;
   var i = d.tage.indexOf(S.tag);
   if (act === 'prev' && i > 0) S.tag = d.tage[i - 1];
