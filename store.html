@@ -13,7 +13,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <!--
-  bang bang noodles · Store-Übersicht v1.6 · 19.10.2026 (Bang-Bang-Look nach Brand Manual v1.1)
+  bang bang noodles · Store-Übersicht v1.7 · 22.10.2026 (Bang-Bang-Look nach Brand Manual v1.1)
+  v1.7: lange Meldungen werden ganz angezeigt (mit Zeilenumbrüchen), auch im gelben Kasten.
   v1.6: komplett englisch (Seite, Rubriken, Status). Alte deutsche Rubriken aus store_api v1.3 werden übersetzt.
   Nur zum Lesen. Daten: Apps-Script-Projekt „Ops-System" (store_api.gs) → Asana Ops-Board.
   Login: Google (Firebase-Projekt des BBN-Cockpits), eigene Sitzung. Geprüft wird serverseitig.
@@ -82,7 +83,7 @@ main.wrap{display:flex;flex-direction:column;gap:20px;padding-top:22px;padding-b
 .wichtig ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
 .wichtig li{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;padding:10px 14px;border-radius:14px;background:#fff}
 .chip-rub{padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600;background:var(--ink);color:#fff}
-.wichtig li b{font-size:14px;font-weight:600}
+.wichtig li b{font-size:14px;font-weight:600;white-space:pre-line;overflow-wrap:anywhere;min-width:0}
 .wichtig .hwtxt{flex:1 1 260px;min-width:0;font-size:14px;white-space:pre-line}
 .bangy{flex:0 0 auto;display:flex;align-items:flex-end;gap:4px;margin:0 auto}
 .bangy img{height:160px;width:auto}
@@ -117,7 +118,7 @@ main.wrap{display:flex;flex-direction:column;gap:20px;padding-top:22px;padding-b
 .pill{flex:0 0 196px;display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:600}
 .pill i{width:9px;height:9px;border-radius:50%;display:inline-block}
 .zeile .txt{flex:999 1 240px;min-width:0;display:flex;flex-direction:column;gap:1px}
-.zeile .txt b{font-weight:500;font-size:16px;line-height:1.35}
+.zeile .txt b{font-weight:500;font-size:16px;line-height:1.35;white-space:pre-line;overflow-wrap:anywhere}
 .zeile .txt small{font-size:12px;color:var(--muted)}
 .zeile .rechts{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px}
 .zeile .rechts img{height:22px;width:auto}
@@ -148,7 +149,7 @@ main.wrap{display:flex;flex-direction:column;gap:20px;padding-top:22px;padding-b
 .liste ul{margin:0;padding:0;list-style:none}
 .liste li{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
 .liste li div{display:flex;flex-direction:column;min-width:0}
-.liste li b{font-weight:500;font-size:15px}
+.liste li b{font-weight:500;font-size:15px;white-space:pre-line;overflow-wrap:anywhere}
 .liste li small{font-size:12px;color:var(--muted)}
 .fuss{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;padding:12px 0 28px;border-top:1px solid var(--line)}
 .fuss .signoff{display:flex;align-items:center;gap:12px;font-weight:600;font-style:italic;font-size:18px;color:var(--magenta)}
@@ -444,7 +445,7 @@ function seiteHtml() {
   if (wichtig.length) {
     h += '<section class="wichtig" aria-labelledby="h-w"><div class="wichtig-inhalt"><h2 id="h-w">important for your shift</h2><ul>' +
       wichtig.map(function (x) {
-        return '<li><span class="chip-rub">' + esc(x.f.rubrik) + '</span><b>' + esc(kurzTitel(x.f.titel)) + '</b><span class="hwtxt">' + esc(x.hinweis) + '</span></li>';
+        return '<li><span class="chip-rub">' + esc(x.f.rubrik) + '</span><b>' + esc(x.f.titel) + '</b><span class="hwtxt">' + esc(x.hinweis) + '</span></li>';
       }).join('') + '</ul></div>' +
       '<div class="bangy" aria-hidden="true"><span class="blase">Heads up!</span><img src="' + IMG.bangy + '" alt=""></div></section>';
   }
@@ -520,7 +521,6 @@ function seiteHtml() {
   return h + '</main>';
 }
 
-function kurzTitel(t) { t = String(t || ''); return t.length > 42 ? t.slice(0, 41).trim() + '…' : t; }
 
 function zeileHtml(x, D) {
   var f = x.f, st = ST[x.status], alter = diff(x.gemeldetAm, D), offen = !!S.offen[f.id];
