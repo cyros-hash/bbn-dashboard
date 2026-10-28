@@ -1597,6 +1597,7 @@ setInterval(function(){
   <button class="tab" onclick="showTab('simulator',this)">🧮 Simulator</button>
   <button class="tab" onclick="showTab('lieferando',this)">🛵 Lieferando</button>
   <button class="tab" onclick="showTab('zieljan',this)">🎯 Ziele Jan</button>
+  <button class="tab" onclick="showTab('verfuegbarkeit',this)">🟢 Verfügbarkeit</button>
 </div>
 
 <div class="content">
@@ -1612,6 +1613,7 @@ setInterval(function(){
   <div id="t-simulator" style="display:none"></div>
   <div id="t-lieferando" style="display:none"></div>
   <div id="t-zieljan" style="display:none"></div>
+  <div id="t-verfuegbarkeit" style="display:none"></div>
 </div>
 
 <script>
@@ -1650,6 +1652,8 @@ var mgmtGehaelter=[]; // Management-Gehälter aus Sheet (22_management_gehaelter
 var zielManuell=[]; // Zielvereinbarung Jan — manuelle Einträge (23_zielvereinbarung_manuell)
 var abwesenheitTest=[]; // D3-Fenster aus Kalender-Automatik (25_abwesenheitstest, via abwesenheit_jan.gs)
 var fluktuation=[],fluktuationGeladen=false; // B2-Quelle: Google-Form-Antworten "Fluktuationstabelle"
+// SNOOZE / Verfügbarkeit (Umuts Snooze-Monitor via snooze_sync.gs, Tabs Snooze_*; seit 28.10.2026)
+var snoozeDaily=[],snoozeLive=[],snoozeStatus=[],snoozeMapping=[],snoozeGeladen=false;
 var MGMT_FROM_SHEET=[]; // Namen deren Kosten aus Sheet kommen (nicht aus Ordio)
 var stundeVon=-1, stundeBis=-1; // -1 = kein Stundenfilter
 var aktivWT=new Set([0,1,2,3,4,5,6]); // aktive Wochentage (0=So...6=Sa)
@@ -2526,6 +2530,39 @@ async function ladeDaten(){
       }
     }catch(e){ console.warn("Fluktuationstabelle nicht geladen: "+e.message); }
 
+    // SNOOZE / VERFÜGBARKEIT (Tabs Snooze_Daily/Live/Status/Mapping; snooze_sync.gs, 30-Min-Trigger)
+    // WICHTIG: gviz fällt bei unbekanntem Tab-Namen still aufs erste Blatt zurück → Header-Guard!
+    try{
+      async function ladeSnoozeTab(name,erwarteterHeader){
+        var r=await fetch("https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:csv&sheet="+encodeURIComponent(name));
+        var t=await r.text();
+        if(!t||t.includes("DOCTYPE"))return null;
+        var zeilen=t.trim().split("\n").map(pCSV);
+        if(!zeilen.length||String(zeilen[0][0]).trim()!==erwarteterHeader)return null; // Guard gegen gviz-Fallback
+        return zeilen.slice(1);
+      }
+      var sd=await ladeSnoozeTab("Snooze_Daily","Date");
+      var sl=await ladeSnoozeTab("Snooze_Live","Store");
+      var st=await ladeSnoozeTab("Snooze_Status","Store");
+      var sm=await ladeSnoozeTab("Snooze_Mapping","Item");
+      if(sd){
+        snoozeDaily=sd.map(function(v){return{datum:(v[0]||"").trim(),st:(v[1]||"").trim(),item:(v[2]||"").trim(),
+          status:(v[3]||"").trim(),kat:(v[4]||"Other").trim(),core:String(v[5]).toUpperCase()==="TRUE",
+          ignore:String(v[6]).toUpperCase()==="TRUE",ls:(v[7]||"").trim(),
+          eps:parseInt(v[8],10)||0,min:parseFloat(v[9])||0,h:parseFloat(v[10])||0};})
+          .filter(function(r){return r.datum&&r.st;});
+        snoozeLive=(sl||[]).map(function(v){return{st:(v[0]||"").trim(),item:(v[1]||"").trim(),seit:(v[2]||"").trim(),
+          offenH:parseFloat(v[5])||0,kat:(v[6]||"Other").trim(),core:String(v[7]).toUpperCase()==="TRUE",
+          ignore:String(v[8]).toUpperCase()==="TRUE",check:(v[10]||"").trim()};});
+        snoozeStatus=(st||[]).map(function(v){return{store:(v[1]||"").trim(),lastCheck:(v[2]||"").trim(),
+          stale:String(v[4]).toUpperCase()==="TRUE",live:parseInt(v[6],10)||0,synced:(v[7]||"").trim(),result:(v[8]||"").trim()};});
+        snoozeMapping=(sm||[]).map(function(v){return{item:(v[0]||"").trim(),kat:(v[1]||"").trim(),
+          core:String(v[2]).toUpperCase()==="TRUE",ignore:String(v[3]).toUpperCase()==="TRUE",ls:(v[4]||"").trim()};});
+        snoozeGeladen=true;
+        console.log("✓ Snooze: "+snoozeDaily.length+" Daily-Zeilen, "+snoozeLive.length+" live, Mapping "+snoozeMapping.length);
+      }
+    }catch(e){ console.warn("Snooze-Tabs nicht geladen: "+e.message); }
+
     // SET FILTER
     var daten=alle.map(function(r){return r.datum;}).sort();
     var maxD=daten[daten.length-1]||toISODateLocal(new Date());
@@ -2661,6 +2698,150 @@ function renderAll(){
   renderSimulator();
   renderLieferando();
   renderZielJan();
+  renderVerfuegbarkeit();
+}
+
+// ============================================================
+// VERFÜGBARKEIT (Snooze-Daten: Artikel offline = nicht verkaufbar)
+// Quelle: Tabs Snooze_* (snooze_sync.gs ← Umuts Snooze-Monitor-API)
+// Regeln: Ignore-Artikel ausgeblendet; Montage = Datenlücke solange
+// Umuts Scanner nur Di–So läuft; Öffnungsminuten 630/Tag (11:30–22:00)
+// ============================================================
+var vfChart=null;
+
+function vfScanTage(von,bis){ // Tage mit Scan-Abdeckung: Di–So, ab 04.08.2026, bis gestern/heute
+  var n=0,d=new Date(von+"T12:00:00"),ende=new Date(bis+"T12:00:00");
+  var heute=toISODateLocal(new Date());
+  while(d<=ende){
+    var iso=toISODateLocal(d);
+    if(iso>="2026-08-04"&&iso<=heute&&d.getDay()!==1)n++;
+    d.setDate(d.getDate()+1);
+  }
+  return n;
+}
+
+function renderVerfuegbarkeit(){
+  var el=document.getElementById("t-verfuegbarkeit");
+  if(!el)return;
+  if(!snoozeGeladen){
+    el.innerHTML='<div style="padding:40px;text-align:center;color:#64748b">Snooze-Daten nicht geladen — Tabs Snooze_* im Sheet prüfen (snooze_sync.gs).</div>';
+    return;
+  }
+  var von=document.getElementById("von").value, bis=document.getElementById("bis").value;
+  var rows=snoozeDaily.filter(function(r){return r.datum>=von&&r.datum<=bis&&!r.ignore;});
+  var scanT=vfScanTage(von,bis);
+  var nCore=snoozeMapping.filter(function(m){return m.core&&!m.ignore;}).length;
+  var stores=["MD","RS"],stName={MD:"Mehringdamm",RS:"Rosenthaler Straße"},stCol={MD:"#fbbf24",RS:"#60a5fa"};
+
+  // Frische-Banner
+  var banner="";
+  snoozeStatus.forEach(function(s){
+    if(s.result.indexOf("ERROR")===0)banner+='<div style="background:#7f1d1d30;border:1px solid #b91c1c60;border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#fca5a5">⛔ Snooze-Sync-Fehler ('+s.store+'): '+s.result.substring(0,120)+'</div>';
+    else if(s.stale)banner+='<div style="background:#78350f30;border:1px solid #92400e60;border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#fcd34d">⚠️ Snooze-Daten '+s.store+' veraltet — letzter Scan '+s.lastCheck+' (Scanner hängt?)</div>';
+  });
+  if(snoozeStatus.length&&snoozeStatus[0].result.indexOf("Montag ohne Scans")>-1)
+    banner+='<div style="background:#1e3a5f30;border:1px solid #1e3a5f;border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#93c5fd">ℹ️ Montage werden von Umuts Scanner noch nicht erfasst (läuft Di–So) — Montag zählt nicht in die Verfügbarkeit.</div>';
+
+  // KPI je Store
+  var kacheln="";
+  stores.forEach(function(sc){
+    var sr=rows.filter(function(r){return r.st===sc;});
+    var offH=sr.reduce(function(s,r){return s+r.h;},0);
+    var snz=sr.reduce(function(s,r){return s+r.eps;},0);
+    var coreMin=sr.filter(function(r){return r.core;}).reduce(function(s,r){return s+r.min;},0);
+    var verf=(nCore>0&&scanT>0)?Math.max(0,1-coreMin/(nCore*630*scanT)):null;
+    var verfTxt=verf===null?"—":(verf*100).toFixed(1).replace(".",",")+"%";
+    var verfCol=verf===null?"#64748b":(verf>=0.98?"#22c55e":verf>=0.95?"#fbbf24":"#ef4444");
+    kacheln+='<div style="background:#0a1628;border-radius:10px;padding:16px;border:1px solid #0a3545">'
+      +'<div style="font-size:13px;font-weight:700;color:'+stCol[sc]+';margin-bottom:10px">'+stName[sc]+'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      +'<div><div style="font-size:10px;color:#64748b;letter-spacing:.5px">OFFLINE-STUNDEN</div><div style="font-size:22px;font-weight:800;color:#E84393">'+offH.toFixed(1).replace(".",",")+' h</div></div>'
+      +'<div><div style="font-size:10px;color:#64748b;letter-spacing:.5px">VERFÜGBARKEIT KERNSORTIMENT</div><div style="font-size:22px;font-weight:800;color:'+verfCol+'">'+verfTxt+'</div><div style="font-size:9px;color:#475569">'+nCore+' Kern-Artikel · '+scanT+' Scan-Tage</div></div>'
+      +'<div><div style="font-size:10px;color:#64748b;letter-spacing:.5px">ANZAHL SNOOZES</div><div style="font-size:22px;font-weight:800;color:#e2e8f0">'+snz+'</div></div>'
+      +'<div><div style="font-size:10px;color:#64748b;letter-spacing:.5px">UMSATZ IM RISIKO</div><div style="font-size:22px;font-weight:800;color:#64748b">—</div><div style="font-size:9px;color:#475569">braucht Lightspeed-Mapping (Snooze_Mapping)</div></div>'
+      +'</div></div>';
+  });
+
+  // Wochentrend: Offline-h je ISO-KW, gestapelt nach Category (beide Stores: Balken je Store nebeneinander via Gruppen)
+  function isoKW(iso){
+    var d=new Date(iso+"T12:00:00");var t=new Date(d.valueOf());
+    t.setDate(t.getDate()+3-((d.getDay()+6)%7));
+    var w1=new Date(t.getFullYear(),0,4);
+    return t.getFullYear()+"-KW"+String(1+Math.round(((t-w1)/864e5-3+((w1.getDay()+6)%7))/7)).padStart(2,"0");
+  }
+  var kats=["Main","Side","Drink","Dessert","Other"];
+  var katCol={Main:"#E84393",Side:"#fbbf24",Drink:"#60a5fa",Dessert:"#a78bfa",Other:"#64748b"};
+  var kwSet={},agg={};
+  rows.forEach(function(r){
+    var kw=isoKW(r.datum);kwSet[kw]=1;
+    var k=kw+"|"+r.st+"|"+(kats.indexOf(r.kat)>-1?r.kat:"Other");
+    agg[k]=(agg[k]||0)+r.h;
+  });
+  var kws=Object.keys(kwSet).sort();
+
+  // Top-Artikel
+  var top={};
+  rows.forEach(function(r){
+    var k=r.st+"|"+r.item;
+    if(!top[k])top[k]={st:r.st,item:r.item,kat:r.kat,h:0,n:0};
+    top[k].h+=r.h;top[k].n+=r.eps;
+  });
+  var topArr=Object.keys(top).map(function(k){return top[k];}).sort(function(a,b){return b.h-a.h;}).slice(0,12);
+  var topRows=topArr.map(function(a){
+    var avg=a.n>0?(a.h/a.n):0;
+    return '<tr><td style="padding:6px 10px;color:'+stCol[a.st]+'">'+a.st+'</td><td style="padding:6px 10px">'+a.item+'</td>'
+      +'<td style="padding:6px 10px;color:#94a3b8">'+a.kat+'</td><td style="padding:6px 10px;text-align:right">'+a.n+'</td>'
+      +'<td style="padding:6px 10px;text-align:right;font-weight:700;color:#E84393">'+a.h.toFixed(1).replace(".",",")+' h</td>'
+      +'<td style="padding:6px 10px;text-align:right;color:#94a3b8">'+avg.toFixed(1).replace(".",",")+' h</td>'
+      +'<td style="padding:6px 10px;text-align:right;color:#64748b">—</td></tr>';
+  }).join("");
+
+  // Jetzt offline
+  var liveRows=snoozeLive.filter(function(l){return !l.ignore;}).map(function(l){
+    var warn=l.offenH>24;
+    return '<tr'+(warn?' style="background:#7f1d1d25"':'')+'><td style="padding:6px 10px;color:'+stCol[l.st]+'">'+l.st+'</td>'
+      +'<td style="padding:6px 10px">'+l.item+(l.core?' <span style="font-size:9px;color:#E84393">KERN</span>':'')+'</td>'
+      +'<td style="padding:6px 10px;color:#94a3b8">'+l.seit+'</td>'
+      +'<td style="padding:6px 10px;text-align:right;font-weight:700;color:'+(warn?'#ef4444':'#e2e8f0')+'">'+l.offenH.toFixed(1).replace(".",",")+' h'+(warn?' ⚠️ vergessen?':'')+'</td></tr>';
+  }).join("");
+  var liveBlock=snoozeLive.filter(function(l){return !l.ignore;}).length
+    ?'<table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="color:#64748b;font-size:10px;text-align:left"><th style="padding:6px 10px">STORE</th><th style="padding:6px 10px">ARTIKEL</th><th style="padding:6px 10px">OFFLINE SEIT</th><th style="padding:6px 10px;text-align:right">OFFENE ZEIT</th></tr>'+liveRows+'</table>'
+    :'<div style="color:#22c55e;font-size:13px;padding:8px 0">✓ Aktuell ist nichts gesnoozt — volles Menü online.</div>';
+
+  var frisch=snoozeStatus.map(function(s){return s.store+": "+s.lastCheck;}).join(" · ");
+
+  el.innerHTML=banner
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">'+kacheln+'</div>'
+    +'<div style="background:#0a1628;border-radius:10px;padding:16px;border:1px solid #0a3545;margin-bottom:16px">'
+    +'<div style="font-size:13px;font-weight:700;margin-bottom:10px">🔴 Jetzt offline <span style="font-size:10px;color:#64748b;font-weight:400">letzter Scan: '+frisch+'</span></div>'+liveBlock+'</div>'
+    +'<div style="background:#0a1628;border-radius:10px;padding:16px;border:1px solid #0a3545;margin-bottom:16px">'
+    +'<div style="font-size:13px;font-weight:700;margin-bottom:10px">📉 Offline-Stunden je Woche (gestapelt nach Kategorie)</div>'
+    +'<div style="height:260px"><canvas id="vfWochenChart"></canvas></div></div>'
+    +'<div style="background:#0a1628;border-radius:10px;padding:16px;border:1px solid #0a3545">'
+    +'<div style="font-size:13px;font-weight:700;margin-bottom:10px">🏆 Top-Artikel nach Offline-Zeit <span style="font-size:10px;color:#64748b;font-weight:400">Zeitraum '+von+' bis '+bis+' · ohne Ignore-Artikel</span></div>'
+    +'<table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="color:#64748b;font-size:10px;text-align:left"><th style="padding:6px 10px">STORE</th><th style="padding:6px 10px">ARTIKEL</th><th style="padding:6px 10px">KATEGORIE</th><th style="padding:6px 10px;text-align:right">SNOOZES</th><th style="padding:6px 10px;text-align:right">STUNDEN</th><th style="padding:6px 10px;text-align:right">Ø DAUER</th><th style="padding:6px 10px;text-align:right">€ RISIKO</th></tr>'
+    +(topRows||'<tr><td colspan="7" style="padding:12px;color:#22c55e">✓ Keine Snoozes im Zeitraum.</td></tr>')+'</table></div>';
+
+  // Chart zeichnen (je Store eine Balkengruppe: Datasets = Store×Kategorie, Stack = Store)
+  if(vfChart){vfChart.destroy();vfChart=null;}
+  var ctx=document.getElementById("vfWochenChart");
+  if(ctx&&kws.length&&typeof Chart!=="undefined"){
+    var datasets=[];
+    stores.forEach(function(sc){
+      kats.forEach(function(kat){
+        var data=kws.map(function(kw){return Math.round((agg[kw+"|"+sc+"|"+kat]||0)*10)/10;});
+        if(data.some(function(x){return x>0;}))
+          datasets.push({label:sc+" "+kat,data:data,backgroundColor:katCol[kat]+(sc==="MD"?"":"90"),stack:sc,borderWidth:0});
+      });
+    });
+    vfChart=new Chart(ctx,{type:"bar",
+      data:{labels:kws,datasets:datasets},
+      options:{responsive:true,maintainAspectRatio:false,
+        scales:{x:{stacked:true,ticks:{color:"#64748b",font:{size:10}},grid:{color:"#0a3545"}},
+                y:{stacked:true,ticks:{color:"#64748b",font:{size:10}},grid:{color:"#0a3545"},title:{display:true,text:"Stunden",color:"#64748b"}}},
+        plugins:{legend:{labels:{color:"#94a3b8",font:{size:10},boxWidth:12}},
+          tooltip:{callbacks:{footer:function(items){var s=0;items.forEach(function(i){s+=i.parsed.y;});return "Σ "+s.toFixed(1)+" h";}}}}}});
+  }
 }
 
 // ============================================================
