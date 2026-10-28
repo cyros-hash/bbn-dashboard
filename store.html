@@ -13,7 +13,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <!--
-  bang bang noodles · Store-Übersicht v1.7 · 22.10.2026 (Bang-Bang-Look nach Brand Manual v1.1)
+  bang bang noodles · Store-Übersicht v1.8 · 28.10.2026 (Bang-Bang-Look nach Brand Manual v1.1)
+  v1.8: abgehakte Meldungen bleiben „Fixed“, auch wenn sie danach noch in eine andere Spalte gezogen werden
+        (nur „wieder geöffnet“ öffnet sie). Für heute gilt immer der aktuelle Stand aus Asana.
+        Im Verlauf stehen nur echte Statuswechsel (kein „Back to Not accepted yet“ mehr direkt nach dem Melden).
   v1.7: lange Meldungen werden ganz angezeigt (mit Zeilenumbrüchen), auch im gelben Kasten.
   v1.6: komplett englisch (Seite, Rubriken, Status). Alte deutsche Rubriken aus store_api v1.3 werden übersetzt.
   Nur zum Lesen. Daten: Apps-Script-Projekt „Ops-System" (store_api.gs) → Asana Ops-Board.
@@ -295,12 +298,21 @@ function fallAm(f, D) {
     if (e[2] === 'neu') { status = 'neu'; sektion = 'neu'; }
     else if (e[2] === 'status') {
       if (e[3] === 'erledigt') { status = 'erledigt'; erledigtAm = e[0]; }
-      else { status = e[3]; sektion = e[3]; erledigtAm = null; }
+      else {
+        sektion = e[3];
+        // Spaltenwechsel einer abgehakten Aufgabe öffnet sie nicht wieder – das tut nur „wieder geöffnet“
+        if (status !== 'erledigt') status = e[3];
+      }
     }
     else if (e[2] === 'wieder') { status = sektion; erledigtAm = null; }
     else if (e[2] === 'frist') { frist = e[3]; fristBisD = true; }
     else if (e[2] === 'hinweis') { hinweis = e[3] || ''; hinweisAb = e[0]; }
   });
+  // Heute gilt der aktuelle Stand aus Asana (abgehakt oder nicht), falls der Verlauf etwas anderes ergibt
+  if (S.daten && D === S.daten.heute) {
+    if (f.erledigt && status !== 'erledigt') { status = 'erledigt'; erledigtAm = erledigtAm || D; }
+    else if (!f.erledigt && status === 'erledigt') { status = sektion; erledigtAm = null; }
+  }
   if (!fristVerlauf) frist = f.due;
   else if (!fristBisD) frist = null;
   if (!hinweisVerlauf && f.hinweis) { hinweis = f.hinweis; hinweisAb = v[0][0]; }
@@ -333,6 +345,20 @@ function verlaufText(f, e) {
   if (e[2] === 'hinweis') return e[3] ? 'Note for the shift updated' : 'Note removed';
   if (e[2] === 'wieder') return 'Reopened';
   return '';
+}
+// Verlauf ohne Einträge, die den Status nicht ändern (z. B. Spaltenwechsel einer abgehakten Aufgabe)
+function verlaufAnzeige(v) {
+  var status = 'neu', sektion = 'neu';
+  return v.filter(function (e) {
+    if (e[2] === 'neu') { status = 'neu'; sektion = 'neu'; return true; }
+    if (e[2] === 'wieder') { status = sektion; return true; }
+    if (e[2] !== 'status') return true;
+    if (e[3] === 'erledigt') { var neuErledigt = status !== 'erledigt'; status = 'erledigt'; return neuErledigt; }
+    sektion = e[3];
+    if (status === 'erledigt' || status === e[3]) return false;
+    status = e[3];
+    return true;
+  });
 }
 function verlaufDot(e) {
   if (e[2] === 'neu') return ST.neu.dot;
@@ -538,7 +564,7 @@ function zeileHtml(x, D) {
     h += '<div class="details"><ol class="stufen" aria-label="Progress">' + stufen(x.status) + '</ol>' +
       '<div class="frist-lang" style="background:' + x.fr.bg + ';color:' + x.fr.fg + '">' + IC.frist + '<span>' + esc(x.fr.lang) + '</span></div>' +
       (x.hinweis ? '<div class="hw-box"><b>NOTE FOR THE SHIFT</b><span>' + esc(x.hinweis) + '</span><small>As of ' + (x.hinweisAb ? kurz(x.hinweisAb) : '') + ' · maintained in Asana</small></div>' : '') +
-      '<ol class="verlauf" aria-label="History">' + x.v.map(function (e) {
+      '<ol class="verlauf" aria-label="History">' + verlaufAnzeige(x.v).map(function (e) {
         return '<li><i style="background:' + verlaufDot(e) + '"></i><div><small>' + kurz(e[0]) + ', ' + esc(e[1]) + '</small><span>' + esc(verlaufText(f, e)) + '</span></div></li>';
       }).join('') + '</ol></div>';
   }
