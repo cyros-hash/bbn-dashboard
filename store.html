@@ -13,7 +13,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <!--
-  bang bang noodles · Store-Übersicht v1.8 · 28.10.2026 (Bang-Bang-Look nach Brand Manual v1.1)
+  bang bang noodles · Store-Übersicht v1.9 · 09.11.2026 (Bang-Bang-Look nach Brand Manual v1.1)
+  v1.9: Schwarzes Brett („📌 notice board“, magenta) neben „important for your shift“ – braucht store_api ab v1.6.
+        Ein Eintrag ist sichtbar ab Erstellung (oder Startdatum) bis zum Fälligkeitsdatum bzw. bis er abgehakt ist.
   v1.8: abgehakte Meldungen bleiben „Fixed“, auch wenn sie danach noch in eine andere Spalte gezogen werden
         (nur „wieder geöffnet“ öffnet sie). Für heute gilt immer der aktuelle Stand aus Asana.
         Im Verlauf stehen nur echte Statuswechsel (kein „Back to Not accepted yet“ mehr direkt nach dem Melden).
@@ -90,6 +92,24 @@ main.wrap{display:flex;flex-direction:column;gap:20px;padding-top:22px;padding-b
 .wichtig .hwtxt{flex:1 1 260px;min-width:0;font-size:14px;white-space:pre-line}
 .bangy{flex:0 0 auto;display:flex;align-items:flex-end;gap:4px;margin:0 auto}
 .bangy img{height:160px;width:auto}
+/* Oben: gelbe Box + Schwarzes Brett (nebeneinander, mobil untereinander) */
+.oben{display:grid;grid-template-columns:1fr;gap:20px;align-items:stretch}
+.oben.zwei{grid-template-columns:1fr 1fr;align-items:start}
+.oben.zwei .wichtig{align-items:flex-start;align-content:flex-start}
+.brett{border-radius:20px;padding:18px 20px;display:flex;flex-direction:column;gap:12px;background:var(--magenta);color:#fff;min-width:0}
+.brett h2{font-weight:700;font-size:25px;line-height:1.1;color:#fff}
+.brett ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.brett li{display:flex;gap:12px;align-items:flex-start;padding:10px 14px;border-radius:14px;background:#fff;color:var(--ink)}
+.brett .dat{flex:0 0 auto;min-width:74px;text-align:center;border-radius:12px;padding:6px 8px;line-height:1.1;background:var(--rose);color:var(--magenta-text)}
+.brett .dat.heute{background:var(--magenta);color:#fff}
+.brett .dat.ohne{background:#F0F0F0;color:var(--ink)}
+.brett .dat small{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.brett .dat b{display:block;font-size:20px;font-weight:600;font-style:italic}
+.brett .txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.brett .txt b{font-size:15px;font-weight:600;white-space:pre-line;overflow-wrap:anywhere}
+.brett .txt span{font-size:14px;white-space:pre-line;overflow-wrap:anywhere}
+.brett .txt small{font-size:12px;color:var(--muted)}
+@media (max-width:900px){.oben.zwei{grid-template-columns:1fr}}
 .blase{align-self:flex-start;padding:8px 14px;border-radius:18px 18px 18px 4px;background:#fff;color:var(--magenta);font-family:'Cherry Bomb One',Kanit,sans-serif;font-size:18px;white-space:nowrap}
 /* Rubriken */
 .abschnitt-kopf{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 16px}
@@ -377,6 +397,20 @@ function stufen(s) {
 }
 
 // ── Darstellung ──
+// ── Schwarzes Brett: was steht am Betriebstag D am Brett? ──
+// sichtbar ab Erstellung (bzw. Startdatum) · bis zum Fälligkeitsdatum · weg, sobald abgehakt
+function brettAm(d, D) {
+  return (d.brett || []).filter(function (e) {
+    return e.ab <= D && !(e.erledigtAm && e.erledigtAm <= D) && (!e.datum || e.datum >= D);
+  });
+}
+function brettDatum(e, D) {
+  if (!e.datum) return '<span class="dat ohne"><small>posted</small><b>' + dm(e.gepostet || e.ab) + '</b></span>';
+  var n = diff(D, e.datum);
+  return '<span class="dat' + (n === 0 ? ' heute' : '') + '"><small>' + (n === 0 ? 'today' : (n === 1 ? 'tomorrow' : WT[wd(e.datum)])) +
+    '</small><b>' + dm(e.datum) + '</b></span>';
+}
+
 function render() {
   var app = document.getElementById('app');
   if (!S.authBereit) { app.innerHTML = '<div class="schirm"><div class="login"><p>Loading …</p></div></div>'; return; }
@@ -466,14 +500,28 @@ function seiteHtml() {
   });
   h += '<div class="cis"><b>Check-ins</b>' + ciTeile.join('') + '</div></section>';
 
-  // Für deine Schicht wichtig (gelbe Box, max. eine pro Seite)
+  // Für deine Schicht wichtig (gelbe Box, max. eine pro Seite) + Schwarzes Brett (magenta) – teilen sich die Zeile
   var wichtig = offen.slice().sort(sortFn).filter(function (x) { return x.hinweis; });
-  if (wichtig.length) {
-    h += '<section class="wichtig" aria-labelledby="h-w"><div class="wichtig-inhalt"><h2 id="h-w">important for your shift</h2><ul>' +
-      wichtig.map(function (x) {
-        return '<li><span class="chip-rub">' + esc(x.f.rubrik) + '</span><b>' + esc(x.f.titel) + '</b><span class="hwtxt">' + esc(x.hinweis) + '</span></li>';
-      }).join('') + '</ul></div>' +
-      '<div class="bangy" aria-hidden="true"><span class="blase">Heads up!</span><img src="' + IMG.bangy + '" alt=""></div></section>';
+  var brett = brettAm(d, D);
+  if (wichtig.length || brett.length) {
+    var zwei = wichtig.length && brett.length;
+    h += '<div class="oben' + (zwei ? ' zwei' : '') + '">';
+    if (wichtig.length) {
+      h += '<section class="wichtig" aria-labelledby="h-w"><div class="wichtig-inhalt"><h2 id="h-w">important for your shift</h2><ul>' +
+        wichtig.map(function (x) {
+          return '<li><span class="chip-rub">' + esc(x.f.rubrik) + '</span><b>' + esc(x.f.titel) + '</b><span class="hwtxt">' + esc(x.hinweis) + '</span></li>';
+        }).join('') + '</ul></div>' +
+        (zwei ? '' : '<div class="bangy" aria-hidden="true"><span class="blase">Heads up!</span><img src="' + IMG.bangy + '" alt=""></div>') + '</section>';
+    }
+    if (brett.length) {
+      h += '<section class="brett" aria-labelledby="h-b"><h2 id="h-b">📌 notice board</h2><ul>' +
+        brett.map(function (e) {
+          return '<li>' + brettDatum(e, D) + '<span class="txt"><b>' + esc(e.titel) + '</b>' +
+            (e.text ? '<span>' + esc(e.text) + '</span>' : '') +
+            '<small>' + (e.alle ? 'both stores' : esc(d.store.name) + ' only') + '</small></span></li>';
+        }).join('') + '</ul></section>';
+    }
+    h += '</div>';
   }
 
   // Lage nach Rubrik
